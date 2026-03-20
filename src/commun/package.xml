@@ -14,13 +14,16 @@
   <exec_depend>rosidl_default_runtime</exec_depend>
 
   <!-- Retiré std_msgs car non utilisé ici -->
+  <!-- <depend>std_msgs</depend> -->
+  <!-- <depend>std_srvs</depend> --> 
   <!-- Si tu en as besoin plus tard, réajoute-le -->
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
   <export>
     <build_type>ament_cmake</build_type>
-    <member_of_group>rosidl_interface_packages</member_of_group>
   </export>
 </package>
