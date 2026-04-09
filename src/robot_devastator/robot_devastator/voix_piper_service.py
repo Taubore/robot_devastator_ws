@@ -13,7 +13,6 @@ from commun.srv import JouerAudio
 PIPER_EXECUTABLE = '/usr/local/bin/piper'
 AUDIO_TEMP_DIR = Path('/tmp')
 
-
 class VoixPiper(Node):
     """Expose les services ROS 2 de génération et de lecture audio."""
 
@@ -53,7 +52,7 @@ class VoixPiper(Node):
         return self.audio_output
 
     def generer_audio_callback(self, request, response):
-        """Génère un fichier audio à partir du texte reçu par le service."""
+        """Génère un fichier audio, si pas déjà existant, à partir du texte reçu par le service."""
         texte = request.texte.strip()
         nom_fichier = request.nom_fichier.strip()
 
@@ -63,10 +62,14 @@ class VoixPiper(Node):
             response.chemin_fichier = ""
             return response
 
-        self.get_logger().info("Génération audio demandée.")
-
         try:
             chemin_audio = self._resoudre_chemin_audio(nom_fichier or None)
+
+            if os.path.isfile(chemin_audio):
+                response.succes = True
+                response.message = f"Fichier audio déjà existant : {chemin_audio.name}"
+                response.chemin_fichier = str(chemin_audio)
+                return response
 
             subprocess.run(
                 [
@@ -85,7 +88,7 @@ class VoixPiper(Node):
                 raise FileNotFoundError(f"Fichier audio non généré : {chemin_audio}")
 
             response.succes = True
-            response.message = f"Fichier audio généré : {chemin_audio}"
+            response.message = f"Fichier audio généré : {chemin_audio.name}"
             response.chemin_fichier = str(chemin_audio)
         except ValueError as erreur:
             response.succes = False
