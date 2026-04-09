@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from robot_devastator.srv import Parler 
+from commun.srv import Parler 
 import subprocess
 import os
 
@@ -9,8 +9,8 @@ class VoixPiper(Node):
         super().__init__('voix_piper')
 
         # Déclare des paramètres ROS pour le modèle Piper
-        self.declare_parameter('piper_model', '/opt/piper/fr_FR-siwis-low.onnx')
-        self.declare_parameter('piper_config', '/opt/piper/fr_FR-siwis-low.onnx.json')
+        self.declare_parameter('piper_model', '/opt/piper/voix/fr_FR-siwis-low.onnx')
+        self.declare_parameter('piper_config', '/opt/piper/voix/fr_FR-siwis-low.onnx.json')
         self.declare_parameter('audio_output', '/tmp/sortie.wav')
 
         self.piper_model = self.get_parameter('piper_model').get_parameter_value().string_value
@@ -23,14 +23,14 @@ class VoixPiper(Node):
     def parler_callback(self, request, response):
         texte = request.texte.strip()
         if not texte:
-            response.success = False
+            response.succes = False
             response.message = "Le texte fourni est vide."
             return response
 
         self.get_logger().info(f"Texte reçu : {texte}")
 
         try:
-            result = subprocess.run(
+            subprocess.run(
                 [
                     '/usr/local/bin/piper',
                     '--model', self.piper_model,
@@ -46,17 +46,17 @@ class VoixPiper(Node):
                 raise FileNotFoundError(f"Fichier audio non généré : {self.audio_output}")
 
             subprocess.run(['aplay', self.audio_output], check=True)
-            response.success = True
+            response.succes = True
             response.message = f"Piper a parlé: {texte}"
 
         except subprocess.TimeoutExpired:
-            response.success = False
+            response.succes = False
             response.message = "Le processus Piper a dépassé le délai d'exécution."
         except subprocess.CalledProcessError as e:
-            response.success = False
+            response.succes = False
             response.message = f"Erreur lors de l'exécution de Piper : {e}"
         except Exception as e:
-            response.success = False
+            response.succes = False
             response.message = f"Erreur inattendue : {e}"
 
         return response

@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from robot_devastator.srv import Parler
+from commun.srv import Parler
 
 class Principal(Node):
     def __init__(self):

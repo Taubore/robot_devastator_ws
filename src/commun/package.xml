@@ -2,25 +2,27 @@
 <package format="3">
   <name>commun</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="taubore@todo.todo">taubore</maintainer>
-  <license>TODO: License declaration</license>
+  <description>Robot Devastator - Interface</description>
+   <maintainer email="louis.st-hilaire@hotmail.com">taubore</maintainer>
+  <license>MIT</license>
 
-  <!-- Obligatoire pour ament -->
+  <!-- Outil de build obligatoire pour un package ROS 2 basé sur ament_cmake -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!-- Dépendances pour générer des interfaces -->
+  <!-- Nécessaire pendant la compilation pour générer le code des fichiers .srv -->
   <build_depend>rosidl_default_generators</build_depend>
+  
+  <!-- Nécessaire à l'execution pour que les autres packages utilisent les interfaces generées -->
   <exec_depend>rosidl_default_runtime</exec_depend>
 
-  <!-- Retiré std_msgs car non utilisé ici -->
+  <!-- À ajouter seulement si les définitions .srv referencent ces types -->
   <!-- <depend>std_msgs</depend> -->
   <!-- <depend>std_srvs</depend> --> 
-  <!-- Si tu en as besoin plus tard, réajoute-le -->
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
+  <!-- Marque ce package comme package d'interfaces ROS 2 pour rosidl -->
   <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>

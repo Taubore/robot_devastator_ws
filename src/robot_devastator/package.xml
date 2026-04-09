@@ -6,19 +6,23 @@
   <maintainer email="louis.st-hilaire@hotmail.com">taubore</maintainer>
   <license>MIT</license>
 
+  <!-- Outil de build principal. ament_python est adapté aux packages ROS 2 écrits en Python. -->
   <buildtool_depend>ament_python</buildtool_depend>
 
+  <!-- Bibliothèque cliente Python de ROS 2. Indispensable pour créer des noeuds, publishers, subscribers, etc. -->
   <depend>rclpy</depend>
-  <depend>std_msgs</depend>
-  <depend>std_srvs</depend>
+
+  <!-- Dépendance vers le package local d'interfaces. -->
   <depend>commun</depend>
 
+  <!-- Dépendances utilisées pour tests et vérifications. Pas nécessaires à l'exécution normale du robot. -->
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
   <test_depend>python3-pytest</test_depend>
 
   <export>
+    <!-- Indique aux outils ROS 2 que ce package doit être traité comme un package Python basé sur ament_python. -->
     <build_type>ament_python</build_type>
   </export>
 </package>
