@@ -1,0 +1,5 @@
+string nom_fichier
+---
+bool succes
+string message
+string chemin_fichier
