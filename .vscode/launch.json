@@ -9,20 +9,43 @@
       "type": "debugpy",
       "request": "launch",
       "console": "integratedTerminal",
-      "program": "${workspaceFolder}/src/robot_devastator/robot_devastator/principal.py",
+      "module": "robot_devastator.principal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${workspaceFolder}/install/commun/lib/python3.12/site-packages:${env:PYTHONPATH}"
+      }
     },
     {
       "name": "ServicePiper",
       "type": "debugpy",
       "request": "launch",
       "console": "integratedTerminal",
-      "program": "${workspaceFolder}/src/robot_devastator/robot_devastator/voix_piper_service.py",
+      "module": "robot_devastator.voix_piper_service",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${workspaceFolder}/install/commun/lib/python3.12/site-packages:${env:PYTHONPATH}"
+      }
+    },
+    {
+      "name": "InterfacePico",
+      "type": "debugpy",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "module": "interface_pico.interface_pico",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${workspaceFolder}/install/commun/lib/python3.12/site-packages:${env:PYTHONPATH}"
+      }
     }
   ],
   "compounds": [
     {
       "name": "Tous",
-      "configurations": ["Principal", "ServicePiper"]
+      "configurations": ["Principal", "ServicePiper", "InterfacePico"]
+    },
+    {
+      "name": "Principal + Pico",
+      "configurations": ["Principal", "InterfacePico"]
     }
   ]
 }
