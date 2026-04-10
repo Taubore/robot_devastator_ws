@@ -25,8 +25,14 @@ class TransportSeriePico:
     """Gère uniquement l'ouverture du port et l'échange de lignes texte."""
 
     def __init__(self, configuration: ConfigurationUART | None = None) -> None:
-        # Le transport ouvre la liaison dès sa création pour rester très simple.
         self.configuration = configuration or ConfigurationUART()
+        self.serial: serial.Serial | None = None
+
+    def connecter(self) -> None:
+        """Ouvre la liaison série si elle n'est pas déjà disponible."""
+        if self.serial is not None and self.serial.is_open:
+            return
+
         self.serial = serial.Serial(
             port=self.configuration.port,
             baudrate=self.configuration.debit,
@@ -35,17 +41,22 @@ class TransportSeriePico:
 
     def fermer(self) -> None:
         """Ferme proprement le port série s'il est encore ouvert."""
-        if self.serial.is_open:
+        if self.serial is not None and self.serial.is_open:
             self.serial.close()
+        self.serial = None
 
     def envoyer_commande(self, commande: str) -> None:
         """Envoie une commande ASCII terminée par un saut de ligne."""
+        self.connecter()
         ligne = f"{commande}\n".encode("ascii")
+        assert self.serial is not None
         self.serial.write(ligne)
         self.serial.flush()
 
     def lire_ligne(self) -> str | None:
         """Lit une ligne complète si le Pico a répondu, sinon retourne `None`."""
+        self.connecter()
+        assert self.serial is not None
         donnees = self.serial.readline()
         if not donnees:
             return None

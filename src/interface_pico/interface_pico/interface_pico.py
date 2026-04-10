@@ -52,6 +52,7 @@ class NoeudInterfacePico(Node):
                 timeout_lecture=timeout_lecture,
             )
         )
+        self._uart_disponible = False
 
         self.derniere_consigne: tuple[int, int] | None = None
 
@@ -80,9 +81,30 @@ class NoeudInterfacePico(Node):
                 "le Pico risque donc de couper les moteurs."
             )
 
-        self.get_logger().info(
-            f"Interface Pico ouverte sur {port} à {debit} bauds."
-        )
+        self._verifier_liaison_serie()
+
+    def _verifier_liaison_serie(self) -> bool:
+        """Essaie d'ouvrir la liaison série et journalise les transitions d'état."""
+        try:
+            self.transport.connecter()
+        except (serial.SerialException, OSError) as erreur:  # pragma: no cover - dépend du matériel série.
+            if self._uart_disponible:
+                self.get_logger().error(f"Liaison UART perdue: {erreur}")
+            else:
+                self.get_logger().warn(
+                    f"Liaison UART indisponible au démarrage ou en reprise: {erreur}"
+                )
+            self._uart_disponible = False
+            return False
+
+        if not self._uart_disponible:
+            self.get_logger().info(
+                "Interface Pico ouverte sur "
+                f"{self.transport.configuration.port} à "
+                f"{self.transport.configuration.debit} bauds."
+            )
+        self._uart_disponible = True
+        return True
 
     def _recevoir_consigne_moteurs(self, message: ConsigneMoteurs) -> None:
         """Valide puis envoie immédiatement une consigne moteur."""
@@ -96,11 +118,15 @@ class NoeudInterfacePico(Node):
                 f"Consigne droite ignorée car hors plage : {message.droite}"
             )
             return
+        if not self._verifier_liaison_serie():
+            return
 
         try:
             self.transport.set_moteurs(message.gauche, message.droite)
         except (serial.SerialException, OSError) as erreur:  # pragma: no cover - dépend du matériel série.
             self.get_logger().error(f"Envoi UART impossible: {erreur}")
+            self.transport.fermer()
+            self._uart_disponible = False
             return
 
         self.derniere_consigne = (message.gauche, message.droite)
@@ -109,19 +135,27 @@ class NoeudInterfacePico(Node):
         """Répète la dernière consigne valide pour éviter le timeout du Pico."""
         if self.derniere_consigne is None:
             return
+        if not self._verifier_liaison_serie():
+            return
 
         gauche, droite = self.derniere_consigne
         try:
             self.transport.set_moteurs(gauche, droite)
         except (serial.SerialException, OSError) as erreur:  # pragma: no cover - dépend du matériel série.
             self.get_logger().error(f"Maintien de consigne impossible: {erreur}")
+            self.transport.fermer()
+            self._uart_disponible = False
 
     def _lire_et_publier_etat(self) -> None:
         """Publie en ROS 2 toute ligne texte éventuellement renvoyée par le Pico."""
+        if not self._verifier_liaison_serie():
+            return
         try:
             ligne = self.transport.lire_ligne()
         except (serial.SerialException, OSError) as erreur:  # pragma: no cover - dépend du matériel série.
             self.get_logger().error(f"Lecture UART impossible: {erreur}")
+            self.transport.fermer()
+            self._uart_disponible = False
             return
 
         if not ligne:
@@ -136,6 +170,8 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.stop()
         except (serial.SerialException, OSError) as erreur:  # pragma: no cover - dépend du matériel série.
+            self.transport.fermer()
+            self._uart_disponible = False
             reponse.success = False
             reponse.message = f"STOP non envoyé : {erreur}"
             return reponse
@@ -150,6 +186,8 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.ping()
         except (serial.SerialException, OSError) as erreur:  # pragma: no cover - dépend du matériel série.
+            self.transport.fermer()
+            self._uart_disponible = False
             reponse.success = False
             reponse.message = f"PING non envoyé : {erreur}"
             return reponse
@@ -178,3 +216,6 @@ def main(args: list[str] | None = None) -> None:
         if noeud is not None:
             noeud.destroy_node()
         rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
