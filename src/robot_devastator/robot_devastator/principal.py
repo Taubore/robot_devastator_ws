@@ -13,6 +13,8 @@ from std_srvs.srv import Trigger
 class Principal(Node):
     """Orchestration des activités du robot."""
 
+    DELAI_ATTENTE_SERVICE_S = 20.0
+
     def __init__(self):
         super().__init__('principal')
         self.generer_cli = self.create_client(GenererAudio, 'generer_audio')
@@ -25,19 +27,18 @@ class Principal(Node):
             10,
         )
 
-    def attendre_services(self):
-        """Attend que tous les services soient disponibles."""
-        while not self.generer_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warn("Service 'generer_audio' non disponible, nouvelle tentative...")
-
-        while not self.jouer_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warn("Service 'jouer_audio' non disponible, nouvelle tentative...")
-
-        while not self.ping_pico_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warn("Service 'ping' non disponible, nouvelle tentative...")
-
-        while not self.stop_pico_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().warn("Service 'stop' non disponible, nouvelle tentative...")
+    def attendre_service(self, client, nom_service):
+        """Attend un service pendant un temps borné pour éviter une boucle infinie."""
+        echeance = time.monotonic() + self.DELAI_ATTENTE_SERVICE_S
+        while not client.wait_for_service(timeout_sec=1.0):
+            if time.monotonic() >= echeance:
+                raise RuntimeError(
+                    f"Service '{nom_service}' indisponible après "
+                    f"{self.DELAI_ATTENTE_SERVICE_S:.0f} s."
+                )
+            self.get_logger().warn(
+                f"Service '{nom_service}' non disponible, nouvelle tentative..."
+            )
 
     def generer_fichier_audio(self, texte, nom_fichier):
         """Demande la génération d'un fichier audio"""
@@ -128,24 +129,33 @@ def main(args=None):
     rclpy.init(args=args)
     node = Principal()
 
-    # 1. Attendre que les services ROS 2 nécessaires soient disponibles.
-    node.attendre_services()
+    try:
+        # 1. Attendre que les services ROS 2 nécessaires soient disponibles.
+        node.attendre_service(node.generer_cli, 'generer_audio')
+        node.attendre_service(node.jouer_cli, 'jouer_audio')
+        node.attendre_service(node.ping_pico_cli, 'ping')
+        node.attendre_service(node.stop_pico_cli, 'stop')
 
-    # 2. Générer des fichiers audio.
-    node.generer_fichier_audio("Je suis prêt à effectuer des mouvements.", "pret")
-    node.generer_fichier_audio("Obstacle droit devant", "obstacle_1")
-    node.generer_fichier_audio("Oups, il y a quelque chose", "obstacle_2")
-    node.generer_fichier_audio("Je dois contourner ça", "contourner_1")
-    node.generer_fichier_audio("Je contourne", "contourner_2")
+        # 2. Générer des fichiers audio.
+        node.generer_fichier_audio("Je suis prêt à effectuer des mouvements.", "pret")
+        node.generer_fichier_audio("Obstacle droit devant", "obstacle_1")
+        node.generer_fichier_audio("Oups, il y a quelque chose", "obstacle_2")
+        node.generer_fichier_audio("Je dois contourner ça", "contourner_1")
+        node.generer_fichier_audio("Je contourne", "contourner_2")
 
-    # 3. Jouer deux fois le fichier généré.
-    node.jouer_wav("pret")
+        # 3. Jouer le fichier "pret"
+        node.jouer_wav("pret")
 
-    # 4. Tester rapidement la chaîne ROS 2 -> Pico avec quelques consignes moteurs.
-    node.tester_moteurs_demarrage()
+        # 4. Tester rapidement la chaîne ROS 2 -> Pico avec quelques consignes moteurs.
+        node.tester_moteurs_demarrage()
 
-    # 5. Garder le nœud actif si d'autres interactions doivent suivre.
-    rclpy.spin(node)
+        # 5. Garder le nœud actif si d'autres interactions doivent suivre.
+        rclpy.spin(node)
+    except RuntimeError as erreur:
+        node.get_logger().error(str(erreur))
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
