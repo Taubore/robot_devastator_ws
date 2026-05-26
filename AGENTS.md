@@ -113,9 +113,12 @@ Donc :
 
 Le projet utilise Pylance avec vérification de types au niveau `base`.
 
-- Aucun diagnostic rouge connu dans le code ajouté ou modifié
-- Corriger les problèmes de type plutôt que les masquer
+- Après chaque modification Python, corrige explicitement les diagnostics rouges Pylance visibles. 
+- Si un diagnostic Pylance semble lié à ROS 2 ou aux messages générés, explique-le avant de le corriger. 
 - Éviter `# type: ignore`, sauf dernier recours commenté
+
+IMPORTANT : 
+
 
 ## Règles ROS 2
 

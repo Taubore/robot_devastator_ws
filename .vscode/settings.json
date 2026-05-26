@@ -1,13 +1,27 @@
 {
     "ROS2.distro": "jazzy",
+    "python.defaultInterpreterPath": "/usr/bin/python3",
+    "python.analysis.typeCheckingMode": "basic",
     "python.autoComplete.extraPaths": [
         "/opt/ros/jazzy/lib/python3.12/site-packages"
     ],
     "python.analysis.extraPaths": [
         "/opt/ros/jazzy/lib/python3.12/site-packages",
-        "${workspaceFolder}/install/commun/lib/python3.12/site-packages",
-        "${workspaceFolder}/install/robot_devastator/lib/python3.12/site-packages"
+        "${workspaceFolder}/install/commun/local/lib/python3.12/dist-packages",
+        "${workspaceFolder}/install/robot_devastator/lib/python3.12/site-packages",
+        "${workspaceFolder}/install/interface_pico/lib/python3.12/site-packages",
+        "${workspaceFolder}/src/robot_devastator",
+        "${workspaceFolder}/src/interface_pico"
     ],
     "chatgpt.openOnStartup": false,
-    "cmake.ignoreCMakeListsMissing": true
+    "cmake.ignoreCMakeListsMissing": true,
+    "search.exclude": {
+        "**/build": true,
+        "**/install": true,
+        "**/log": true
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    }
 }
