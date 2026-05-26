@@ -1,6 +1,5 @@
 """Services ROS 2 pour générer et jouer des fichiers audio via Piper."""
 
-import os
 import subprocess
 from pathlib import Path
 
@@ -11,7 +10,16 @@ from commun.srv import GenererAudio
 from commun.srv import JouerAudio
 
 PIPER_EXECUTABLE = '/usr/local/bin/piper'
-AUDIO_TEMP_DIR = Path('/tmp')
+
+# Répertoire persistant utilisé comme cache pour les fichiers WAV nommés.
+AUDIO_CACHE_DIR = Path.home() / '.cache' / 'robot_devastator' / 'audio'
+
+# Fichier utilisé quand le service reçoit une demande sans `nom_fichier`.
+DEFAULT_AUDIO_OUTPUT = AUDIO_CACHE_DIR / 'derniere_sortie.wav'
+
+# Durée maximale accordée aux commandes externes `piper` et `aplay`.
+DEFAULT_COMMAND_TIMEOUT_S = 15.0
+
 
 class VoixPiper(Node):
     """Expose les services ROS 2 de génération et de lecture audio."""
@@ -20,16 +28,38 @@ class VoixPiper(Node):
         super().__init__('voix_piper')
 
         # Ces paramètres permettent de changer le modèle ou le chemin de sortie
-        # sans modifier le code Python.
-        self.declare_parameter('piper_model', '/opt/piper/voix/fr_FR-siwis-low.onnx')
-        self.declare_parameter('piper_config', '/opt/piper/voix/fr_FR-siwis-low.onnx.json')
-        self.declare_parameter('audio_output', '/tmp/derniere_sortie.wav')
+        # sans modifier le code Python. `audio_output` ne concerne que le cas
+        # où aucun nom de fichier n'est fourni dans la requête.
+        self.declare_parameter(
+            'piper_model',
+            '/opt/piper/voix/fr_FR-siwis-low.onnx',
+        )
+        self.declare_parameter(
+            'piper_config',
+            '/opt/piper/voix/fr_FR-siwis-low.onnx.json',
+        )
+        self.declare_parameter('audio_output', str(DEFAULT_AUDIO_OUTPUT))
+        self.declare_parameter('command_timeout_s', DEFAULT_COMMAND_TIMEOUT_S)
 
-        self.piper_model = self.get_parameter('piper_model').get_parameter_value().string_value
-        self.piper_config = self.get_parameter('piper_config').get_parameter_value().string_value
+        self.piper_model = (
+            self.get_parameter('piper_model').get_parameter_value().string_value
+        )
+        self.piper_config = (
+            self.get_parameter('piper_config').get_parameter_value().string_value
+        )
         self.audio_output = Path(
             self.get_parameter('audio_output').get_parameter_value().string_value
         )
+        self.command_timeout_s = (
+            self.get_parameter('command_timeout_s').get_parameter_value().double_value
+        )
+        if self.command_timeout_s <= 0.0:
+            raise ValueError(
+                "Le paramètre 'command_timeout_s' doit être strictement positif."
+            )
+
+        AUDIO_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        self.audio_output.parent.mkdir(parents=True, exist_ok=True)
 
         self.generer_srv = self.create_service(
             GenererAudio,
@@ -47,12 +77,14 @@ class VoixPiper(Node):
         """Retourne le chemin audio cible à partir d'un nom simple."""
         if nom_fichier:
             if '/' in nom_fichier or '\\' in nom_fichier:
-                raise ValueError("Le nom de fichier doit être un nom simple, sans chemin.")
-            return AUDIO_TEMP_DIR / f"{nom_fichier}.wav"
+                raise ValueError(
+                    "Le nom de fichier doit être un nom simple, sans chemin."
+                )
+            return AUDIO_CACHE_DIR / f"{nom_fichier}.wav"
         return self.audio_output
 
     def generer_audio_callback(self, request, response):
-        """Génère un fichier audio, si pas déjà existant, à partir du texte reçu par le service."""
+        """Génère un fichier audio à partir du texte reçu par le service."""
         texte = request.texte.strip()
         nom_fichier = request.nom_fichier.strip()
 
@@ -65,7 +97,7 @@ class VoixPiper(Node):
         try:
             chemin_audio = self._resoudre_chemin_audio(nom_fichier or None)
 
-            if os.path.isfile(chemin_audio):
+            if chemin_audio.is_file():
                 response.succes = True
                 response.message = f"Fichier audio déjà existant : {chemin_audio.name}"
                 response.chemin_fichier = str(chemin_audio)
@@ -81,10 +113,10 @@ class VoixPiper(Node):
                 input=texte,
                 text=True,
                 check=True,
-                timeout=10,
+                timeout=self.command_timeout_s,
             )
 
-            if not os.path.isfile(chemin_audio):
+            if not chemin_audio.is_file():
                 raise FileNotFoundError(f"Fichier audio non généré : {chemin_audio}")
 
             response.succes = True
@@ -120,10 +152,14 @@ class VoixPiper(Node):
         try:
             chemin_audio = self._resoudre_chemin_audio(nom_fichier or None)
 
-            if not os.path.isfile(chemin_audio):
+            if not chemin_audio.is_file():
                 raise FileNotFoundError(f"Fichier audio introuvable : {chemin_audio}")
 
-            subprocess.run(['aplay', str(chemin_audio)], check=True, timeout=10)
+            subprocess.run(
+                ['aplay', str(chemin_audio)],
+                check=True,
+                timeout=self.command_timeout_s,
+            )
 
             response.succes = True
             response.message = f"Lecture audio lancée : {chemin_audio}"
@@ -156,11 +192,12 @@ def main(args=None):
     """Initialise ROS 2 puis démarre le service audio Piper."""
     rclpy.init(args=args)
 
-    # Ce nœud expose deux services : un pour générer un fichier audio,
-    # l'autre pour le relire plus tard.
     node = VoixPiper()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

@@ -4,21 +4,18 @@ import time
 
 import rclpy
 from commun.msg import ConsigneMoteurs
-from commun.srv import GenererAudio
-from commun.srv import JouerAudio
+from rclpy.client import Client
 from rclpy.node import Node
 from std_srvs.srv import Trigger
 
 
 class Principal(Node):
-    """Orchestration des activités du robot."""
+    """Nœud principal utilisé pour valider la chaîne moteur ROS 2."""
 
     DELAI_ATTENTE_SERVICE_S = 20.0
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('principal')
-        self.generer_cli = self.create_client(GenererAudio, 'generer_audio')
-        self.jouer_cli = self.create_client(JouerAudio, 'jouer_audio')
         self.ping_pico_cli = self.create_client(Trigger, 'ping')
         self.stop_pico_cli = self.create_client(Trigger, 'stop')
         self.consigne_moteurs_pub = self.create_publisher(
@@ -27,7 +24,7 @@ class Principal(Node):
             10,
         )
 
-    def attendre_service(self, client, nom_service):
+    def attendre_service(self, client: Client, nom_service: str) -> None:
         """Attend un service pendant un temps borné pour éviter une boucle infinie."""
         echeance = time.monotonic() + self.DELAI_ATTENTE_SERVICE_S
         while not client.wait_for_service(timeout_sec=1.0):
@@ -40,34 +37,7 @@ class Principal(Node):
                 f"Service '{nom_service}' non disponible, nouvelle tentative..."
             )
 
-    def generer_fichier_audio(self, texte, nom_fichier):
-        """Demande la génération d'un fichier audio"""
-        requete = GenererAudio.Request()
-        requete.texte = texte
-        requete.nom_fichier = nom_fichier
-        future = self.generer_cli.call_async(requete)
-        rclpy.spin_until_future_complete(self, future)
-
-        resultat = future.result()
-        if resultat is None:
-            self.get_logger().error("Échec de l'appel au service de génération.")
-            return
-
-        self.get_logger().info(f"{resultat.message}")
-
-    def jouer_wav(self, nom_fichier):
-        """Demande la lecture du fichier audio d'exemple."""
-        requete = JouerAudio.Request()
-        requete.nom_fichier = nom_fichier
-        future = self.jouer_cli.call_async(requete)
-        rclpy.spin_until_future_complete(self, future)
-
-        resultat = future.result()
-        if resultat is None:
-            self.get_logger().error("Échec de l'appel au service de lecture.")
-            return
-
-    def appeler_service_trigger(self, client, nom_service):
+    def appeler_service_trigger(self, client: Client, nom_service: str) -> bool:
         """Appelle un service `Trigger` et journalise son résultat."""
         requete = Trigger.Request()
         future = client.call_async(requete)
@@ -87,7 +57,7 @@ class Principal(Node):
         self.get_logger().info(f"Service '{nom_service}' : {resultat.message}")
         return True
 
-    def publier_consigne_moteurs(self, gauche, droite):
+    def publier_consigne_moteurs(self, gauche: int, droite: int) -> None:
         """Publie une consigne moteur simple vers l'interface Pico."""
         message = ConsigneMoteurs()
         message.gauche = gauche
@@ -97,7 +67,12 @@ class Principal(Node):
             f"Consigne moteurs publiée : gauche={gauche}, droite={droite}"
         )
 
-    def tester_moteurs_demarrage(self):
+    def arreter_moteurs(self) -> None:
+        """Envoie une consigne d'arrêt explicite, puis demande l'arrêt au Pico."""
+        self.publier_consigne_moteurs(0, 0)
+        self.appeler_service_trigger(self.stop_pico_cli, 'stop')
+
+    def tester_moteurs_demarrage(self) -> None:
         """Envoie quelques consignes courtes pour valider le chemin ROS 2 vers le Pico."""
         self.get_logger().info("Début du test de démarrage des moteurs.")
 
@@ -115,47 +90,37 @@ class Principal(Node):
             ("arrêt", 0, 0, 0.5),
         ]
 
-        for description, gauche, droite, duree_s in sequence_test:
-            self.get_logger().info(f"Test moteurs : {description}.")
-            self.publier_consigne_moteurs(gauche, droite)
-            time.sleep(duree_s)
+        try:
+            for description, gauche, droite, duree_s in sequence_test:
+                self.get_logger().info(f"Test moteurs : {description}.")
+                self.publier_consigne_moteurs(gauche, droite)
+                time.sleep(duree_s)
+        finally:
+            self.arreter_moteurs()
 
-        self.appeler_service_trigger(self.stop_pico_cli, 'stop')
         self.get_logger().info("Fin du test de démarrage des moteurs.")
 
 
-def main(args=None):
-    """Initialise ROS 2 et exécute la séquence de démonstration."""
+def main(args: list[str] | None = None) -> None:
+    """Initialise ROS 2 et exécute la séquence de validation moteur."""
     rclpy.init(args=args)
     node = Principal()
 
     try:
-        # 1. Attendre que les services ROS 2 nécessaires soient disponibles.
-        node.attendre_service(node.generer_cli, 'generer_audio')
-        node.attendre_service(node.jouer_cli, 'jouer_audio')
+        # Attendre que les services ROS 2 nécessaires soient disponibles.
         node.attendre_service(node.ping_pico_cli, 'ping')
         node.attendre_service(node.stop_pico_cli, 'stop')
 
-        # 2. Générer des fichiers audio.
-        node.generer_fichier_audio("Je suis prêt à effectuer des mouvements.", "pret")
-        node.generer_fichier_audio("Obstacle droit devant", "obstacle_1")
-        node.generer_fichier_audio("Oups, il y a quelque chose", "obstacle_2")
-        node.generer_fichier_audio("Je dois contourner ça", "contourner_1")
-        node.generer_fichier_audio("Je contourne", "contourner_2")
-
-        # 3. Jouer le fichier "pret"
-        node.jouer_wav("pret")
-
-        # 4. Tester rapidement la chaîne ROS 2 -> Pico avec quelques consignes moteurs.
+        # Tester rapidement la chaîne ROS 2 -> Pico avec quelques consignes moteurs.
         node.tester_moteurs_demarrage()
-
-        # 5. Garder le nœud actif si d'autres interactions doivent suivre.
-        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info("Arrêt demandé par l'utilisateur.")
     except RuntimeError as erreur:
         node.get_logger().error(str(erreur))
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

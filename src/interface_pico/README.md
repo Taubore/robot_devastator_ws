@@ -4,8 +4,11 @@
 
 ## Rôle des fichiers principaux
 
-- `interface_pico/transport_serie_pico.py` : couche UART brute. Ce fichier ouvre le port série, envoie les commandes texte terminées par fin de ligne et lit les lignes éventuelles renvoyées par le Pico.
-- `interface_pico/interface_pico.py` : nœud ROS 2 `interface_pico_node`. Ce fichier adapte ROS 2 vers le transport série, expose les topics, services, paramètres et timers.
+- `interface_pico/transport_serie_pico.py` : couche UART brute. Ce fichier ouvre le port
+  série, envoie les commandes texte terminées par fin de ligne et lit les lignes éventuelles
+  renvoyées par le Pico.
+- `interface_pico/interface_pico.py` : nœud ROS 2 `interface_pico_node`. Ce fichier adapte
+  ROS 2 vers le transport série, expose les topics, services, paramètres et timers.
 
 ## Interfaces ROS 2
 
@@ -20,6 +23,10 @@
 - `debit` : débit UART, par défaut `115200`
 - `timeout_lecture` : timeout de lecture série, par défaut `0.1`
 - `periode_maintien_s` : période de renvoi de la dernière consigne, par défaut `0.1`
+- `mode_materiel` : mode d'accès au Pico, par défaut `reel`
+  - `reel` : ouvre le port série et communique avec le Pico WH
+  - `simulation` : n'ouvre aucun port série, accepte `ping` et `stop`, et publie des états
+    simulés
 
 ## Lancement
 
@@ -29,6 +36,15 @@ colcon build --packages-select commun interface_pico
 source install/setup.bash
 ros2 launch interface_pico interface_pico.launch.py
 ```
+
+Lancement sans Pico ni UART, utile sur Legion-Linux :
+
+```bash
+ros2 launch interface_pico interface_pico.launch.py mode_materiel:=simulation
+```
+
+Depuis VSCode, utiliser plutôt la configuration de débogage `InterfacePico simulation`.
+La configuration `InterfacePico reel` conserve le mode matériel réel par défaut.
 
 ## Test rapide
 

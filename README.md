@@ -18,8 +18,10 @@ Workspace ROS 2 du projet Devastator pour la cible Raspberry Pi 4.
 
 - `generer_audio` : génère un fichier WAV à partir d’un texte
 - `jouer_audio` : lit un fichier WAV déjà généré
-- Si `nom_fichier` est vide, le fichier utilisé est `/tmp/derniere_sortie.wav`
-- Si `nom_fichier` est renseigné, le fichier utilisé est `/tmp/<nom_fichier>.wav`
+- Les fichiers générés sont conservés dans `~/.cache/robot_devastator/audio`
+- Si `nom_fichier` est vide, le fichier utilisé est `~/.cache/robot_devastator/audio/derniere_sortie.wav`
+- Si `nom_fichier` est renseigné, le fichier utilisé est `~/.cache/robot_devastator/audio/<nom_fichier>.wav`
+- Le paramètre ROS 2 `command_timeout_s` règle le délai maximal des commandes `piper` et `aplay`, par défaut `10.0`
 - Cette séparation permet de pré-générer les fichiers lents avec Piper, puis de rejouer rapidement les WAV en temps réel
 
 ## Interface Pico

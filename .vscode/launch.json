@@ -16,18 +16,7 @@
       }
     },
     {
-      "name": "ServicePiper",
-      "type": "debugpy",
-      "request": "launch",
-      "console": "integratedTerminal",
-      "module": "robot_devastator.voix_piper_service",
-      "cwd": "${workspaceFolder}",
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${env:PYTHONPATH}"
-      }
-    },
-    {
-      "name": "InterfacePico",
+      "name": "InterfacePico reel",
       "type": "debugpy",
       "request": "launch",
       "console": "integratedTerminal",
@@ -36,12 +25,28 @@
       "env": {
         "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${env:PYTHONPATH}"
       }
+    },
+    {
+      "name": "InterfacePico simulation",
+      "type": "debugpy",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "module": "interface_pico.interface_pico",
+      "cwd": "${workspaceFolder}",
+      "args": ["--ros-args", "-p", "mode_materiel:=simulation"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${env:PYTHONPATH}"
+      }
     }
   ],
   "compounds": [
     {
-      "name": "Tous",
-      "configurations": ["Principal", "ServicePiper", "InterfacePico"]
+      "name": "Tous reel",
+      "configurations": ["Principal", "InterfacePico reel"]
+    },
+    {
+      "name": "Tous simulation",
+      "configurations": ["Principal", "InterfacePico simulation"]
     }
   ]
 }
