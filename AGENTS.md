@@ -76,6 +76,7 @@ Plusieurs intégration de matériel sont pour le futur et ne doivent pas être i
 - Module Waveshare LCD 2" ST7789V pour visage du robot et aussi mode état du robot en plusieurs pages.
 - Slamtec RPLIDAR A1M8.
 - Camera RealSense D435IF.
+- ReSpeaker Mic Array v3.0 de SeeedStudio pour réception vocale
 
 ## Principe de progression
 

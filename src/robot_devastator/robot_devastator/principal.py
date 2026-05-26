@@ -84,10 +84,10 @@ class Principal(Node):
         time.sleep(0.2)
 
         sequence_test = [
-            ("avance lente", 200, 200, 1.0),
-            ("rotation sur place", 220, -220, 1.0),
-            ("recul lent", -180, -180, 1.0),
-            ("arrêt", 0, 0, 0.5),
+            ("avance", 500, 500, 3.0),
+            ("rotation sur place", 500, -500, 3.0),
+            ("recul", -500, -500, 3.0),
+            ("arrêt", 0, 0, 1.0),
         ]
 
         try:
