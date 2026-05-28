@@ -1,7 +1,8 @@
 {
     "ROS2.distro": "jazzy",
     "python.defaultInterpreterPath": "/usr/bin/python3",
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.diagnosticMode": "openFilesOnly",
     "python.autoComplete.extraPaths": [
         "/opt/ros/jazzy/lib/python3.12/site-packages"
     ],

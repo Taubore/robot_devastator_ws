@@ -112,14 +112,12 @@ Donc :
 
 ## Pylance
 
-Le projet utilise Pylance avec vérification de types au niveau `base`.
+Le workspace Devastator utilise Pylance surtout pour l’autocomplétion, la navigation et les erreurs évidentes.
 
-- Après chaque modification Python, corrige explicitement les diagnostics rouges Pylance visibles. 
-- Si un diagnostic Pylance semble lié à ROS 2 ou aux messages générés, explique-le avant de le corriger. 
-- Éviter `# type: ignore`, sauf dernier recours commenté
-
-IMPORTANT : 
-
+- Ne pas viser une conformité stricte au typage statique Python.
+- Éviter tout de même le code ambigu : valeurs possiblement `None`, imports inutiles, attributs incertains, retours de services non vérifiés.
+- Ne pas ajouter de complexité uniquement pour satisfaire un typage statique théorique.
+- Si une erreur Pylance visible est signalée par l’utilisateur, la corriger simplement.
 
 ## Règles ROS 2
 

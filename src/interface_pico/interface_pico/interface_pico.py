@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from collections import deque
-from typing import Final, Protocol
+from typing import Final, Protocol, cast
 
 import rclpy
 import serial
@@ -49,6 +49,26 @@ class TransportPico(Protocol):
 
     def set_moteurs(self, gauche: int, droite: int) -> None:
         """Envoie une consigne moteur brute gauche/droite."""
+
+
+class MessageConsigneMoteurs(Protocol):
+    """Champs attendus du message ROS `commun/msg/ConsigneMoteurs`."""
+
+    gauche: int
+    droite: int
+
+
+class ReponseTrigger(Protocol):
+    """Champs modifiés dans une réponse ROS `std_srvs/srv/Trigger`."""
+
+    success: bool
+    message: str
+
+
+class MessageTexte(Protocol):
+    """Champ attendu du message ROS `std_msgs/msg/String`."""
+
+    data: str
 
 
 class TransportSimulationPico:
@@ -195,28 +215,32 @@ class NoeudInterfacePico(Node):
 
     def _recevoir_consigne_moteurs(self, message: ConsigneMoteurs) -> None:
         """Valide puis envoie immédiatement une consigne moteur."""
-        if not VALEUR_MOTEUR_MIN <= message.gauche <= VALEUR_MOTEUR_MAX:
+        consigne = cast(MessageConsigneMoteurs, message)
+        gauche = int(consigne.gauche)
+        droite = int(consigne.droite)
+
+        if not VALEUR_MOTEUR_MIN <= gauche <= VALEUR_MOTEUR_MAX:
             self.get_logger().warn(
-                f"Consigne gauche ignorée car hors plage : {message.gauche}"
+                f"Consigne gauche ignorée car hors plage : {gauche}"
             )
             return
-        if not VALEUR_MOTEUR_MIN <= message.droite <= VALEUR_MOTEUR_MAX:
+        if not VALEUR_MOTEUR_MIN <= droite <= VALEUR_MOTEUR_MAX:
             self.get_logger().warn(
-                f"Consigne droite ignorée car hors plage : {message.droite}"
+                f"Consigne droite ignorée car hors plage : {droite}"
             )
             return
         if not self._verifier_liaison_serie():
             return
 
         try:
-            self.transport.set_moteurs(message.gauche, message.droite)
+            self.transport.set_moteurs(gauche, droite)
         except (serial.SerialException, OSError) as erreur:
             self.get_logger().error(f"Envoi UART impossible: {erreur}")
             self.transport.fermer()
             self._uart_disponible = False
             return
 
-        self.derniere_consigne = (message.gauche, message.droite)
+        self.derniere_consigne = (gauche, droite)
 
     def _maintenir_derniere_consigne(self) -> None:
         """Répète la dernière consigne valide pour éviter le timeout du Pico."""
@@ -251,10 +275,11 @@ class NoeudInterfacePico(Node):
         self.get_logger().info(f"État Pico : {ligne}")
 
         message = String()
-        message.data = ligne
+        message_texte = cast(MessageTexte, message)
+        message_texte.data = ligne
         self.publisher_etat.publish(message)
 
-    def _gerer_stop(self, _requete: Trigger.Request, reponse: Trigger.Response) -> Trigger.Response:
+    def _gerer_stop(self, _requete: object, reponse: ReponseTrigger) -> ReponseTrigger:
         """Demande l'arrêt moteur et mémorise une consigne nulle."""
         try:
             self.transport.stop()
@@ -270,7 +295,7 @@ class NoeudInterfacePico(Node):
         reponse.message = "Commande STOP acceptée."
         return reponse
 
-    def _gerer_ping(self, _requete: Trigger.Request, reponse: Trigger.Response) -> Trigger.Response:
+    def _gerer_ping(self, _requete: object, reponse: ReponseTrigger) -> ReponseTrigger:
         """Traite simplement `PING`."""
         try:
             self.transport.ping()
