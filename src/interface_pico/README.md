@@ -13,9 +13,13 @@
 ## Interfaces ROS 2
 
 - Topic d'entrée `consigne_moteurs` : message `commun/msg/ConsigneMoteurs`
+- Topic d'entrée `commande_tourelle_deg` : message `std_msgs/msg/Int32`, angle servo de
+  tourelle en degrés de `0` à `180`
 - Service `stop` : `std_srvs/srv/Trigger`
 - Service `ping` : `std_srvs/srv/Trigger`
 - Topic d'état `etat_pico` : `std_msgs/msg/String`
+- Topic publié `distance_ultrason_mm` : message `std_msgs/msg/Int32`, distance ultrason en
+  millimètres lorsque le Pico répond à `DIST` par une ligne entière
 
 ## Paramètres
 
@@ -23,6 +27,7 @@
 - `debit` : débit UART, par défaut `115200`
 - `timeout_lecture` : timeout de lecture série, par défaut `0.1`
 - `periode_maintien_s` : période de renvoi de la dernière consigne, par défaut `0.1`
+- `periode_distance_s` : période des demandes `DIST`, par défaut `0.5`
 - `mode_materiel` : mode d'accès au Pico, par défaut `reel`
   - `reel` : ouvre le port série et communique avec le Pico WH
   - `simulation` : n'ouvre aucun port série, accepte `ping` et `stop`, et publie des états
@@ -60,3 +65,21 @@ Tester les services :
 ros2 service call /ping std_srvs/srv/Trigger
 ros2 service call /stop std_srvs/srv/Trigger
 ```
+
+Lire la distance ultrason :
+
+```bash
+ros2 topic echo /distance_ultrason_mm
+```
+
+Tester les positions documentées du servo de tourelle :
+
+```bash
+ros2 topic pub --once /commande_tourelle_deg std_msgs/msg/Int32 "{data: 95}"
+ros2 topic pub --once /commande_tourelle_deg std_msgs/msg/Int32 "{data: 45}"
+ros2 topic pub --once /commande_tourelle_deg std_msgs/msg/Int32 "{data: 140}"
+```
+
+Pour cette étape, les valeurs utilisées sont `95` pour le centre, `45` pour la gauche et
+`140` pour la droite. Aucune logique de balayage automatique ou d'évitement d'obstacle n'est
+ajoutée dans `interface_pico`.

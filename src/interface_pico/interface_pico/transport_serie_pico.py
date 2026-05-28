@@ -10,6 +10,8 @@ import serial
 
 VALEUR_MOTEUR_MIN: Final[int] = -1000
 VALEUR_MOTEUR_MAX: Final[int] = 1000
+ANGLE_SERVO_MIN: Final[int] = 0
+ANGLE_SERVO_MAX: Final[int] = 180
 
 
 @dataclass(slots=True)
@@ -73,6 +75,16 @@ class TransportSeriePico:
     def demander_status(self) -> None:
         """Demande un état texte simple au Pico."""
         self.envoyer_commande("STATUS")
+
+    def demander_distance(self) -> None:
+        """Demande au Pico une mesure de distance ultrason en millimètres."""
+        self.envoyer_commande("DIST")
+
+    def set_servo(self, angle: int) -> None:
+        """Envoie une consigne d'angle au servo de tourelle."""
+        if not ANGLE_SERVO_MIN <= angle <= ANGLE_SERVO_MAX:
+            raise ValueError("angle hors plage 0..180")
+        self.envoyer_commande(f"SERVO {angle}")
 
     def set_moteurs(self, gauche: int, droite: int) -> None:
         """Envoie une consigne moteur brute gauche/droite."""

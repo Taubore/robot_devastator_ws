@@ -27,6 +27,8 @@ Workspace ROS 2 du projet Devastator pour la cible Raspberry Pi 4.
 ## Interface Pico
 
 - Topic d’entrée `consigne_moteurs` : `commun/msg/ConsigneMoteurs`
+- Topic d’entrée `commande_tourelle_deg` : `std_msgs/msg/Int32`, angle servo de tourelle
+- Topic publié `distance_ultrason_mm` : `std_msgs/msg/Int32`, distance ultrason en millimètres
 - Services `ping` et `stop` : `std_srvs/srv/Trigger`
 - Topic d’état `etat_pico` : `std_msgs/msg/String`
 - Nœud : `interface_pico_node`
