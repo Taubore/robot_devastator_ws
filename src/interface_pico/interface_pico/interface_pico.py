@@ -25,6 +25,12 @@ from .transport_serie_pico import (
 TAILLE_FILE_MESSAGES: Final[int] = 10
 MODE_MATERIEL_REEL: Final[str] = 'reel'
 MODE_MATERIEL_SIMULATION: Final[str] = 'simulation'
+TOPIC_COMMANDE_MOTEURS: Final[str] = '/pico/commande_moteurs'
+TOPIC_COMMANDE_TOURELLE: Final[str] = '/pico/commande_tourelle_deg'
+TOPIC_DISTANCE_ULTRASON: Final[str] = '/pico/distance_ultrason_mm'
+TOPIC_ETAT_PICO: Final[str] = '/pico/etat'
+SERVICE_PING: Final[str] = '/pico/ping'
+SERVICE_STOP: Final[str] = '/pico/stop'
 MODES_MATERIEL_VALIDES: Final[set[str]] = {
     MODE_MATERIEL_REEL,
     MODE_MATERIEL_SIMULATION,
@@ -190,28 +196,28 @@ class NoeudInterfacePico(Node):
 
         self.publisher_etat = self.create_publisher(
             String,
-            'etat_pico',
+            TOPIC_ETAT_PICO,
             TAILLE_FILE_MESSAGES,
         )
         self.publisher_distance = self.create_publisher(
             Int32,
-            'distance_ultrason_mm',
+            TOPIC_DISTANCE_ULTRASON,
             TAILLE_FILE_MESSAGES,
         )
         self.abonnement_consigne = self.create_subscription(
             ConsigneMoteurs,
-            'consigne_moteurs',
+            TOPIC_COMMANDE_MOTEURS,
             self._recevoir_consigne_moteurs,
             TAILLE_FILE_MESSAGES,
         )
         self.abonnement_tourelle = self.create_subscription(
             Int32,
-            'commande_tourelle_deg',
+            TOPIC_COMMANDE_TOURELLE,
             self._recevoir_commande_tourelle,
             TAILLE_FILE_MESSAGES,
         )
-        self.service_stop = self.create_service(Trigger, 'stop', self._gerer_stop)
-        self.service_ping = self.create_service(Trigger, 'ping', self._gerer_ping)
+        self.service_stop = self.create_service(Trigger, SERVICE_STOP, self._gerer_stop)
+        self.service_ping = self.create_service(Trigger, SERVICE_PING, self._gerer_ping)
 
         # Un timer pour relire le port sans boucle bloquante, un autre pour
         # renvoyer la consigne mémorisée avant le timeout de 500 ms du Pico.

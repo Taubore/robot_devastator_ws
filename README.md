@@ -14,6 +14,14 @@ Workspace ROS 2 du projet Devastator pour la cible Raspberry Pi 4.
 - `src/robot_devastator` : package Python principal
 - `src/interface_pico` : interface ROS 2 simple entre le Raspberry Pi 4 et le Pico WH
 
+## Documentation
+
+- [État actuel](docs/etat.md)
+- [Architecture cible](docs/architecture_cible.md)
+- [Paramètres techniques](docs/parametres.md)
+- [Connexions des composantes matériel](docs/connexions.md)
+- [Inventaire des composantes matériel principales](docs/inventaire_composantes.md)
+
 ## Services audio
 
 - `generer_audio` : génère un fichier WAV à partir d’un texte
@@ -26,11 +34,13 @@ Workspace ROS 2 du projet Devastator pour la cible Raspberry Pi 4.
 
 ## Interface Pico
 
-- Topic d’entrée `consigne_moteurs` : `commun/msg/ConsigneMoteurs`
-- Topic d’entrée `commande_tourelle_deg` : `std_msgs/msg/Int32`, angle servo de tourelle
-- Topic publié `distance_ultrason_mm` : `std_msgs/msg/Int32`, distance ultrason en millimètres
-- Services `ping` et `stop` : `std_srvs/srv/Trigger`
-- Topic d’état `etat_pico` : `std_msgs/msg/String`
+- Topic d’entrée `/pico/commande_moteurs` : `commun/msg/ConsigneMoteurs`
+- Topic d’entrée `/pico/commande_tourelle_deg` : `std_msgs/msg/Int32`, angle servo de
+  tourelle
+- Topic publié `/pico/distance_ultrason_mm` : `std_msgs/msg/Int32`, distance ultrason en
+  millimètres
+- Services `/pico/ping` et `/pico/stop` : `std_srvs/srv/Trigger`
+- Topic d’état `/pico/etat` : `std_msgs/msg/String`
 - Nœud : `interface_pico_node`
 - Lancement :
 
@@ -44,7 +54,7 @@ ros2 launch interface_pico interface_pico.launch.py
 Exemple de consigne moteur :
 
 ```bash
-ros2 topic pub --once /consigne_moteurs commun/msg/ConsigneMoteurs "{gauche: 200, droite: 200}"
+ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs "{gauche: 200, droite: 200}"
 ```
 
 ## Construction

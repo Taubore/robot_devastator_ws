@@ -8,6 +8,10 @@ from rclpy.client import Client
 from rclpy.node import Node
 from std_srvs.srv import Trigger
 
+TOPIC_COMMANDE_MOTEURS = '/pico/commande_moteurs'
+SERVICE_PING = '/pico/ping'
+SERVICE_STOP = '/pico/stop'
+
 
 class Principal(Node):
     """Nœud principal utilisé pour valider la chaîne moteur ROS 2."""
@@ -16,11 +20,11 @@ class Principal(Node):
 
     def __init__(self) -> None:
         super().__init__('principal')
-        self.ping_pico_cli = self.create_client(Trigger, 'ping')
-        self.stop_pico_cli = self.create_client(Trigger, 'stop')
+        self.ping_pico_cli = self.create_client(Trigger, SERVICE_PING)
+        self.stop_pico_cli = self.create_client(Trigger, SERVICE_STOP)
         self.consigne_moteurs_pub = self.create_publisher(
             ConsigneMoteurs,
-            'consigne_moteurs',
+            TOPIC_COMMANDE_MOTEURS,
             10,
         )
 
@@ -70,17 +74,17 @@ class Principal(Node):
     def arreter_moteurs(self) -> None:
         """Envoie une consigne d'arrêt explicite, puis demande l'arrêt au Pico."""
         self.publier_consigne_moteurs(0, 0)
-        self.appeler_service_trigger(self.stop_pico_cli, 'stop')
+        self.appeler_service_trigger(self.stop_pico_cli, SERVICE_STOP)
 
     def tester_moteurs_demarrage(self) -> None:
         """Envoie quelques consignes courtes pour valider le chemin ROS 2 vers le Pico."""
         self.get_logger().info("Début du test de démarrage des moteurs.")
 
-        if not self.appeler_service_trigger(self.ping_pico_cli, 'ping'):
+        if not self.appeler_service_trigger(self.ping_pico_cli, SERVICE_PING):
             return
 
         # Une courte pause laisse le temps à la découverte ROS 2 du topic
-        # `consigne_moteurs` de se stabiliser avant la première publication.
+        # `/pico/commande_moteurs` de se stabiliser avant la première publication.
         time.sleep(0.2)
 
         sequence_test = [
@@ -108,8 +112,8 @@ def main(args: list[str] | None = None) -> None:
 
     try:
         # Attendre que les services ROS 2 nécessaires soient disponibles.
-        node.attendre_service(node.ping_pico_cli, 'ping')
-        node.attendre_service(node.stop_pico_cli, 'stop')
+        node.attendre_service(node.ping_pico_cli, SERVICE_PING)
+        node.attendre_service(node.stop_pico_cli, SERVICE_STOP)
 
         # Tester rapidement la chaîne ROS 2 -> Pico avec quelques consignes moteurs.
         node.tester_moteurs_demarrage()

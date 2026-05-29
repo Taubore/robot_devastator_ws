@@ -12,14 +12,14 @@
 
 ## Interfaces ROS 2
 
-- Topic d'entrée `consigne_moteurs` : message `commun/msg/ConsigneMoteurs`
-- Topic d'entrée `commande_tourelle_deg` : message `std_msgs/msg/Int32`, angle servo de
-  tourelle en degrés de `0` à `180`
-- Service `stop` : `std_srvs/srv/Trigger`
-- Service `ping` : `std_srvs/srv/Trigger`
-- Topic d'état `etat_pico` : `std_msgs/msg/String`
-- Topic publié `distance_ultrason_mm` : message `std_msgs/msg/Int32`, distance ultrason en
-  millimètres lorsque le Pico répond à `DIST` par une ligne entière
+- Topic d'entrée `/pico/commande_moteurs` : message `commun/msg/ConsigneMoteurs`
+- Topic d'entrée `/pico/commande_tourelle_deg` : message `std_msgs/msg/Int32`, angle servo
+  de tourelle en degrés de `0` à `180`
+- Service `/pico/stop` : `std_srvs/srv/Trigger`
+- Service `/pico/ping` : `std_srvs/srv/Trigger`
+- Topic d'état `/pico/etat` : `std_msgs/msg/String`
+- Topic publié `/pico/distance_ultrason_mm` : message `std_msgs/msg/Int32`, distance
+  ultrason en millimètres lorsque le Pico répond à `DIST` par une ligne entière
 
 ## Paramètres
 
@@ -56,28 +56,28 @@ La configuration `InterfacePico reel` conserve le mode matériel réel par défa
 Publier une consigne moteur :
 
 ```bash
-ros2 topic pub --once /consigne_moteurs commun/msg/ConsigneMoteurs "{gauche: 200, droite: 200}"
+ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs "{gauche: 200, droite: 200}"
 ```
 
 Tester les services :
 
 ```bash
-ros2 service call /ping std_srvs/srv/Trigger
-ros2 service call /stop std_srvs/srv/Trigger
+ros2 service call /pico/ping std_srvs/srv/Trigger
+ros2 service call /pico/stop std_srvs/srv/Trigger
 ```
 
 Lire la distance ultrason :
 
 ```bash
-ros2 topic echo /distance_ultrason_mm
+ros2 topic echo /pico/distance_ultrason_mm
 ```
 
 Tester les positions documentées du servo de tourelle :
 
 ```bash
-ros2 topic pub --once /commande_tourelle_deg std_msgs/msg/Int32 "{data: 95}"
-ros2 topic pub --once /commande_tourelle_deg std_msgs/msg/Int32 "{data: 45}"
-ros2 topic pub --once /commande_tourelle_deg std_msgs/msg/Int32 "{data: 140}"
+ros2 topic pub --once /pico/commande_tourelle_deg std_msgs/msg/Int32 "{data: 95}"
+ros2 topic pub --once /pico/commande_tourelle_deg std_msgs/msg/Int32 "{data: 45}"
+ros2 topic pub --once /pico/commande_tourelle_deg std_msgs/msg/Int32 "{data: 140}"
 ```
 
 Pour cette étape, les valeurs utilisées sont `95` pour le centre, `45` pour la gauche et

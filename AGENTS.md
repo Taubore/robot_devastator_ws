@@ -132,7 +132,7 @@ Le workspace Devastator utilise Pylance surtout pour l’autocomplétion, la nav
 
 Utiliser la chaîne existante :
 
-`robot_devastator` → `consigne_moteurs` → `interface_pico` → UART → Pico WH → MDD3A → moteurs
+`robot_devastator` → `/pico/commande_moteurs` → `interface_pico` → UART → Pico WH → MDD3A → moteurs
 
 Règles :
 
@@ -187,4 +187,3 @@ Pour chaque tâche :
 - indiquer les fichiers touchés
 - expliquer comment tester
 - éviter les solutions parallèles
-
