@@ -41,3 +41,10 @@ Voir la section [composantes active de l'inventaire](inventaire_composantes.md)
 - L'intégration des services ROS suivants: 
     - `/pico/ping`
     - `/pico/stop`
+
+## Prochain test
+
+Le prochain test d'autonomie est la version v0 du nœud `evitement_obstacle_node` :
+avancer lentement quand la distance ultrason avant est supérieure au seuil d'arrêt, puis arrêter
+les moteurs quand l'obstacle est trop près. Cette version ne tourne pas encore et n'utilise pas la
+tourelle.

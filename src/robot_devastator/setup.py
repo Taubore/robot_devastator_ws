@@ -17,11 +17,15 @@ setup(
     zip_safe=True,
     maintainer='taubore',
     maintainer_email='louis.st-hilaire@hotmail.com',
-    description='Package ROS 2 Python pour piloter le robot Devastator et tester la synthese vocale avec Piper',
+    description=(
+        'Package ROS 2 Python pour piloter le robot Devastator '
+        'et tester la synthèse vocale avec Piper'
+    ),
     license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'evitement_obstacle = robot_devastator.evitement_obstacle:main',
             'principal = robot_devastator.principal:main',
             'voix_piper_service = robot_devastator.voix_piper_service:main',
         ],

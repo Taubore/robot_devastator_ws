@@ -33,9 +33,9 @@ communes du projet.
 
 | Topic | Type | Producteur | Consommateur | Rôle |
 |---|---|---|---|---|
-| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `principal` | `interface_pico_node` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
+| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `principal`, `evitement_obstacle_node` | `interface_pico_node` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
 | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou futur nœud de décision | `interface_pico_node` | Commander l'angle du servo de tourelle en degrés |
-| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico_node` | Futur nœud de décision | Publier la distance ultrason mesurée en millimètres |
+| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico_node` | `evitement_obstacle_node` | Publier la distance ultrason mesurée en millimètres |
 | `/pico/etat` | `std_msgs/msg/String` | `interface_pico_node` | Outil de diagnostic | Publier les lignes d'état reçues ou simulées côté Pico |
 
 ### Services
@@ -56,6 +56,7 @@ Aucune action ROS 2 n'est implémentée actuellement.
 | Node | Package | Exécutable / module | État | Rôle |
 |---|---|---|---|---|
 | `interface_pico_node` | `interface_pico` | `interface_pico_node` / `interface_pico.interface_pico` | Actif | Exposer les topics et services Pico, puis traduire les commandes ROS 2 vers UART |
+| `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement si la distance ultrason est dégagée, sinon arrêter les moteurs |
 | `principal` | `robot_devastator` | `principal` / `robot_devastator.principal` | Actif | Valider la chaîne moteur ROS 2 vers Pico avec une courte séquence de test |
 | `voix_piper` | `robot_devastator` | `voix_piper_service` / `robot_devastator.voix_piper_service` | Gelé | Services audio Piper amorcés, mais non intégrés au comportement principal actuel |
 
