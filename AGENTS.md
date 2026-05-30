@@ -58,6 +58,48 @@ Respecter la structure ROS 2 existante.
 Avant d’ajouter un fichier ou un package, vérifier si le besoin peut être couvert par le code
 existant. Toute évolution d’architecture non triviale doit être proposée avant modification.
 
+Ne pas créer une architecture parallèle. L’évolution doit se faire par extraction progressive
+de responsabilités claires à partir du code existant, en conservant un robot fonctionnel à
+chaque étape.
+
+## Architecture directrice
+
+L’architecture doit s’inspirer du modèle modulaire de Synthiam ARC : un robot est un
+assemblage de capacités indépendantes, configurables et réutilisables.
+
+Dans ROS 2, cela signifie :
+
+- une capacité claire = un nœud ou package ROS 2 spécialisé
+- configuration = paramètres ROS 2 et fichiers YAML
+- assemblage du robot = fichiers `launch.py`
+- communication entre capacités = topics, services ou actions
+- réutilisation = modules non liés inutilement à Devastator
+
+Ne pas créer une application monolithique. Ne pas créer non plus un framework maison.
+
+Les différences propres à Devastator doivent rester dans les paramètres, les fichiers YAML,
+les fichiers `launch.py` ou la couche d’assemblage du robot.
+
+Un module réutilisable ne doit pas connaître inutilement le robot précis qui l’utilise.
+
+Séparation souhaitée :
+
+- capteur : lit ou publie une mesure
+- perception : transforme les mesures en information utile
+- décision : choisit une action
+- actionneur : applique une commande au matériel
+- lancement : assemble les modules
+
+Règle pratique :
+
+Extraire une capacité en module seulement lorsqu’elle est claire, utile et testable. Ne pas
+refactoriser massivement pour atteindre une architecture idéale. Le robot doit rester
+exécutable et testable après chaque étape.
+
+Les détails et exemples d’architecture modulaire peuvent être documentés dans
+`docs/architecture_modulaire.md`. `AGENTS.md` reste la référence courte et prioritaire pour
+guider Codex.
+
 ## Objectif fonctionnel actuel
 
 L’objectif court terme du projet est une autonomie simple du robot :
@@ -89,6 +131,8 @@ Donc :
 - pas de PID avant mesures fiables
 - pas de caméra, lidar ou perception avancée à cette étape
 - tests réels simples avant abstraction
+
+Quant à la l'architecture directrice, il s'agit d'appliquer les principes de module seulement quand une responsabilité est claire, testable et susceptible d’être réutilisée. Autrement, il ne faut pas appliquer cette architecture dès le départ, car cela ralentira la progression de l'humain dans son projet plutôt que de l'aider.
 
 ## Règles Git
 
@@ -127,6 +171,11 @@ Le workspace Devastator utilise Pylance surtout pour l’autocomplétion, la nav
 - Préférer les paramètres ROS 2 aux valeurs codées en dur
 - Les nœuds doivent être lançables depuis VSCode ou via `launch.py`
 - Éviter les longues séquences CLI sauf diagnostic, installation ou build nécessaire
+- Utiliser les topics pour les flux continus de données ou de commandes
+- Utiliser les services pour les demandes ponctuelles
+- Utiliser les actions pour les comportements longs, annulables ou suivis
+- Documenter les interfaces ROS 2 lorsqu’elles deviennent des points d’intégration stables
+- Garder les différences entre robots dans les paramètres YAML et les fichiers launch
 
 ## Interface Pico et moteurs
 
