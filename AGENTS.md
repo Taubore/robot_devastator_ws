@@ -71,7 +71,7 @@ Dans ROS 2, cela signifie :
 
 - une capacité claire = un nœud ou package ROS 2 spécialisé
 - configuration = paramètres ROS 2 et fichiers YAML
-- assemblage du robot = fichiers `launch.py`
+- assemblage du robot = fichiers `launch`, préférablement `*.launch.yaml`
 - communication entre capacités = topics, services ou actions
 - réutilisation = modules non liés inutilement à Devastator
 
@@ -169,13 +169,20 @@ Le workspace Devastator utilise Pylance surtout pour l’autocomplétion, la nav
 - Utiliser les messages et services existants quand ils suffisent
 - Ne pas créer de nouveaux `.msg` ou `.srv` sans nécessité claire
 - Préférer les paramètres ROS 2 aux valeurs codées en dur
-- Les nœuds doivent être lançables depuis VSCode ou via `launch.py`
+- Les nœuds doivent être lançables depuis VSCode ou via `ros2 launch`.
 - Éviter les longues séquences CLI sauf diagnostic, installation ou build nécessaire
 - Utiliser les topics pour les flux continus de données ou de commandes
 - Utiliser les services pour les demandes ponctuelles
 - Utiliser les actions pour les comportements longs, annulables ou suivis
 - Documenter les interfaces ROS 2 lorsqu’elles deviennent des points d’intégration stables
 - Garder les différences entre robots dans les paramètres YAML et les fichiers launch
+- Regrouper les lancements complets du robot dans le package `robot_devastator_bringup`
+  lorsque plusieurs nœuds, paramètres ou sous-systèmes doivent être assemblés.
+- Préférer les fichiers `*.launch.yaml` pour les lancements simples.
+- Utiliser `*.launch.py` seulement si YAML ne suffit pas : logique conditionnelle,
+  génération dynamique, besoin ROS 2 non exprimable proprement en YAML ou logique de lancement devient trop complexe pour rester clair.
+- Garder les fichiers de paramètres séparés des fichiers de lancement, même si les deux
+  utilisent YAML (`robot_devastator_bringup/config` ou `robot_devastator_bringup/launch`).
 
 ## Interface Pico et moteurs
 
