@@ -1,52 +1,43 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Principal",
+      "name": "Nœud Python ROS 2",
       "type": "debugpy",
       "request": "launch",
       "console": "integratedTerminal",
-      "module": "robot_devastator.principal",
+      "module": "${input:modulePythonRos2}",
       "cwd": "${workspaceFolder}",
+      "args": ["--ros-args", "-p", "mode_materiel:=${input:modeSimulation}"],
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${workspaceFolder}/install/commun/local/lib/python3.12/dist-packages:${workspaceFolder}/install/robot_devastator/lib/python3.12/site-packages:${workspaceFolder}/install/interface_pico/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages:${env:PYTHONPATH}"
-      }
-    },
-    {
-      "name": "InterfacePico reel",
-      "type": "debugpy",
-      "request": "launch",
-      "console": "integratedTerminal",
-      "module": "interface_pico.interface_pico",
-      "cwd": "${workspaceFolder}",
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${workspaceFolder}/install/commun/local/lib/python3.12/dist-packages:${workspaceFolder}/install/robot_devastator/lib/python3.12/site-packages:${workspaceFolder}/install/interface_pico/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages:${env:PYTHONPATH}"
-      }
-    },
-    {
-      "name": "InterfacePico simulation",
-      "type": "debugpy",
-      "request": "launch",
-      "console": "integratedTerminal",
-      "module": "interface_pico.interface_pico",
-      "cwd": "${workspaceFolder}",
-      "args": ["--ros-args", "-p", "mode_materiel:=simulation"],
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${workspaceFolder}/install/commun/local/lib/python3.12/dist-packages:${workspaceFolder}/install/robot_devastator/lib/python3.12/site-packages:${workspaceFolder}/install/interface_pico/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages:${env:PYTHONPATH}"
+        // Le message généré par commun reste dans install après le build colcon.
+        "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${workspaceFolder}/install/commun/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages:${env:PYTHONPATH}",
+        "LD_LIBRARY_PATH": "${workspaceFolder}/install/commun/lib:${env:LD_LIBRARY_PATH}"
       }
     }
   ],
-  "compounds": [
+  "inputs": [
     {
-      "name": "Tous reel",
-      "configurations": ["Principal", "InterfacePico reel"]
+      "id": "modulePythonRos2",
+      "type": "promptString",
+      "description": "Module Python ROS 2 à déboguer",
+      "default": "robot_devastator.evitement_obstacle"
     },
     {
-      "name": "Tous simulation",
-      "configurations": ["Principal", "InterfacePico simulation"]
+      "id": "modeSimulation",
+      "type": "pickString",
+      "description": "Mode simulation ?",
+      "options": [
+        {
+          "label": "Non",
+          "value": "reel"
+        },
+        {
+          "label": "Oui",
+          "value": "simulation"
+        }
+      ],
+      "default": "reel"
     }
   ]
 }

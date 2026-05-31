@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import signal
+from types import FrameType
 from typing import Final
 
 from commun.msg import ConsigneMoteurs
 import rclpy
 from rclpy.node import Node
+from rclpy.signals import SignalHandlerOptions
 from std_msgs.msg import Int32
 
 TOPIC_COMMANDE_MOTEURS: Final[str] = '/pico/commande_moteurs'
@@ -14,6 +17,14 @@ TOPIC_DISTANCE_ULTRASON: Final[str] = '/pico/distance_ultrason_mm'
 VALEUR_MOTEUR_MIN: Final[int] = -1000
 VALEUR_MOTEUR_MAX: Final[int] = 1000
 TAILLE_FILE_MESSAGES: Final[int] = 10
+
+
+def _interrompre_execution(
+    _numero_signal: int,
+    _frame: FrameType | None,
+) -> None:
+    """Interrompt proprement l'exécution lors d'une demande d'arrêt système."""
+    raise KeyboardInterrupt
 
 
 class EvitementObstacle(Node):
@@ -120,7 +131,9 @@ class EvitementObstacle(Node):
 
 def main(args: list[str] | None = None) -> None:
     """Initialise ROS 2 et exécute le comportement d'évitement minimal."""
-    rclpy.init(args=args)
+    # Garder le contexte actif assez longtemps pour publier l'arrêt moteur après Ctrl+C ou F5.
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
+    signal.signal(signal.SIGTERM, _interrompre_execution)
     node: EvitementObstacle | None = None
 
     try:
@@ -133,7 +146,8 @@ def main(args: list[str] | None = None) -> None:
         if node is not None:
             node.arreter_moteurs()
             node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

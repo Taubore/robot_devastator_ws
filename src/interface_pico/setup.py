@@ -1,7 +1,5 @@
 """Décrit l'installation du package ROS 2 Python interface_pico."""
 
-from glob import glob
-
 from setuptools import find_packages, setup
 
 package_name = 'interface_pico'
@@ -17,7 +15,6 @@ setup(
         ),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name, ['README.md']),
-        ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

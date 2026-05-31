@@ -1,0 +1,8 @@
+launch:
+- node:
+    pkg: interface_pico
+    exec: interface_pico_node
+    name: interface_pico_node
+    output: screen
+    param:
+    - from: $(find-pkg-share robot_devastator_bringup)/config/interface_pico_reel.yaml

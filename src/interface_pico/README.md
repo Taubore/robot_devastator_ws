@@ -33,23 +33,28 @@
   - `simulation` : n'ouvre aucun port série, accepte `ping` et `stop`, et publie des états
     simulés
 
-## Lancement
+## Lancement dans Devastator
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --packages-select commun interface_pico
+colcon build --symlink-install --packages-select commun interface_pico robot_devastator_bringup
 source install/setup.bash
-ros2 launch interface_pico interface_pico.launch.py
+ros2 launch robot_devastator_bringup interface_pico_reel.launch.yaml
 ```
 
 Lancement sans Pico ni UART, utile sur Legion-Linux :
 
 ```bash
-ros2 launch interface_pico interface_pico.launch.py mode_materiel:=simulation
+ros2 launch robot_devastator_bringup interface_pico_simulation.launch.yaml
 ```
 
-Depuis VSCode, utiliser plutôt la configuration de débogage `InterfacePico simulation`.
-La configuration `InterfacePico reel` conserve le mode matériel réel par défaut.
+Les fichiers de lancement et de paramètres sont centralisés dans `robot_devastator_bringup` pour
+éviter plusieurs points d'entrée concurrents. Depuis VSCode, utiliser plutôt les tâches
+`ROS 2 - Lancer interface Pico simulation` et `ROS 2 - Lancer interface Pico réel`.
+
+La configuration de débogage `Nœud Python ROS 2` permet de lancer directement
+`interface_pico.interface_pico` avec debugpy. Elle demande si le mode simulation doit être
+activé. Répondre `Non` pour utiliser le Pico réel.
 
 ## Test rapide
 

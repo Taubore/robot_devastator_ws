@@ -1,0 +1,6 @@
+evitement_obstacle_node:
+  ros__parameters:
+    distance_arret_mm: 350
+    vitesse_avance: 500
+    periode_publication_s: 0.1
+    distance_invalide_arrete: true

@@ -23,9 +23,10 @@ communes du projet.
 | `src/commun` | Interfaces ROS 2 communes |
 | `src/interface_pico` | Pont ROS 2 ↔ UART ↔ Pico WH |
 | `src/robot_devastator` | Logique principale du robot |
+| `src/robot_devastator_bringup` | Assemblage des nœuds et paramètres de lancement |
 | `docs` | Documentation du projet |
-| `.vscode/tasks.json` | Tâches de build et de nettoyage |
-| `.vscode/launch.json` | Lancements et debug VSCode |
+| `.vscode/tasks.json` | Tâches de build, de nettoyage et de lancement |
+| `.vscode/launch.json` | Debug direct de nœuds Python précis |
 
 ## Interfaces ROS 2
 
@@ -86,7 +87,28 @@ ROS 2 semble conserver des artefacts obsolètes dans `build/` ou `install/`.
 
 ### Lancement / debug
 
-Les configurations de lancement et de debug sont définies dans `.vscode/launch.json`.
+Les assemblages ROS 2 sont centralisés dans `robot_devastator_bringup`. Utiliser les tâches
+VSCode suivantes selon le besoin :
+
+- `Tasks: Run Task > ROS 2 - Lancer interface Pico simulation`
+- `Tasks: Run Task > ROS 2 - Lancer interface Pico réel`
+- `Tasks: Run Task > ROS 2 - Lancer autonomie simple simulation`
+- `Tasks: Run Task > ROS 2 - Lancer autonomie simple réel`
+
+Les configurations de `.vscode/launch.json` servent seulement au debug direct d'un nœud Python
+précis avec F5 :
+
+`Nœud Python ROS 2` demande le module Python à exécuter, par exemple
+`robot_devastator.evitement_obstacle`, `robot_devastator.principal` ou
+`interface_pico.interface_pico`. Il demande ensuite si le mode simulation doit être activé.
+La réponse `Non`, sélectionnée par défaut, transmet le mode matériel `reel`.
+
+En CLI, la syntaxe équivalente pour passer un paramètre ROS 2 est
+`ros2 run <package> <executable> --ros-args -p <parametre>:=<valeur>`.
+
+L'autonomie simple correspond à la version v0 existante : avancer lentement lorsque la distance
+ultrason est suffisante et arrêter les moteurs devant un obstacle. Elle ne tourne pas encore et
+ne pilote pas automatiquement la tourelle.
 
 ## Commandes CLI de secours
 
@@ -94,12 +116,15 @@ Ces commandes restent utiles pour un diagnostic rapide hors VSCode.
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install --packages-select commun interface_pico robot_devastator
+colcon build --symlink-install --packages-select commun interface_pico robot_devastator robot_devastator_bringup
 source install/setup.bash
 ```
 
 ```bash
-ros2 launch interface_pico interface_pico.launch.py mode_materiel:=simulation
+ros2 launch robot_devastator_bringup interface_pico_simulation.launch.yaml
+ros2 launch robot_devastator_bringup interface_pico_reel.launch.yaml
+ros2 launch robot_devastator_bringup autonomie_simple_simulation.launch.yaml
+ros2 launch robot_devastator_bringup autonomie_simple_reel.launch.yaml
 ```
 
 ```bash

@@ -1,0 +1,15 @@
+launch:
+- node:
+    pkg: interface_pico
+    exec: interface_pico_node
+    name: interface_pico_node
+    output: screen
+    param:
+    - from: $(find-pkg-share robot_devastator_bringup)/config/interface_pico_reel.yaml
+- node:
+    pkg: robot_devastator
+    exec: evitement_obstacle
+    name: evitement_obstacle_node
+    output: screen
+    param:
+    - from: $(find-pkg-share robot_devastator_bringup)/config/autonomie_simple.yaml

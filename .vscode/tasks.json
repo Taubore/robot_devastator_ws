@@ -7,7 +7,7 @@
             "command": "bash",
             "args": [
                 "-lc",
-                "source /opt/ros/jazzy/setup.bash && colcon build --symlink-install --packages-select commun interface_pico robot_devastator"
+                "source /opt/ros/jazzy/setup.bash && colcon build --symlink-install --packages-select commun interface_pico robot_devastator robot_devastator_bringup"
             ],
             "group": "build",
             "problemMatcher": []
@@ -29,9 +29,49 @@
             "command": "bash",
             "args": [
                 "-lc",
-                "./scripts/nettoyer_packages_ros.sh commun interface_pico robot_devastator"
+                "./scripts/nettoyer_packages_ros.sh commun interface_pico robot_devastator robot_devastator_bringup"
             ],
             "group": "build",            
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS 2 - Lancer interface Pico simulation",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_devastator_bringup interface_pico_simulation.launch.yaml"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS 2 - Lancer interface Pico réel",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_devastator_bringup interface_pico_reel.launch.yaml"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS 2 - Lancer autonomie simple simulation",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_devastator_bringup autonomie_simple_simulation.launch.yaml"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS 2 - Lancer autonomie simple réel",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_devastator_bringup autonomie_simple_reel.launch.yaml"
+            ],
             "problemMatcher": []
         }
     ]

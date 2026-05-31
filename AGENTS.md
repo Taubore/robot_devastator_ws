@@ -228,6 +228,12 @@ Mettre à jour `README.md` si une modification change :
 ## Essais en bac à sable
 - Les noeuds ROS 2 écrivent les logs dans ~/.ros/log, soit hors zone écrivable du bac à sable. Pour que les tests n'échouent pas, il faut rediriger temporairement les logs ROS vers /tmp.
 
+## Validation automatisée ROS 2
+
+- Conserver sans modification les fichiers de tests standards générés par ROS 2.
+- Ne pas exécuter `pytest` directement dans ce workspace.
+- Utiliser `colcon test --packages-select <package>` puis `colcon test-result --verbose`.
+
 ## Interaction avec Codex
 
 Avant une modification non triviale :
