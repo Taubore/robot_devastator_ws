@@ -9,29 +9,36 @@ principal:
     # Format d'une variante parlée : nom_fichier|texte à générer avec Piper.
     # Une chaîne vide représente une variante silencieuse choisie aléatoirement.
     annonces.demarrage:
-      - 'demarrage_01|Devastator prêt.'
+      - 'demarrage_01|Prêt à partir.'
     annonces.autonomie_demarre:
       - 'autonomie_demarre_01|Mode autonomie activé.'
     annonces.obstacle_detecte:
       - 'obstacle_detecte_01|Obstacle détecté.'
-      - ''
       - 'obstacle_detecte_03|Oups, il y a quelque chose.'
       - 'obstacle_detecte_04|Quelque chose à contourner.'
       - 'obstacle_detecte_05|Obstacle droit devant, je dois contourner.'
       - ''
+      - ''
+      - ''
+      - ''      
     annonces.analyse_obstacle:
       - 'analyse_obstacle_01|Recherche d’un passage.'
+      - 'analyse_obstacle_02|Il ya un obstacle, je cherche une solution.'
+      - ''
       - ''
     annonces.rotation_gauche:
-      - 'rotation_gauche_01|Passage à gauche.'
+      - 'rotation_gauche_01|À gauche ça semble mieux.'
+      - ''
+      - ''
       - ''
     annonces.rotation_droite:
-      - 'rotation_droite_01|Passage à droite.'
+      - 'rotation_droite_01|À droite ça semble mieux.'
+      - ''
+      - ''
       - ''
     annonces.recul_recuperation:
-      - 'recul_recuperation_01|Recul de récupération.'
+      - "recul_recuperation_01|Il faut que je sorte d'ici."
     annonces.reprise_avance:
-      - 'reprise_avance_01|Reprise de l’avance.'
       - ''
     annonces.arret_robot:
-      - 'arret_robot_01|Arrêt du robot.'
+      - "arret_robot_01|C'est bon, c'est terminé."

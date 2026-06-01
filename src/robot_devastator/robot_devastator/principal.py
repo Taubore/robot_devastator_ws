@@ -8,6 +8,7 @@ from typing import Final
 from commun.srv import GenererAudio, JouerAudio
 import rclpy
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 from robot_devastator.voix_piper_service import AUDIO_CACHE_DIR
 from std_msgs.msg import String
 
@@ -49,7 +50,7 @@ class Principal(Node):
         self.declare_parameter('preparer_audio_au_demarrage', True)
         self.declare_parameter('jouer_annonce_demarrage', True)
         for evenement in EVENEMENTS_ANNONCES:
-            self.declare_parameter(f'annonces.{evenement}', [])
+            self.declare_parameter(f'annonces.{evenement}', Parameter.Type.STRING_ARRAY)
 
         self.delai_min_repetition_s = float(
             self.get_parameter('delai_min_repetition_s').value
