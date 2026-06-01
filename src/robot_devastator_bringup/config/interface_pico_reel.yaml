@@ -2,7 +2,7 @@ interface_pico_node:
   ros__parameters:
     port: /dev/ttyS0
     debit: 115200
-    timeout_lecture: 0.1
-    periode_maintien_s: 0.1
-    periode_distance_s: 0.5
+    timeout_lecture: 0.02
+    periode_maintien_s: 0.25
+    periode_distance_s: 0.10
     mode_materiel: reel
