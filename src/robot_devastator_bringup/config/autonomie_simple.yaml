@@ -4,3 +4,9 @@ evitement_obstacle_node:
     vitesse_avance: 250
     periode_publication_s: 0.1
     distance_invalide_arrete: true
+    angle_tourelle_centre_deg: 95
+    angle_tourelle_gauche_deg: 140
+    angle_tourelle_droite_deg: 45
+    delai_stabilisation_tourelle_s: 0.35
+    vitesse_rotation: 250
+    duree_rotation_s: 0.45

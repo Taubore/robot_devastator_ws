@@ -35,7 +35,7 @@ communes du projet.
 | Topic | Type | Producteur | Consommateur | Rôle |
 |---|---|---|---|---|
 | `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `principal`, `evitement_obstacle_node` | `interface_pico_node` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
-| `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou futur nœud de décision | `interface_pico_node` | Commander l'angle du servo de tourelle en degrés |
+| `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle_node` | `interface_pico_node` | Commander l'angle du servo de tourelle en degrés |
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico_node` | `evitement_obstacle_node` | Publier la distance ultrason mesurée en millimètres |
 | `/pico/etat` | `std_msgs/msg/String` | `interface_pico_node` | Outil de diagnostic | Publier les lignes d'état reçues ou simulées côté Pico |
 
@@ -57,7 +57,7 @@ Aucune action ROS 2 n'est implémentée actuellement.
 | Node | Package | Exécutable / module | État | Rôle |
 |---|---|---|---|---|
 | `interface_pico_node` | `interface_pico` | `interface_pico_node` / `interface_pico.interface_pico` | Actif | Exposer les topics et services Pico, puis traduire les commandes ROS 2 vers UART |
-| `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement si la distance ultrason est dégagée, sinon arrêter les moteurs |
+| `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, analyser un obstacle à gauche et à droite, puis tourner brièvement vers le côté le plus dégagé |
 | `principal` | `robot_devastator` | `principal` / `robot_devastator.principal` | Actif | Valider la chaîne moteur ROS 2 vers Pico avec une courte séquence de test |
 | `voix_piper` | `robot_devastator` | `voix_piper_service` / `robot_devastator.voix_piper_service` | Gelé | Services audio Piper amorcés, mais non intégrés au comportement principal actuel |
 
@@ -106,9 +106,10 @@ La réponse `Non`, sélectionnée par défaut, transmet le mode matériel `reel`
 En CLI, la syntaxe équivalente pour passer un paramètre ROS 2 est
 `ros2 run <package> <executable> --ros-args -p <parametre>:=<valeur>`.
 
-L'autonomie simple correspond à la version v0 existante : avancer lentement lorsque la distance
-ultrason est suffisante et arrêter les moteurs devant un obstacle. Elle ne tourne pas encore et
-ne pilote pas automatiquement la tourelle.
+L'autonomie simple fait avancer lentement le robot lorsque la distance ultrason est suffisante.
+Devant un obstacle, elle arrête les moteurs, oriente la tourelle à gauche puis à droite, compare
+deux mesures fraîches et tourne brièvement vers le côté le plus dégagé. Après recentrage de la
+tourelle, elle reprend l'avance seulement si une nouvelle mesure avant est valide et dégagée.
 
 ## Commandes CLI de secours
 
