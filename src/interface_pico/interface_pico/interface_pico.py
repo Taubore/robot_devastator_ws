@@ -231,8 +231,12 @@ class NoeudInterfacePico(Node):
             message_distance = Int32()
             message_distance.data = int(ligne)
             self.publisher_distance.publish(message_distance)
+        elif ligne.startswith('ERREUR'):
+            self.get_logger().error(f'Réponse UART du Pico : {ligne}')
+        elif ligne.startswith('WARN'):
+            self.get_logger().warn(f'Réponse UART du Pico : {ligne}')
         else:
-            self.get_logger().info(f'État Pico : {ligne}')
+            self.get_logger().debug(f'Réponse UART du Pico : {ligne}')
 
     def _gerer_stop(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
         """Demande l'arrêt moteur et mémorise une consigne nulle."""
