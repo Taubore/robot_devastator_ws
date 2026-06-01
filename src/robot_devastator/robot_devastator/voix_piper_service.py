@@ -70,6 +70,7 @@ class VoixPiper(Node):
             'jouer_audio',
             self.jouer_audio_callback
         )
+        self.get_logger().info(f'Cache audio persistant utilisé : {AUDIO_CACHE_DIR}.')
         self.get_logger().info("Services 'generer_audio' et 'jouer_audio' prêts.")
 
     def _resoudre_chemin_audio(self, nom_fichier=None):

@@ -8,6 +8,18 @@ launch:
     - from: $(find-pkg-share robot_devastator_bringup)/config/interface_pico.yaml
 - node:
     pkg: robot_devastator
+    exec: voix_piper_service
+    name: voix_piper
+    output: screen
+- node:
+    pkg: robot_devastator
+    exec: principal
+    name: principal
+    output: screen
+    param:
+    - from: $(find-pkg-share robot_devastator_bringup)/config/principal.yaml
+- node:
+    pkg: robot_devastator
     exec: evitement_obstacle
     name: evitement_obstacle_node
     output: screen

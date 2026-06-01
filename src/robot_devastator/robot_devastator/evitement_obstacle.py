@@ -12,11 +12,12 @@ from commun.msg import ConsigneMoteurs
 import rclpy
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, String
 
 TOPIC_COMMANDE_MOTEURS: Final[str] = '/pico/commande_moteurs'
 TOPIC_COMMANDE_TOURELLE: Final[str] = '/pico/commande_tourelle_deg'
 TOPIC_DISTANCE_ULTRASON: Final[str] = '/pico/distance_ultrason_mm'
+TOPIC_EVENEMENT_ROBOT: Final[str] = '/robot/evenement'
 VALEUR_MOTEUR_MIN: Final[int] = -1000
 VALEUR_MOTEUR_MAX: Final[int] = 1000
 ANGLE_TOURELLE_MIN_DEG: Final[int] = 0
@@ -188,6 +189,11 @@ class EvitementObstacle(Node):
             TOPIC_COMMANDE_TOURELLE,
             TAILLE_FILE_MESSAGES,
         )
+        self.evenement_robot_pub = self.create_publisher(
+            String,
+            TOPIC_EVENEMENT_ROBOT,
+            TAILLE_FILE_MESSAGES,
+        )
         self.abonnement_distance = self.create_subscription(
             Int32,
             TOPIC_DISTANCE_ULTRASON,
@@ -206,6 +212,7 @@ class EvitementObstacle(Node):
         )
         self.arreter_moteurs()
         self.publier_consigne_tourelle(self.angle_tourelle_centre_deg)
+        self.publier_evenement('autonomie_demarre')
 
     def _borner_consigne_moteur(self, valeur: int) -> int:
         """Retourne une consigne limitée à la plage moteur autorisée."""
@@ -278,6 +285,7 @@ class EvitementObstacle(Node):
             return
 
         if self.derniere_distance_mm <= self.distance_arret_mm:
+            self.publier_evenement('obstacle_detecte')
             self._commencer_analyse_obstacle()
             return
 
@@ -291,6 +299,7 @@ class EvitementObstacle(Node):
         self.publier_consigne_tourelle(self.angle_tourelle_gauche_deg)
         self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s
         self.etat = EtatEvitement.STABILISATION_GAUCHE
+        self.publier_evenement('analyse_obstacle')
 
     def _gerer_stabilisation(self, prochain_etat: EtatEvitement) -> None:
         """Maintient l'arrêt pendant la stabilisation de la tourelle."""
@@ -360,6 +369,10 @@ class EvitementObstacle(Node):
         self.publier_consigne_tourelle(self.angle_tourelle_centre_deg)
         self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s
         self.etat = EtatEvitement.STABILISATION_ROTATION
+        if self.dernier_cote_rotation == CoteRotation.GAUCHE:
+            self.publier_evenement('rotation_gauche')
+        else:
+            self.publier_evenement('rotation_droite')
 
     def _gerer_stabilisation_rotation(self) -> None:
         """Attend le recentrage de la tourelle avant de chercher un dégagement."""
@@ -380,6 +393,7 @@ class EvitementObstacle(Node):
             self.arreter_moteurs()
             self.fin_etape_s = monotonic() + self.duree_recul_s
             self.etat = EtatEvitement.RECUL
+            self.publier_evenement('recul_recuperation')
             return
 
         if self.derniere_distance_mm is None:
@@ -429,6 +443,14 @@ class EvitementObstacle(Node):
 
         self.etat = EtatEvitement.AVANCE
         self.publier_consigne_moteurs(self.vitesse_avance, self.vitesse_avance)
+        self.publier_evenement('reprise_avance')
+
+    def publier_evenement(self, evenement: str) -> None:
+        """Publie un événement haut niveau lors d'une transition significative."""
+        message = String()
+        message.data = evenement
+        self.evenement_robot_pub.publish(message)
+        self.get_logger().info(f'Événement robot publié : {evenement}.')
 
     def publier_consigne_moteurs(self, gauche: int, droite: int) -> None:
         """Publie une consigne moteur bornée vers l'interface Pico."""

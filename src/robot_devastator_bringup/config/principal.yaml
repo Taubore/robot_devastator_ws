@@ -1,0 +1,37 @@
+principal:
+  ros__parameters:
+    # Empêche une annonce identique de se répéter trop rapidement.
+    delai_min_repetition_s: 3.0
+    # Prépare une seule fois les WAV absents du cache persistant au démarrage.
+    preparer_audio_au_demarrage: true
+    # Joue une annonce après la préparation initiale des fichiers WAV.
+    jouer_annonce_demarrage: true
+    # Format d'une variante parlée : nom_fichier|texte à générer avec Piper.
+    # Une chaîne vide représente une variante silencieuse choisie aléatoirement.
+    annonces.demarrage:
+      - 'demarrage_01|Devastator prêt.'
+    annonces.autonomie_demarre:
+      - 'autonomie_demarre_01|Mode autonomie activé.'
+    annonces.obstacle_detecte:
+      - 'obstacle_detecte_01|Obstacle détecté.'
+      - ''
+      - 'obstacle_detecte_03|Oups, il y a quelque chose.'
+      - 'obstacle_detecte_04|Quelque chose à contourner.'
+      - 'obstacle_detecte_05|Obstacle droit devant, je dois contourner.'
+      - ''
+    annonces.analyse_obstacle:
+      - 'analyse_obstacle_01|Recherche d’un passage.'
+      - ''
+    annonces.rotation_gauche:
+      - 'rotation_gauche_01|Passage à gauche.'
+      - ''
+    annonces.rotation_droite:
+      - 'rotation_droite_01|Passage à droite.'
+      - ''
+    annonces.recul_recuperation:
+      - 'recul_recuperation_01|Recul de récupération.'
+    annonces.reprise_avance:
+      - 'reprise_avance_01|Reprise de l’avance.'
+      - ''
+    annonces.arret_robot:
+      - 'arret_robot_01|Arrêt du robot.'
