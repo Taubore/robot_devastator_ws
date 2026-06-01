@@ -5,7 +5,7 @@ launch:
     name: interface_pico_node
     output: screen
     param:
-    - from: $(find-pkg-share robot_devastator_bringup)/config/interface_pico_reel.yaml
+    - from: $(find-pkg-share robot_devastator_bringup)/config/interface_pico.yaml
 - node:
     pkg: robot_devastator
     exec: evitement_obstacle

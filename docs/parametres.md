@@ -3,9 +3,8 @@
 
 ## Configuration ROS 2 de l'interface Pico
 
-Le nœud `interface_pico_node` utilise uniquement la liaison UART réelle vers le Pico WH. Les
-paramètres actifs sont regroupés dans
-`src/robot_devastator_bringup/config/interface_pico_reel.yaml` :
+Le nœud `interface_pico_node` utilise la liaison UART vers le Pico WH. Les paramètres actifs sont
+regroupés dans `src/robot_devastator_bringup/config/interface_pico.yaml` :
 
 - `port` : port UART, actuellement `/dev/ttyS0`
 - `debit` : débit UART, actuellement `115200`
@@ -72,7 +71,7 @@ fiable des moteurs.
 - Objectif :
   - éviter qu'un état actif de la TX du Raspberry Pi bloque le démarrage du Pico
 
-### Mode test réel avec Raspberry Pi 4
+### Mode test avec Raspberry Pi 4
 
 - USB PC débranché du Pico
 - Pico alimenté en autonome via VSYS
@@ -83,9 +82,9 @@ fiable des moteurs.
 
 - Pour développer sur le Pico :
   - débrancher la ligne Pi4 TX → Pico RX
-- Pour tester la communication réelle :
+- Pour tester la communication avec le Raspberry Pi 4 :
   - rebrancher la ligne Pi4 TX → Pico RX
-  - alimenter le Pico en mode réel
+  - alimenter le Pico via VSYS
   - tester depuis le Raspberry Pi 4
 
 ## Convention logique (figée)
@@ -112,8 +111,8 @@ fiable des moteurs.
 
 - Le moteur gauche est inversé physiquement au niveau du MDD3A
 - Objectif : garantir que la même convention logique s’applique aux deux moteurs
-  - `avancer()` = avance réelle
-  - `reculer()` = recul réel
+  - `avancer()` = avance
+  - `reculer()` = recul
 
 ## Fréquence PWM
 

@@ -2,8 +2,8 @@
 
 import time
 
-import rclpy
 from commun.msg import ConsigneMoteurs
+import rclpy
 from rclpy.client import Client
 from rclpy.node import Node
 from std_srvs.srv import Trigger
@@ -35,7 +35,7 @@ class Principal(Node):
             if time.monotonic() >= echeance:
                 raise RuntimeError(
                     f"Service '{nom_service}' indisponible après "
-                    f"{self.DELAI_ATTENTE_SERVICE_S:.0f} s."
+                    f'{self.DELAI_ATTENTE_SERVICE_S:.0f} s.'
                 )
             self.get_logger().warn(
                 f"Service '{nom_service}' non disponible, nouvelle tentative..."
@@ -68,7 +68,7 @@ class Principal(Node):
         message.droite = droite
         self.consigne_moteurs_pub.publish(message)
         self.get_logger().info(
-            f"Consigne moteurs publiée : gauche={gauche}, droite={droite}"
+            f'Consigne moteurs publiée : gauche={gauche}, droite={droite}'
         )
 
     def arreter_moteurs(self) -> None:
@@ -78,7 +78,7 @@ class Principal(Node):
 
     def tester_moteurs_demarrage(self) -> None:
         """Envoie quelques consignes courtes pour valider le chemin ROS 2 vers le Pico."""
-        self.get_logger().info("Début du test de démarrage des moteurs.")
+        self.get_logger().info('Début du test de démarrage des moteurs.')
 
         if not self.appeler_service_trigger(self.ping_pico_cli, SERVICE_PING):
             return
@@ -88,21 +88,21 @@ class Principal(Node):
         time.sleep(0.2)
 
         sequence_test = [
-            ("avance", 500, 500, 3.0),
-            ("rotation sur place", 500, -500, 3.0),
-            ("recul", -500, -500, 3.0),
-            ("arrêt", 0, 0, 1.0),
+            ('avance', 500, 500, 3.0),
+            ('rotation sur place', 500, -500, 3.0),
+            ('recul', -500, -500, 3.0),
+            ('arrêt', 0, 0, 1.0),
         ]
 
         try:
             for description, gauche, droite, duree_s in sequence_test:
-                self.get_logger().info(f"Test moteurs : {description}.")
+                self.get_logger().info(f'Test moteurs : {description}.')
                 self.publier_consigne_moteurs(gauche, droite)
                 time.sleep(duree_s)
         finally:
             self.arreter_moteurs()
 
-        self.get_logger().info("Fin du test de démarrage des moteurs.")
+        self.get_logger().info('Fin du test de démarrage des moteurs.')
 
 
 def main(args: list[str] | None = None) -> None:

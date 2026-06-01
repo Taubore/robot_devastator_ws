@@ -90,8 +90,8 @@ ROS 2 semble conserver des artefacts obsolètes dans `build/` ou `install/`.
 Les assemblages ROS 2 sont centralisés dans `robot_devastator_bringup`. Utiliser les tâches
 VSCode suivantes selon le besoin :
 
-- `Tasks: Run Task > ROS 2 - Lancer interface Pico réel`
-- `Tasks: Run Task > ROS 2 - Lancer autonomie simple réel`
+- `Tasks: Run Task > ROS 2 - Lancer interface Pico`
+- `Tasks: Run Task > ROS 2 - Lancer autonomie simple`
 
 Les configurations de `.vscode/launch.json` servent seulement au debug direct d'un nœud Python
 précis avec F5 :
@@ -119,8 +119,8 @@ source install/setup.bash
 ```
 
 ```bash
-ros2 launch robot_devastator_bringup interface_pico_reel.launch.yaml
-ros2 launch robot_devastator_bringup autonomie_simple_reel.launch.yaml
+ros2 launch robot_devastator_bringup interface_pico.launch.yaml
+ros2 launch robot_devastator_bringup autonomie_simple.launch.yaml
 ```
 
 ```bash

@@ -1,13 +1,12 @@
 """Services ROS 2 pour générer et jouer des fichiers audio via Piper."""
 
-import subprocess
 from pathlib import Path
-
-import rclpy
-from rclpy.node import Node
+import subprocess
 
 from commun.srv import GenererAudio
 from commun.srv import JouerAudio
+import rclpy
+from rclpy.node import Node
 
 PIPER_EXECUTABLE = '/usr/local/bin/piper'
 
@@ -78,9 +77,9 @@ class VoixPiper(Node):
         if nom_fichier:
             if '/' in nom_fichier or '\\' in nom_fichier:
                 raise ValueError(
-                    "Le nom de fichier doit être un nom simple, sans chemin."
+                    'Le nom de fichier doit être un nom simple, sans chemin.'
                 )
-            return AUDIO_CACHE_DIR / f"{nom_fichier}.wav"
+            return AUDIO_CACHE_DIR / f'{nom_fichier}.wav'
         return self.audio_output
 
     def generer_audio_callback(self, request, response):
@@ -90,8 +89,8 @@ class VoixPiper(Node):
 
         if not texte:
             response.succes = False
-            response.message = "Le texte fourni est vide."
-            response.chemin_fichier = ""
+            response.message = 'Le texte fourni est vide.'
+            response.chemin_fichier = ''
             return response
 
         try:
@@ -99,7 +98,7 @@ class VoixPiper(Node):
 
             if chemin_audio.is_file():
                 response.succes = True
-                response.message = f"Fichier audio déjà existant : {chemin_audio.name}"
+                response.message = f'Fichier audio déjà existant : {chemin_audio.name}'
                 response.chemin_fichier = str(chemin_audio)
                 return response
 
@@ -117,31 +116,31 @@ class VoixPiper(Node):
             )
 
             if not chemin_audio.is_file():
-                raise FileNotFoundError(f"Fichier audio non généré : {chemin_audio}")
+                raise FileNotFoundError(f'Fichier audio non généré : {chemin_audio}')
 
             response.succes = True
-            response.message = f"Fichier audio généré : {chemin_audio.name}"
+            response.message = f'Fichier audio généré : {chemin_audio.name}'
             response.chemin_fichier = str(chemin_audio)
         except ValueError as erreur:
             response.succes = False
             response.message = str(erreur)
-            response.chemin_fichier = ""
+            response.chemin_fichier = ''
         except subprocess.TimeoutExpired:
             response.succes = False
             response.message = "Le processus Piper a dépassé le délai d'exécution."
-            response.chemin_fichier = ""
+            response.chemin_fichier = ''
         except subprocess.CalledProcessError as erreur:
             response.succes = False
             response.message = f"Erreur lors de l'exécution de Piper : {erreur}"
-            response.chemin_fichier = ""
+            response.chemin_fichier = ''
         except FileNotFoundError as erreur:
             response.succes = False
             response.message = str(erreur)
-            response.chemin_fichier = ""
+            response.chemin_fichier = ''
         except Exception as erreur:
             response.succes = False
-            response.message = f"Erreur inattendue : {erreur}"
-            response.chemin_fichier = ""
+            response.message = f'Erreur inattendue : {erreur}'
+            response.chemin_fichier = ''
 
         return response
 
@@ -153,7 +152,7 @@ class VoixPiper(Node):
             chemin_audio = self._resoudre_chemin_audio(nom_fichier or None)
 
             if not chemin_audio.is_file():
-                raise FileNotFoundError(f"Fichier audio introuvable : {chemin_audio}")
+                raise FileNotFoundError(f'Fichier audio introuvable : {chemin_audio}')
 
             subprocess.run(
                 ['aplay', str(chemin_audio)],
@@ -162,28 +161,28 @@ class VoixPiper(Node):
             )
 
             response.succes = True
-            response.message = f"Lecture audio lancée : {chemin_audio}"
+            response.message = f'Lecture audio lancée : {chemin_audio}'
             response.chemin_fichier = str(chemin_audio)
         except ValueError as erreur:
             response.succes = False
             response.message = str(erreur)
-            response.chemin_fichier = ""
+            response.chemin_fichier = ''
         except subprocess.TimeoutExpired:
             response.succes = False
             response.message = "La lecture audio a dépassé le délai d'exécution."
-            response.chemin_fichier = ""
+            response.chemin_fichier = ''
         except subprocess.CalledProcessError as erreur:
             response.succes = False
-            response.message = f"Erreur lors de la lecture audio : {erreur}"
-            response.chemin_fichier = ""
+            response.message = f'Erreur lors de la lecture audio : {erreur}'
+            response.chemin_fichier = ''
         except FileNotFoundError as erreur:
             response.succes = False
             response.message = str(erreur)
-            response.chemin_fichier = ""
+            response.chemin_fichier = ''
         except Exception as erreur:
             response.succes = False
-            response.message = f"Erreur inattendue : {erreur}"
-            response.chemin_fichier = ""
+            response.message = f'Erreur inattendue : {erreur}'
+            response.chemin_fichier = ''
 
         return response
 
@@ -198,6 +197,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
