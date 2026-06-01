@@ -8,7 +8,6 @@
       "console": "integratedTerminal",
       "module": "${input:modulePythonRos2}",
       "cwd": "${workspaceFolder}",
-      "args": ["--ros-args", "-p", "mode_materiel:=${input:modeSimulation}"],
       "env": {
         // Le message généré par commun reste dans install après le build colcon.
         "PYTHONPATH": "${workspaceFolder}/src/robot_devastator:${workspaceFolder}/src/interface_pico:${workspaceFolder}/install/commun/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages:${env:PYTHONPATH}",
@@ -22,22 +21,6 @@
       "type": "promptString",
       "description": "Module Python ROS 2 à déboguer",
       "default": "robot_devastator.evitement_obstacle"
-    },
-    {
-      "id": "modeSimulation",
-      "type": "pickString",
-      "description": "Mode simulation ?",
-      "options": [
-        {
-          "label": "Non",
-          "value": "reel"
-        },
-        {
-          "label": "Oui",
-          "value": "simulation"
-        }
-      ],
-      "default": "reel"
     }
   ]
 }

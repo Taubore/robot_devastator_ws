@@ -3,13 +3,12 @@
 
 from __future__ import annotations
 
-from collections import deque
-from typing import Final, Protocol, cast
+from typing import Final
 
-import rclpy
-import serial
 from commun.msg import ConsigneMoteurs
+import rclpy
 from rclpy.node import Node
+import serial
 from std_msgs.msg import Int32, String
 from std_srvs.srv import Trigger
 
@@ -23,126 +22,12 @@ from .transport_serie_pico import (
 )
 
 TAILLE_FILE_MESSAGES: Final[int] = 10
-MODE_MATERIEL_REEL: Final[str] = 'reel'
-MODE_MATERIEL_SIMULATION: Final[str] = 'simulation'
 TOPIC_COMMANDE_MOTEURS: Final[str] = '/pico/commande_moteurs'
 TOPIC_COMMANDE_TOURELLE: Final[str] = '/pico/commande_tourelle_deg'
 TOPIC_DISTANCE_ULTRASON: Final[str] = '/pico/distance_ultrason_mm'
 TOPIC_ETAT_PICO: Final[str] = '/pico/etat'
 SERVICE_PING: Final[str] = '/pico/ping'
 SERVICE_STOP: Final[str] = '/pico/stop'
-MODES_MATERIEL_VALIDES: Final[set[str]] = {
-    MODE_MATERIEL_REEL,
-    MODE_MATERIEL_SIMULATION,
-}
-
-
-class TransportPico(Protocol):
-    """Méthodes communes attendues par le nœud, peu importe le mode matériel."""
-
-    def connecter(self) -> None:
-        """Prépare le transport si nécessaire."""
-
-    def fermer(self) -> None:
-        """Libère les ressources du transport."""
-
-    def lire_ligne(self) -> str | None:
-        """Retourne une ligne d'état disponible, sinon `None`."""
-
-    def ping(self) -> None:
-        """Teste la liaison logique avec le Pico."""
-
-    def stop(self) -> None:
-        """Demande l'arrêt immédiat des moteurs."""
-
-    def demander_distance(self) -> None:
-        """Demande une mesure de distance ultrason au Pico."""
-
-    def set_servo(self, angle: int) -> None:
-        """Envoie une consigne d'angle au servo de tourelle."""
-
-    def set_moteurs(self, gauche: int, droite: int) -> None:
-        """Envoie une consigne moteur brute gauche/droite."""
-
-
-class MessageConsigneMoteurs(Protocol):
-    """Champs attendus du message ROS `commun/msg/ConsigneMoteurs`."""
-
-    gauche: int
-    droite: int
-
-
-class ReponseTrigger(Protocol):
-    """Champs modifiés dans une réponse ROS `std_srvs/srv/Trigger`."""
-
-    success: bool
-    message: str
-
-
-class MessageTexte(Protocol):
-    """Champ attendu du message ROS `std_msgs/msg/String`."""
-
-    data: str
-
-
-class MessageEntier(Protocol):
-    """Champ attendu du message ROS `std_msgs/msg/Int32`."""
-
-    data: int
-
-
-class TransportSimulationPico:
-    """Transport minimal qui imite les réponses du Pico sans ouvrir d'UART."""
-
-    def __init__(self) -> None:
-        self._lignes_etat: deque[str] = deque(["SIMULATION OK"])
-        self._derniere_consigne: tuple[int, int] | None = None
-        self._distance_simulee_mm = 500
-
-    def connecter(self) -> None:
-        """Prépare le transport simulé."""
-
-    def fermer(self) -> None:
-        """Ferme le transport simulé."""
-
-    def lire_ligne(self) -> str | None:
-        """Retourne la prochaine ligne d'état simulée."""
-        if not self._lignes_etat:
-            return None
-        return self._lignes_etat.popleft()
-
-    def ping(self) -> None:
-        """Simule une commande `PING` réussie."""
-        self._lignes_etat.append("SIMULATION PING OK")
-
-    def stop(self) -> None:
-        """Simule une commande `STOP` réussie."""
-        self._lignes_etat.append("SIMULATION STOP")
-
-    def demander_distance(self) -> None:
-        """Simule une réponse numérique à la commande `DIST`."""
-        self._lignes_etat.append(str(self._distance_simulee_mm))
-
-    def set_servo(self, angle: int) -> None:
-        """Simule l'envoi d'une consigne d'angle au servo de tourelle."""
-        if not ANGLE_SERVO_MIN <= angle <= ANGLE_SERVO_MAX:
-            raise ValueError("angle hors plage 0..180")
-
-        self._lignes_etat.append(f"SIMULATION SERVO angle={angle}")
-
-    def set_moteurs(self, gauche: int, droite: int) -> None:
-        """Simule l'envoi d'une consigne moteur brute gauche/droite."""
-        if not VALEUR_MOTEUR_MIN <= gauche <= VALEUR_MOTEUR_MAX:
-            raise ValueError("gauche hors plage -1000..1000")
-        if not VALEUR_MOTEUR_MIN <= droite <= VALEUR_MOTEUR_MAX:
-            raise ValueError("droite hors plage -1000..1000")
-
-        consigne = (gauche, droite)
-        if consigne == self._derniere_consigne:
-            return
-
-        self._derniere_consigne = consigne
-        self._lignes_etat.append(f"SIMULATION SET gauche={gauche} droite={droite}")
 
 
 class NoeudInterfacePico(Node):
@@ -158,14 +43,12 @@ class NoeudInterfacePico(Node):
         self.declare_parameter('timeout_lecture', 0.1)
         self.declare_parameter('periode_maintien_s', 0.1)
         self.declare_parameter('periode_distance_s', 0.5)
-        self.declare_parameter('mode_materiel', MODE_MATERIEL_REEL)
 
         self.port = str(self.get_parameter('port').value)
         self.debit = int(self.get_parameter('debit').value)
         timeout_lecture = float(self.get_parameter('timeout_lecture').value)
         periode_maintien_s = float(self.get_parameter('periode_maintien_s').value)
         periode_distance_s = float(self.get_parameter('periode_distance_s').value)
-        self.mode_materiel = str(self.get_parameter('mode_materiel').value)
 
         if timeout_lecture <= 0.0:
             raise ValueError("Le paramètre 'timeout_lecture' doit être strictement positif.")
@@ -173,24 +56,16 @@ class NoeudInterfacePico(Node):
             raise ValueError("Le paramètre 'periode_maintien_s' doit être strictement positif.")
         if periode_distance_s <= 0.0:
             raise ValueError("Le paramètre 'periode_distance_s' doit être strictement positif.")
-        if self.mode_materiel not in MODES_MATERIEL_VALIDES:
-            raise ValueError(
-                "Le paramètre 'mode_materiel' doit valoir "
-                f"'{MODE_MATERIEL_REEL}' ou '{MODE_MATERIEL_SIMULATION}'."
+        self.transport = TransportSeriePico(
+            ConfigurationUART(
+                port=self.port,
+                debit=self.debit,
+                timeout_lecture=timeout_lecture,
             )
-
-        if self.mode_materiel == MODE_MATERIEL_REEL:
-            self.transport: TransportPico = TransportSeriePico(
-                ConfigurationUART(
-                    port=self.port,
-                    debit=self.debit,
-                    timeout_lecture=timeout_lecture,
-                )
-            )
-        else:
-            self.transport = TransportSimulationPico()
+        )
 
         self._uart_disponible = False
+        self._indisponibilite_uart_journalisee = False
 
         self.derniere_consigne: tuple[int, int] | None = None
 
@@ -233,8 +108,8 @@ class NoeudInterfacePico(Node):
 
         if periode_maintien_s >= 0.5:
             self.get_logger().warn(
-                "La période de maintien est supérieure ou égale à 0,5 s, "
-                "le Pico risque donc de couper les moteurs."
+                'La période de maintien est supérieure ou égale à 0,5 s, '
+                'le Pico risque donc de couper les moteurs.'
             )
 
         self._verifier_liaison_serie()
@@ -247,18 +122,15 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.demander_distance()
         except (serial.SerialException, OSError) as erreur:
-            self.get_logger().error(f"Demande de distance impossible: {erreur}")
-            self.transport.fermer()
-            self._uart_disponible = False
+            self._signaler_erreur_uart(f'Demande de distance impossible: {erreur}')
 
     def _recevoir_commande_tourelle(self, message: Int32) -> None:
-        """Valide puis envoie une consigne d'angle pour le servo de tourelle."""
-        message_entier = cast(MessageEntier, message)
-        angle = int(message_entier.data)
+        """Envoyer une consigne d'angle valide au servo de tourelle."""
+        angle = int(message.data)
 
         if not ANGLE_SERVO_MIN <= angle <= ANGLE_SERVO_MAX:
             self.get_logger().warn(
-                f"Commande tourelle ignorée car hors plage : {angle}"
+                f'Commande tourelle ignorée car hors plage : {angle}'
             )
             return
         if not self._verifier_liaison_serie():
@@ -267,9 +139,14 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.set_servo(angle)
         except (serial.SerialException, OSError) as erreur:
-            self.get_logger().error(f"Commande tourelle impossible: {erreur}")
-            self.transport.fermer()
-            self._uart_disponible = False
+            self._signaler_erreur_uart(f'Commande tourelle impossible: {erreur}')
+
+    def _signaler_erreur_uart(self, message: str) -> None:
+        """Ferme le port après une erreur UART déjà expliquée dans les logs."""
+        self.get_logger().error(message)
+        self.transport.fermer()
+        self._uart_disponible = False
+        self._indisponibilite_uart_journalisee = True
 
     def _verifier_liaison_serie(self) -> bool:
         """Essaie d'ouvrir la liaison Pico et journalise les transitions d'état."""
@@ -277,39 +154,36 @@ class NoeudInterfacePico(Node):
             self.transport.connecter()
         except (serial.SerialException, OSError) as erreur:
             if self._uart_disponible:
-                self.get_logger().error(f"Liaison UART perdue: {erreur}")
-            else:
+                self.get_logger().error(f'Liaison UART perdue: {erreur}')
+            elif not self._indisponibilite_uart_journalisee:
                 self.get_logger().warn(
-                    f"Liaison UART indisponible au démarrage ou en reprise: {erreur}"
+                    f'Liaison UART indisponible au démarrage ou en reprise: {erreur}'
                 )
             self._uart_disponible = False
+            self._indisponibilite_uart_journalisee = True
             return False
 
         if not self._uart_disponible:
-            if self.mode_materiel == MODE_MATERIEL_REEL:
-                self.get_logger().info(
-                    "Interface Pico ouverte sur "
-                    f"{self.port} à {self.debit} bauds."
-                )
-            else:
-                self.get_logger().info("Interface Pico en mode simulation.")
+            self.get_logger().info(
+                f'Interface Pico ouverte sur {self.port} à {self.debit} bauds.'
+            )
         self._uart_disponible = True
+        self._indisponibilite_uart_journalisee = False
         return True
 
     def _recevoir_consigne_moteurs(self, message: ConsigneMoteurs) -> None:
-        """Valide puis envoie immédiatement une consigne moteur."""
-        consigne = cast(MessageConsigneMoteurs, message)
-        gauche = int(consigne.gauche)
-        droite = int(consigne.droite)
+        """Envoyer immédiatement une consigne moteur valide."""
+        gauche = int(message.gauche)
+        droite = int(message.droite)
 
         if not VALEUR_MOTEUR_MIN <= gauche <= VALEUR_MOTEUR_MAX:
             self.get_logger().warn(
-                f"Consigne gauche ignorée car hors plage : {gauche}"
+                f'Consigne gauche ignorée car hors plage : {gauche}'
             )
             return
         if not VALEUR_MOTEUR_MIN <= droite <= VALEUR_MOTEUR_MAX:
             self.get_logger().warn(
-                f"Consigne droite ignorée car hors plage : {droite}"
+                f'Consigne droite ignorée car hors plage : {droite}'
             )
             return
         if not self._verifier_liaison_serie():
@@ -318,9 +192,7 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.set_moteurs(gauche, droite)
         except (serial.SerialException, OSError) as erreur:
-            self.get_logger().error(f"Envoi UART impossible: {erreur}")
-            self.transport.fermer()
-            self._uart_disponible = False
+            self._signaler_erreur_uart(f'Envoi UART impossible: {erreur}')
             return
 
         self.derniere_consigne = (gauche, droite)
@@ -336,9 +208,7 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.set_moteurs(gauche, droite)
         except (serial.SerialException, OSError) as erreur:
-            self.get_logger().error(f"Maintien de consigne impossible: {erreur}")
-            self.transport.fermer()
-            self._uart_disponible = False
+            self._signaler_erreur_uart(f'Maintien de consigne impossible: {erreur}')
 
     def _lire_et_publier_etat(self) -> None:
         """Publie en ROS 2 toute ligne texte éventuellement renvoyée par le Pico."""
@@ -347,56 +217,50 @@ class NoeudInterfacePico(Node):
         try:
             ligne = self.transport.lire_ligne()
         except (serial.SerialException, OSError) as erreur:
-            self.get_logger().error(f"Lecture UART impossible: {erreur}")
-            self.transport.fermer()
-            self._uart_disponible = False
+            self._signaler_erreur_uart(f'Lecture UART impossible: {erreur}')
             return
 
         if not ligne:
             return
 
-        self.get_logger().info(f"État Pico : {ligne}")
-
         message = String()
-        message_texte = cast(MessageTexte, message)
-        message_texte.data = ligne
+        message.data = ligne
         self.publisher_etat.publish(message)
 
         if ligne.isdecimal():
             message_distance = Int32()
-            message_entier = cast(MessageEntier, message_distance)
-            message_entier.data = int(ligne)
+            message_distance.data = int(ligne)
             self.publisher_distance.publish(message_distance)
+        else:
+            self.get_logger().info(f'État Pico : {ligne}')
 
-    def _gerer_stop(self, _requete: object, reponse: ReponseTrigger) -> ReponseTrigger:
+    def _gerer_stop(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
         """Demande l'arrêt moteur et mémorise une consigne nulle."""
         try:
             self.transport.stop()
         except (serial.SerialException, OSError) as erreur:
-            self.transport.fermer()
-            self._uart_disponible = False
+            self._signaler_erreur_uart(f'Commande STOP impossible: {erreur}')
             reponse.success = False
-            reponse.message = f"STOP non envoyé : {erreur}"
+            reponse.message = f'STOP non envoyé : {erreur}'
             return reponse
 
         self.derniere_consigne = (0, 0)
         reponse.success = True
-        reponse.message = "Commande STOP acceptée."
+        reponse.message = 'Commande STOP acceptée.'
         return reponse
 
-    def _gerer_ping(self, _requete: object, reponse: ReponseTrigger) -> ReponseTrigger:
+    def _gerer_ping(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
         """Traite simplement `PING`."""
         try:
             self.transport.ping()
         except (serial.SerialException, OSError) as erreur:
-            self.transport.fermer()
-            self._uart_disponible = False
+            self._signaler_erreur_uart(f'Commande PING impossible: {erreur}')
             reponse.success = False
-            reponse.message = f"PING non envoyé : {erreur}"
+            reponse.message = f'PING non envoyé : {erreur}'
             return reponse
 
         reponse.success = True
-        reponse.message = "Commande PING acceptée."
+        reponse.message = 'Commande PING acceptée.'
         return reponse
 
     def destroy_node(self) -> bool:

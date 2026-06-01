@@ -65,7 +65,6 @@ class EvitementObstacle(Node):
         self.declare_parameter('distance_arret_mm', 350)
         self.declare_parameter('vitesse_avance', 500)
         self.declare_parameter('periode_publication_s', 0.1)
-        self.declare_parameter('distance_invalide_arrete', True)
         self.declare_parameter('angle_tourelle_centre_deg', 95)
         self.declare_parameter('angle_tourelle_gauche_deg', 140)
         self.declare_parameter('angle_tourelle_droite_deg', 45)
@@ -83,9 +82,6 @@ class EvitementObstacle(Node):
         self.vitesse_avance = int(self.get_parameter('vitesse_avance').value)
         self.periode_publication_s = float(
             self.get_parameter('periode_publication_s').value
-        )
-        self.distance_invalide_arrete = bool(
-            self.get_parameter('distance_invalide_arrete').value
         )
         self.angle_tourelle_centre_deg = int(
             self.get_parameter('angle_tourelle_centre_deg').value
@@ -159,12 +155,6 @@ class EvitementObstacle(Node):
                     f"Le paramètre '{nom}' doit être compris entre "
                     f'{ANGLE_TOURELLE_MIN_DEG} et {ANGLE_TOURELLE_MAX_DEG}.'
                 )
-        if not self.distance_invalide_arrete:
-            self.get_logger().warn(
-                "Le paramètre 'distance_invalide_arrete' est désactivé, mais cette "
-                'autonomie reste arrêtée quand une distance invalide est reçue.'
-            )
-
         self.vitesse_avance = self._borner_consigne_moteur(self.vitesse_avance)
         self.vitesse_rotation_recherche = abs(
             self._borner_consigne_moteur(self.vitesse_rotation_recherche)
@@ -180,7 +170,6 @@ class EvitementObstacle(Node):
         self.numero_derniere_distance = 0
         self.numero_distance_avant_mesure = 0
         self.distance_gauche_mm: int | None = None
-        self.distance_centre_mm: int | None = None
         self.distance_droite_mm: int | None = None
         self.etat = EtatEvitement.AVANCE
         self.fin_etape_s = 0.0
@@ -298,7 +287,6 @@ class EvitementObstacle(Node):
         """Arrête le robot et oriente la tourelle vers la gauche."""
         self.arreter_moteurs()
         self.distance_gauche_mm = None
-        self.distance_centre_mm = None
         self.distance_droite_mm = None
         self.publier_consigne_tourelle(self.angle_tourelle_gauche_deg)
         self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s
@@ -337,7 +325,8 @@ class EvitementObstacle(Node):
         if not self._nouvelle_distance_valide_disponible():
             return
 
-        self.distance_centre_mm = self.derniere_distance_mm
+        # La mesure centrale garantit que le balayage passe bien devant le robot.
+        # Le choix de rotation reste volontairement fondé sur les mesures latérales.
         self.publier_consigne_tourelle(self.angle_tourelle_droite_deg)
         self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s
         self.etat = EtatEvitement.STABILISATION_DROITE

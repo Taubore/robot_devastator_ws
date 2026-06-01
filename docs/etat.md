@@ -28,6 +28,8 @@ Voir la section [composantes active de l'inventaire](inventaire_composantes.md)
 
 ## Ce qui est fonctionnel et testé
 
+- l'autonomie simple au sonar sur le robot réel. Le comportement fonctionne relativement bien
+  avec les paramètres actuels, qui restent empiriques ;
 - le firmware du Raspberry Pi Pico WH testé avec `picocom` à partir du Raspberry Pi 4. Les services suivants du protocole UART sont testés:
     - `PING`
     - `STOP`
@@ -44,9 +46,10 @@ Voir la section [composantes active de l'inventaire](inventaire_composantes.md)
     - `/pico/ping`
     - `/pico/stop`
 
-## Prochain test
+## Prochaine validation ciblée
 
-Valider physiquement la nouvelle autonomie simple avec les roues dans le vide :
+Après toute modification du comportement, revalider physiquement l'autonomie simple avec les roues
+dans le vide :
 
 1. placer un obstacle devant le sonar ;
 2. vérifier l'arrêt explicite des moteurs ;
@@ -59,5 +62,6 @@ Valider physiquement la nouvelle autonomie simple avec les roues dans le vide :
    balayage.
 
 Les angles de tourelle, le délai de stabilisation, les vitesses, la distance de dégagement et les
-durées restent empiriques. Ils devront être ajustés progressivement sur le Raspberry Pi 4 avec le
-robot sécurisé.
+durées restent empiriques. Ils doivent être ajustés progressivement sur le Raspberry Pi 4 avec le
+robot sécurisé. Les vitesses moteur ne doivent pas être réduites sous environ `300` sans nouvelle
+validation physique.

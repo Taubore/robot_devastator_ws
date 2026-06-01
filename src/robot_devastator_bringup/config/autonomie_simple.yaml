@@ -6,8 +6,6 @@ evitement_obstacle_node:
     vitesse_avance: 300
     # Intervalle entre les mises à jour de la machine d'états et des consignes moteur.
     periode_publication_s: 0.1
-    # Conserve l'arrêt des moteurs lorsqu'une mesure ultrason est invalide.
-    distance_invalide_arrete: true
     # Angle du sonar utilisé pour surveiller la direction d'avance du robot.
     angle_tourelle_centre_deg: 95
     # Angle du sonar utilisé pour mesurer le dégagement disponible à gauche.

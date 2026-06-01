@@ -37,7 +37,7 @@ communes du projet.
 | `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `principal`, `evitement_obstacle_node` | `interface_pico_node` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
 | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle_node` | `interface_pico_node` | Commander l'angle du servo de tourelle en degrés |
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico_node` | `evitement_obstacle_node` | Publier la distance ultrason mesurée en millimètres |
-| `/pico/etat` | `std_msgs/msg/String` | `interface_pico_node` | Outil de diagnostic | Publier les lignes d'état reçues ou simulées côté Pico |
+| `/pico/etat` | `std_msgs/msg/String` | `interface_pico_node` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
 
 ### Services
 
@@ -90,9 +90,7 @@ ROS 2 semble conserver des artefacts obsolètes dans `build/` ou `install/`.
 Les assemblages ROS 2 sont centralisés dans `robot_devastator_bringup`. Utiliser les tâches
 VSCode suivantes selon le besoin :
 
-- `Tasks: Run Task > ROS 2 - Lancer interface Pico simulation`
 - `Tasks: Run Task > ROS 2 - Lancer interface Pico réel`
-- `Tasks: Run Task > ROS 2 - Lancer autonomie simple simulation`
 - `Tasks: Run Task > ROS 2 - Lancer autonomie simple réel`
 
 Les configurations de `.vscode/launch.json` servent seulement au debug direct d'un nœud Python
@@ -100,11 +98,7 @@ précis avec F5 :
 
 `Nœud Python ROS 2` demande le module Python à exécuter, par exemple
 `robot_devastator.evitement_obstacle`, `robot_devastator.principal` ou
-`interface_pico.interface_pico`. Il demande ensuite si le mode simulation doit être activé.
-La réponse `Non`, sélectionnée par défaut, transmet le mode matériel `reel`.
-
-En CLI, la syntaxe équivalente pour passer un paramètre ROS 2 est
-`ros2 run <package> <executable> --ros-args -p <parametre>:=<valeur>`.
+`interface_pico.interface_pico`.
 
 L'autonomie simple fait avancer lentement le robot lorsque la distance ultrason est suffisante.
 Devant un obstacle, elle arrête les moteurs, oriente la tourelle à gauche, au centre puis à droite,
@@ -125,14 +119,13 @@ source install/setup.bash
 ```
 
 ```bash
-ros2 launch robot_devastator_bringup interface_pico_simulation.launch.yaml
 ros2 launch robot_devastator_bringup interface_pico_reel.launch.yaml
-ros2 launch robot_devastator_bringup autonomie_simple_simulation.launch.yaml
 ros2 launch robot_devastator_bringup autonomie_simple_reel.launch.yaml
 ```
 
 ```bash
-ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs "{gauche: 200, droite: 200}"
+# Roues dans le vide : une valeur inférieure à 300 peut ne pas faire tourner les moteurs.
+ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs "{gauche: 300, droite: 300}"
 ros2 service call /pico/ping std_srvs/srv/Trigger
 ros2 service call /pico/stop std_srvs/srv/Trigger
 ```

@@ -1,6 +1,23 @@
 
 # Contrôle moteurs — Pico WH + MDD3A
 
+## Configuration ROS 2 de l'interface Pico
+
+Le nœud `interface_pico_node` utilise uniquement la liaison UART réelle vers le Pico WH. Les
+paramètres actifs sont regroupés dans
+`src/robot_devastator_bringup/config/interface_pico_reel.yaml` :
+
+- `port` : port UART, actuellement `/dev/ttyS0`
+- `debit` : débit UART, actuellement `115200`
+- `timeout_lecture` : attente maximale d'une lecture UART
+- `periode_maintien_s` : intervalle entre les rappels de la dernière consigne moteur
+- `periode_distance_s` : intervalle entre les demandes de mesure ultrason
+
+Le comportement d'autonomie simple est configuré dans
+`src/robot_devastator_bringup/config/autonomie_simple.yaml`. Les vitesses d'avance, de rotation et
+de recul sont actuellement fixées à `300`, soit le seuil minimal observé pour obtenir un mouvement
+fiable des moteurs.
+
 ## Affectation GPIO (validée)
 
 - Moteur gauche :

@@ -10,5 +10,3 @@ interface_pico_node:
     periode_maintien_s: 0.25
     # Intervalle entre les demandes de mesure ultrason envoyées au Pico.
     periode_distance_s: 0.10
-    # Active les échanges UART avec le matériel réel.
-    mode_materiel: reel

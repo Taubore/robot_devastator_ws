@@ -28,11 +28,6 @@
 - `timeout_lecture` : timeout de lecture série, par défaut `0.1`
 - `periode_maintien_s` : période de renvoi de la dernière consigne, par défaut `0.1`
 - `periode_distance_s` : période des demandes `DIST`, par défaut `0.5`
-- `mode_materiel` : mode d'accès au Pico, par défaut `reel`
-  - `reel` : ouvre le port série et communique avec le Pico WH
-  - `simulation` : n'ouvre aucun port série, accepte `ping` et `stop`, et publie des états
-    simulés
-
 ## Lancement dans Devastator
 
 ```bash
@@ -42,26 +37,19 @@ source install/setup.bash
 ros2 launch robot_devastator_bringup interface_pico_reel.launch.yaml
 ```
 
-Lancement sans Pico ni UART, utile sur Legion-Linux :
-
-```bash
-ros2 launch robot_devastator_bringup interface_pico_simulation.launch.yaml
-```
-
 Les fichiers de lancement et de paramètres sont centralisés dans `robot_devastator_bringup` pour
 éviter plusieurs points d'entrée concurrents. Depuis VSCode, utiliser plutôt les tâches
-`ROS 2 - Lancer interface Pico simulation` et `ROS 2 - Lancer interface Pico réel`.
+`ROS 2 - Lancer interface Pico réel`.
 
 La configuration de débogage `Nœud Python ROS 2` permet de lancer directement
-`interface_pico.interface_pico` avec debugpy. Elle demande si le mode simulation doit être
-activé. Répondre `Non` pour utiliser le Pico réel.
+`interface_pico.interface_pico` avec debugpy.
 
 ## Test rapide
 
-Publier une consigne moteur :
+Publier une consigne moteur avec les roues dans le vide :
 
 ```bash
-ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs "{gauche: 200, droite: 200}"
+ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs "{gauche: 300, droite: 300}"
 ```
 
 Tester les services :
@@ -85,6 +73,6 @@ ros2 topic pub --once /pico/commande_tourelle_deg std_msgs/msg/Int32 "{data: 45}
 ros2 topic pub --once /pico/commande_tourelle_deg std_msgs/msg/Int32 "{data: 140}"
 ```
 
-Pour cette étape, les valeurs utilisées sont `95` pour le centre, `45` pour la gauche et
-`140` pour la droite. Aucune logique de balayage automatique ou d'évitement d'obstacle n'est
+Pour cette étape, les valeurs utilisées sont `95` pour le centre, `140` pour la gauche et
+`45` pour la droite. Aucune logique de balayage automatique ou d'évitement d'obstacle n'est
 ajoutée dans `interface_pico`.
