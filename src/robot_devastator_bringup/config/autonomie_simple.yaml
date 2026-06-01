@@ -1,12 +1,12 @@
 evitement_obstacle_node:
   ros__parameters:
     distance_arret_mm: 350
-    vitesse_avance: 250
+    vitesse_avance: 500
     periode_publication_s: 0.1
     distance_invalide_arrete: true
     angle_tourelle_centre_deg: 95
     angle_tourelle_gauche_deg: 140
     angle_tourelle_droite_deg: 45
     delai_stabilisation_tourelle_s: 0.35
-    vitesse_rotation: 250
-    duree_rotation_s: 0.45
+    vitesse_rotation: 500
+    duree_rotation_s: 0.75
