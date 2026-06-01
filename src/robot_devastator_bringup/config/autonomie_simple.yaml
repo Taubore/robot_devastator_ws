@@ -8,5 +8,10 @@ evitement_obstacle_node:
     angle_tourelle_gauche_deg: 140
     angle_tourelle_droite_deg: 45
     delai_stabilisation_tourelle_s: 0.35
-    vitesse_rotation: 500
-    duree_rotation_s: 0.75
+    distance_degagement_mm: 600
+    mesures_degagement_requises: 3
+    vitesse_rotation_recherche: 300
+    vitesse_recul: 300
+    duree_rotation_recherche_max_s: 4.0
+    duree_recul_s: 0.45
+    marge_choix_direction_mm: 120

@@ -38,11 +38,22 @@ class EtatEvitement(Enum):
     AVANCE = auto()
     STABILISATION_GAUCHE = auto()
     MESURE_GAUCHE = auto()
+    STABILISATION_CENTRE = auto()
+    MESURE_CENTRE = auto()
     STABILISATION_DROITE = auto()
     MESURE_DROITE = auto()
+    STABILISATION_ROTATION = auto()
     ROTATION = auto()
+    RECUL = auto()
     RECENTRAGE = auto()
     VERIFICATION_REPRISE = auto()
+
+
+class CoteRotation(Enum):
+    """Côtés possibles pour la recherche de dégagement."""
+
+    GAUCHE = auto()
+    DROITE = auto()
 
 
 class EvitementObstacle(Node):
@@ -59,8 +70,13 @@ class EvitementObstacle(Node):
         self.declare_parameter('angle_tourelle_gauche_deg', 140)
         self.declare_parameter('angle_tourelle_droite_deg', 45)
         self.declare_parameter('delai_stabilisation_tourelle_s', 0.35)
-        self.declare_parameter('vitesse_rotation', 250)
-        self.declare_parameter('duree_rotation_s', 0.45)
+        self.declare_parameter('distance_degagement_mm', 600)
+        self.declare_parameter('mesures_degagement_requises', 3)
+        self.declare_parameter('vitesse_rotation_recherche', 300)
+        self.declare_parameter('vitesse_recul', 300)
+        self.declare_parameter('duree_rotation_recherche_max_s', 4.0)
+        self.declare_parameter('duree_recul_s', 0.45)
+        self.declare_parameter('marge_choix_direction_mm', 120)
 
         self.distance_arret_mm = int(self.get_parameter('distance_arret_mm').value)
         self.vitesse_avance = int(self.get_parameter('vitesse_avance').value)
@@ -82,8 +98,23 @@ class EvitementObstacle(Node):
         self.delai_stabilisation_tourelle_s = float(
             self.get_parameter('delai_stabilisation_tourelle_s').value
         )
-        self.vitesse_rotation = int(self.get_parameter('vitesse_rotation').value)
-        self.duree_rotation_s = float(self.get_parameter('duree_rotation_s').value)
+        self.distance_degagement_mm = int(
+            self.get_parameter('distance_degagement_mm').value
+        )
+        self.mesures_degagement_requises = int(
+            self.get_parameter('mesures_degagement_requises').value
+        )
+        self.vitesse_rotation_recherche = int(
+            self.get_parameter('vitesse_rotation_recherche').value
+        )
+        self.vitesse_recul = int(self.get_parameter('vitesse_recul').value)
+        self.duree_rotation_recherche_max_s = float(
+            self.get_parameter('duree_rotation_recherche_max_s').value
+        )
+        self.duree_recul_s = float(self.get_parameter('duree_recul_s').value)
+        self.marge_choix_direction_mm = int(
+            self.get_parameter('marge_choix_direction_mm').value
+        )
 
         if self.distance_arret_mm <= 0:
             raise ValueError("Le paramètre 'distance_arret_mm' doit être positif.")
@@ -93,8 +124,22 @@ class EvitementObstacle(Node):
             raise ValueError(
                 "Le paramètre 'delai_stabilisation_tourelle_s' ne peut pas être négatif."
             )
-        if self.duree_rotation_s <= 0.0:
-            raise ValueError("Le paramètre 'duree_rotation_s' doit être positif.")
+        if self.distance_degagement_mm <= 0:
+            raise ValueError("Le paramètre 'distance_degagement_mm' doit être positif.")
+        if self.mesures_degagement_requises <= 0:
+            raise ValueError(
+                "Le paramètre 'mesures_degagement_requises' doit être positif."
+            )
+        if self.duree_rotation_recherche_max_s <= 0.0:
+            raise ValueError(
+                "Le paramètre 'duree_rotation_recherche_max_s' doit être positif."
+            )
+        if self.duree_recul_s <= 0.0:
+            raise ValueError("Le paramètre 'duree_recul_s' doit être positif.")
+        if self.marge_choix_direction_mm < 0:
+            raise ValueError(
+                "Le paramètre 'marge_choix_direction_mm' ne peut pas être négatif."
+            )
         for nom, angle in (
             ('angle_tourelle_centre_deg', self.angle_tourelle_centre_deg),
             ('angle_tourelle_gauche_deg', self.angle_tourelle_gauche_deg),
@@ -112,17 +157,27 @@ class EvitementObstacle(Node):
             )
 
         self.vitesse_avance = self._borner_consigne_moteur(self.vitesse_avance)
-        self.vitesse_rotation = abs(self._borner_consigne_moteur(self.vitesse_rotation))
-        if self.vitesse_rotation == 0:
-            raise ValueError("Le paramètre 'vitesse_rotation' doit être différent de zéro.")
+        self.vitesse_rotation_recherche = abs(
+            self._borner_consigne_moteur(self.vitesse_rotation_recherche)
+        )
+        self.vitesse_recul = abs(self._borner_consigne_moteur(self.vitesse_recul))
+        if self.vitesse_rotation_recherche == 0:
+            raise ValueError(
+                "Le paramètre 'vitesse_rotation_recherche' doit être différent de zéro."
+            )
+        if self.vitesse_recul == 0:
+            raise ValueError("Le paramètre 'vitesse_recul' doit être différent de zéro.")
         self.derniere_distance_mm: int | None = None
         self.numero_derniere_distance = 0
         self.numero_distance_avant_mesure = 0
         self.distance_gauche_mm: int | None = None
+        self.distance_centre_mm: int | None = None
         self.distance_droite_mm: int | None = None
         self.etat = EtatEvitement.AVANCE
         self.fin_etape_s = 0.0
         self.consigne_rotation: tuple[int, int] = (0, 0)
+        self.dernier_cote_rotation = CoteRotation.GAUCHE
+        self.nombre_mesures_degagement = 0
 
         self.consigne_moteurs_pub = self.create_publisher(
             ConsigneMoteurs,
@@ -172,9 +227,20 @@ class EvitementObstacle(Node):
                 f'Distance ultrason invalide reçue: {distance_mm} mm.'
             )
             self.derniere_distance_mm = None
+            self.nombre_mesures_degagement = 0
             return
 
         self.derniere_distance_mm = distance_mm
+        if self.etat == EtatEvitement.ROTATION:
+            if distance_mm >= self.distance_degagement_mm:
+                self.nombre_mesures_degagement += 1
+                if (
+                    self.nombre_mesures_degagement
+                    >= self.mesures_degagement_requises
+                ):
+                    self._commencer_recentrage()
+            else:
+                self.nombre_mesures_degagement = 0
 
     def _publier_consigne_selon_distance(self) -> None:
         """Fait progresser l'évitement et publie une consigne moteur sécuritaire."""
@@ -184,12 +250,20 @@ class EvitementObstacle(Node):
             self._gerer_stabilisation(EtatEvitement.MESURE_GAUCHE)
         elif self.etat == EtatEvitement.MESURE_GAUCHE:
             self._gerer_mesure_gauche()
+        elif self.etat == EtatEvitement.STABILISATION_CENTRE:
+            self._gerer_stabilisation(EtatEvitement.MESURE_CENTRE)
+        elif self.etat == EtatEvitement.MESURE_CENTRE:
+            self._gerer_mesure_centre()
         elif self.etat == EtatEvitement.STABILISATION_DROITE:
             self._gerer_stabilisation(EtatEvitement.MESURE_DROITE)
         elif self.etat == EtatEvitement.MESURE_DROITE:
             self._gerer_mesure_droite()
+        elif self.etat == EtatEvitement.STABILISATION_ROTATION:
+            self._gerer_stabilisation_rotation()
         elif self.etat == EtatEvitement.ROTATION:
             self._gerer_rotation()
+        elif self.etat == EtatEvitement.RECUL:
+            self._gerer_recul()
         elif self.etat == EtatEvitement.RECENTRAGE:
             self._gerer_recentrage()
         elif self.etat == EtatEvitement.VERIFICATION_REPRISE:
@@ -211,6 +285,7 @@ class EvitementObstacle(Node):
         """Arrête le robot et oriente la tourelle vers la gauche."""
         self.arreter_moteurs()
         self.distance_gauche_mm = None
+        self.distance_centre_mm = None
         self.distance_droite_mm = None
         self.publier_consigne_tourelle(self.angle_tourelle_gauche_deg)
         self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s
@@ -233,12 +308,23 @@ class EvitementObstacle(Node):
         )
 
     def _gerer_mesure_gauche(self) -> None:
-        """Mémorise une nouvelle mesure gauche, puis oriente la tourelle à droite."""
+        """Mémorise une nouvelle mesure gauche, puis oriente la tourelle au centre."""
         self.arreter_moteurs()
         if not self._nouvelle_distance_valide_disponible():
             return
 
         self.distance_gauche_mm = self.derniere_distance_mm
+        self.publier_consigne_tourelle(self.angle_tourelle_centre_deg)
+        self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s
+        self.etat = EtatEvitement.STABILISATION_CENTRE
+
+    def _gerer_mesure_centre(self) -> None:
+        """Mémorise une nouvelle mesure centrale, puis oriente la tourelle à droite."""
+        self.arreter_moteurs()
+        if not self._nouvelle_distance_valide_disponible():
+            return
+
+        self.distance_centre_mm = self.derniere_distance_mm
         self.publier_consigne_tourelle(self.angle_tourelle_droite_deg)
         self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s
         self.etat = EtatEvitement.STABILISATION_DROITE
@@ -255,24 +341,61 @@ class EvitementObstacle(Node):
             return
 
         self.distance_droite_mm = distance_droite_mm
-        if distance_gauche_mm >= distance_droite_mm:
-            self.consigne_rotation = (-self.vitesse_rotation, self.vitesse_rotation)
-        else:
-            self.consigne_rotation = (self.vitesse_rotation, -self.vitesse_rotation)
+        ecart_mm = distance_gauche_mm - distance_droite_mm
+        if abs(ecart_mm) >= self.marge_choix_direction_mm:
+            if ecart_mm > 0:
+                self.dernier_cote_rotation = CoteRotation.GAUCHE
+            else:
+                self.dernier_cote_rotation = CoteRotation.DROITE
 
-        self.fin_etape_s = monotonic() + self.duree_rotation_s
+        if self.dernier_cote_rotation == CoteRotation.GAUCHE:
+            vitesse = self.vitesse_rotation_recherche
+            self.consigne_rotation = (-vitesse, vitesse)
+            angle_rotation_deg = self.angle_tourelle_gauche_deg
+        else:
+            vitesse = self.vitesse_rotation_recherche
+            self.consigne_rotation = (vitesse, -vitesse)
+            angle_rotation_deg = self.angle_tourelle_droite_deg
+
+        self.publier_consigne_tourelle(angle_rotation_deg)
+        self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s
+        self.etat = EtatEvitement.STABILISATION_ROTATION
+
+    def _gerer_stabilisation_rotation(self) -> None:
+        """Attend la stabilisation de la tourelle avant de chercher un dégagement."""
+        self.arreter_moteurs()
+        if monotonic() < self.fin_etape_s:
+            return
+
+        self.nombre_mesures_degagement = 0
+        self.fin_etape_s = monotonic() + self.duree_rotation_recherche_max_s
         self.etat = EtatEvitement.ROTATION
 
     def _gerer_rotation(self) -> None:
-        """Tourne brièvement sur place, puis arrête et recentre la tourelle."""
+        """Tourne sur place jusqu'au dégagement ou jusqu'à l'expiration du délai."""
+        if monotonic() >= self.fin_etape_s:
+            self.arreter_moteurs()
+            self.fin_etape_s = monotonic() + self.duree_recul_s
+            self.etat = EtatEvitement.RECUL
+            return
+
         if self.derniere_distance_mm is None:
             self.arreter_moteurs()
             return
 
+        self.publier_consigne_moteurs(*self.consigne_rotation)
+
+    def _gerer_recul(self) -> None:
+        """Recule brièvement après une recherche de dégagement infructueuse."""
         if monotonic() < self.fin_etape_s:
-            self.publier_consigne_moteurs(*self.consigne_rotation)
+            self.publier_consigne_moteurs(-self.vitesse_recul, -self.vitesse_recul)
             return
 
+        self.arreter_moteurs()
+        self._commencer_analyse_obstacle()
+
+    def _commencer_recentrage(self) -> None:
+        """Arrête le robot et recentre la tourelle après un dégagement confirmé."""
         self.arreter_moteurs()
         self.publier_consigne_tourelle(self.angle_tourelle_centre_deg)
         self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s

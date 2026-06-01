@@ -57,7 +57,7 @@ Aucune action ROS 2 n'est implémentée actuellement.
 | Node | Package | Exécutable / module | État | Rôle |
 |---|---|---|---|---|
 | `interface_pico_node` | `interface_pico` | `interface_pico_node` / `interface_pico.interface_pico` | Actif | Exposer les topics et services Pico, puis traduire les commandes ROS 2 vers UART |
-| `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, analyser un obstacle à gauche et à droite, puis tourner brièvement vers le côté le plus dégagé |
+| `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, balayer avec la tourelle, puis tourner jusqu'à trouver un dégagement |
 | `principal` | `robot_devastator` | `principal` / `robot_devastator.principal` | Actif | Valider la chaîne moteur ROS 2 vers Pico avec une courte séquence de test |
 | `voix_piper` | `robot_devastator` | `voix_piper_service` / `robot_devastator.voix_piper_service` | Gelé | Services audio Piper amorcés, mais non intégrés au comportement principal actuel |
 
@@ -107,9 +107,11 @@ En CLI, la syntaxe équivalente pour passer un paramètre ROS 2 est
 `ros2 run <package> <executable> --ros-args -p <parametre>:=<valeur>`.
 
 L'autonomie simple fait avancer lentement le robot lorsque la distance ultrason est suffisante.
-Devant un obstacle, elle arrête les moteurs, oriente la tourelle à gauche puis à droite, compare
-deux mesures fraîches et tourne brièvement vers le côté le plus dégagé. Après recentrage de la
-tourelle, elle reprend l'avance seulement si une nouvelle mesure avant est valide et dégagée.
+Devant un obstacle, elle arrête les moteurs, oriente la tourelle à gauche, au centre puis à droite,
+et compare les mesures fraîches. Elle tourne vers le côté le plus dégagé jusqu'à confirmer le
+dégagement avec plusieurs mesures consécutives. Si aucun dégagement n'est trouvé dans le délai
+prévu, elle recule brièvement et refait un balayage. Après recentrage de la tourelle, elle reprend
+l'avance seulement si une nouvelle mesure avant est valide et dégagée.
 
 ## Commandes CLI de secours
 
