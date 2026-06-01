@@ -5,7 +5,7 @@
 Mettre en place une autonomie simple au sonar, sans intégrer de complexité avancée, mais en posant 
 base de la structure du projet de façon très modulaire permettant ainsi de la faire évoluer peu à 
 peu en complexité, avec de plus en plus de composantes. Ambition également de récupérer des modules
-dans d'autres projets de robot acec ROS 2.
+dans d'autres projets de robot avec ROS 2.
 
 Comportement cible immédiat :
 
@@ -44,7 +44,4 @@ Voir la section [composantes active de l'inventaire](inventaire_composantes.md)
 
 ## Prochain test
 
-Le prochain test d'autonomie est la version v0 du nœud `evitement_obstacle_node` :
-avancer lentement quand la distance ultrason avant est supérieure au seuil d'arrêt, puis arrêter
-les moteurs quand l'obstacle est trop près. Cette version ne tourne pas encore et n'utilise pas la
-tourelle.
+Lorsque obstacle détecter, orienter le sonar à gauche puis à droite avec prise de mesure pour chacune de ces position puis tourner l'équivalent de 45 degrés (on va y aller approximativement ou empiriquement pour l'instant) dans la direction où la valeur retournée est la plus élevé (donc la direction qui apparaît la plus dégagée). Ensuite, on poursuit l'avancement en ligne droite.
