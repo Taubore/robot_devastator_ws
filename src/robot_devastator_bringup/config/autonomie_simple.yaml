@@ -1,17 +1,34 @@
 evitement_obstacle_node:
   ros__parameters:
+    # Distance avant minimale avant de déclencher l'arrêt et le balayage de la tourelle.
     distance_arret_mm: 350
-    vitesse_avance: 500
+    # Consigne appliquée aux deux moteurs pendant l'avance lente, entre 0 et 1000.
+    vitesse_avance: 300
+    # Intervalle entre les mises à jour de la machine d'états et des consignes moteur.
     periode_publication_s: 0.1
+    # Conserve l'arrêt des moteurs lorsqu'une mesure ultrason est invalide.
     distance_invalide_arrete: true
+    # Angle du sonar utilisé pour surveiller la direction d'avance du robot.
     angle_tourelle_centre_deg: 95
+    # Angle du sonar utilisé pour mesurer le dégagement disponible à gauche.
     angle_tourelle_gauche_deg: 140
+    # Angle du sonar utilisé pour mesurer le dégagement disponible à droite.
     angle_tourelle_droite_deg: 45
+    # Attente après chaque mouvement du servo avant d'utiliser une nouvelle mesure.
     delai_stabilisation_tourelle_s: 0.35
+    # Distance avant requise pendant la rotation pour considérer la voie dégagée.
     distance_degagement_mm: 600
+    # Nombre de mesures dégagées consécutives requises avant d'arrêter la rotation.
     mesures_degagement_requises: 3
+    # Consigne absolue appliquée aux moteurs en sens opposés pour tourner sur place.
     vitesse_rotation_recherche: 300
+    # Consigne absolue appliquée aux deux moteurs pendant le recul de récupération.
     vitesse_recul: 300
+    # Durée minimale de rotation avant d'accepter les mesures de dégagement.
+    duree_rotation_recherche_min_s: 0.6
+    # Durée maximale de recherche avant d'arrêter la rotation et de reculer.
     duree_rotation_recherche_max_s: 4.0
+    # Durée du recul de récupération avant de refaire un balayage.
     duree_recul_s: 0.45
+    # Écart latéral minimal requis pour changer le dernier côté de rotation choisi.
     marge_choix_direction_mm: 120

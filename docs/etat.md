@@ -14,9 +14,10 @@ Comportement cible immédiat :
 3. arrêter le robot
 4. orienter le sonar à gauche, au centre puis à droite avec prise de mesure fraîche
 5. comparer les distances mesurées
-6. tourner vers le côté le plus dégagé jusqu'à confirmer un dégagement suffisant
-7. reculer brièvement et refaire le balayage si la rotation ne trouve aucun dégagement
-8. retour à l'étape 1
+6. recentrer le sonar et tourner vers le côté le plus dégagé
+7. confirmer le dégagement avant seulement après une durée minimale de rotation
+8. reculer brièvement et refaire le balayage si la rotation ne trouve aucun dégagement
+9. retour à l'étape 1
 
 L’objectif du moment n’est pas encore de faire de la navigation ROS 2 avancée, de l’odométrie,
 du PID, du lidar, de la caméra ou de la cartographie.
@@ -50,9 +51,9 @@ Valider physiquement la nouvelle autonomie simple avec les roues dans le vide :
 1. placer un obstacle devant le sonar ;
 2. vérifier l'arrêt explicite des moteurs ;
 3. vérifier les mesures fraîches à gauche, au centre, puis à droite ;
-4. vérifier la rotation vers le côté le plus dégagé ;
-5. publier trois mesures consécutives d'au moins `600 mm` et vérifier l'arrêt de la rotation ;
-6. vérifier le recentrage de la tourelle ;
+4. vérifier le recentrage du sonar avant la rotation vers le côté le plus dégagé ;
+5. vérifier que la rotation dure au moins `0,6 s` ;
+6. publier trois mesures consécutives d'au moins `600 mm` et vérifier l'arrêt de la rotation ;
 7. vérifier que l'avance reprend seulement lorsque la mesure avant est valide et dégagée ;
 8. refaire un essai sans dégagement et vérifier le recul bref après `4,0 s`, puis un nouveau
    balayage.

@@ -153,6 +153,7 @@ Quant à la l'architecture directrice, il s'agit d'appliquer les principes de mo
 - Éviter la surconception
 - Utiliser constantes, `Enum` ou `dataclass` lorsque cela évite des chaînes littérales dispersées
 - Ne pas transformer un script simple en framework
+- Ajoute un peu plus de commentaires que la moyenne pour faciliter la relecture, surtout sur l’intention, les calculs, les conditions et les logiques non immédiates, sans commenter trivialement chaque ligne.
 
 ## Pylance
 

@@ -1,8 +1,14 @@
 interface_pico_node:
   ros__parameters:
+    # Port série matériel relié au Raspberry Pi Pico WH.
     port: /dev/ttyS0
+    # Débit UART partagé avec le firmware du Pico.
     debit: 115200
+    # Durée maximale d'attente d'une réponse UART avant de poursuivre la boucle.
     timeout_lecture: 0.02
+    # Intervalle entre les rappels de la dernière consigne moteur au Pico.
     periode_maintien_s: 0.25
+    # Intervalle entre les demandes de mesure ultrason envoyées au Pico.
     periode_distance_s: 0.10
+    # Active les échanges UART avec le matériel réel.
     mode_materiel: reel

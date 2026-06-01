@@ -74,6 +74,7 @@ class EvitementObstacle(Node):
         self.declare_parameter('mesures_degagement_requises', 3)
         self.declare_parameter('vitesse_rotation_recherche', 300)
         self.declare_parameter('vitesse_recul', 300)
+        self.declare_parameter('duree_rotation_recherche_min_s', 0.6)
         self.declare_parameter('duree_rotation_recherche_max_s', 4.0)
         self.declare_parameter('duree_recul_s', 0.45)
         self.declare_parameter('marge_choix_direction_mm', 120)
@@ -108,6 +109,9 @@ class EvitementObstacle(Node):
             self.get_parameter('vitesse_rotation_recherche').value
         )
         self.vitesse_recul = int(self.get_parameter('vitesse_recul').value)
+        self.duree_rotation_recherche_min_s = float(
+            self.get_parameter('duree_rotation_recherche_min_s').value
+        )
         self.duree_rotation_recherche_max_s = float(
             self.get_parameter('duree_rotation_recherche_max_s').value
         )
@@ -130,9 +134,14 @@ class EvitementObstacle(Node):
             raise ValueError(
                 "Le paramètre 'mesures_degagement_requises' doit être positif."
             )
-        if self.duree_rotation_recherche_max_s <= 0.0:
+        if self.duree_rotation_recherche_min_s < 0.0:
             raise ValueError(
-                "Le paramètre 'duree_rotation_recherche_max_s' doit être positif."
+                "Le paramètre 'duree_rotation_recherche_min_s' ne peut pas être négatif."
+            )
+        if self.duree_rotation_recherche_max_s <= self.duree_rotation_recherche_min_s:
+            raise ValueError(
+                "Le paramètre 'duree_rotation_recherche_max_s' doit être supérieur à "
+                "'duree_rotation_recherche_min_s'."
             )
         if self.duree_recul_s <= 0.0:
             raise ValueError("Le paramètre 'duree_recul_s' doit être positif.")
@@ -175,6 +184,7 @@ class EvitementObstacle(Node):
         self.distance_droite_mm: int | None = None
         self.etat = EtatEvitement.AVANCE
         self.fin_etape_s = 0.0
+        self.debut_validation_degagement_s = 0.0
         self.consigne_rotation: tuple[int, int] = (0, 0)
         self.dernier_cote_rotation = CoteRotation.GAUCHE
         self.nombre_mesures_degagement = 0
@@ -232,6 +242,9 @@ class EvitementObstacle(Node):
 
         self.derniere_distance_mm = distance_mm
         if self.etat == EtatEvitement.ROTATION:
+            if monotonic() < self.debut_validation_degagement_s:
+                self.nombre_mesures_degagement = 0
+                return
             if distance_mm >= self.distance_degagement_mm:
                 self.nombre_mesures_degagement += 1
                 if (
@@ -351,23 +364,24 @@ class EvitementObstacle(Node):
         if self.dernier_cote_rotation == CoteRotation.GAUCHE:
             vitesse = self.vitesse_rotation_recherche
             self.consigne_rotation = (-vitesse, vitesse)
-            angle_rotation_deg = self.angle_tourelle_gauche_deg
         else:
             vitesse = self.vitesse_rotation_recherche
             self.consigne_rotation = (vitesse, -vitesse)
-            angle_rotation_deg = self.angle_tourelle_droite_deg
 
-        self.publier_consigne_tourelle(angle_rotation_deg)
+        self.publier_consigne_tourelle(self.angle_tourelle_centre_deg)
         self.fin_etape_s = monotonic() + self.delai_stabilisation_tourelle_s
         self.etat = EtatEvitement.STABILISATION_ROTATION
 
     def _gerer_stabilisation_rotation(self) -> None:
-        """Attend la stabilisation de la tourelle avant de chercher un dégagement."""
+        """Attend le recentrage de la tourelle avant de chercher un dégagement."""
         self.arreter_moteurs()
         if monotonic() < self.fin_etape_s:
             return
 
         self.nombre_mesures_degagement = 0
+        self.debut_validation_degagement_s = (
+            monotonic() + self.duree_rotation_recherche_min_s
+        )
         self.fin_etape_s = monotonic() + self.duree_rotation_recherche_max_s
         self.etat = EtatEvitement.ROTATION
 

@@ -109,9 +109,10 @@ En CLI, la syntaxe équivalente pour passer un paramètre ROS 2 est
 L'autonomie simple fait avancer lentement le robot lorsque la distance ultrason est suffisante.
 Devant un obstacle, elle arrête les moteurs, oriente la tourelle à gauche, au centre puis à droite,
 et compare les mesures fraîches. Elle tourne vers le côté le plus dégagé jusqu'à confirmer le
-dégagement avec plusieurs mesures consécutives. Si aucun dégagement n'est trouvé dans le délai
-prévu, elle recule brièvement et refait un balayage. Après recentrage de la tourelle, elle reprend
-l'avance seulement si une nouvelle mesure avant est valide et dégagée.
+dégagement avant avec plusieurs mesures consécutives prises par le sonar recentré, après une durée
+minimale de rotation. Si aucun dégagement n'est trouvé dans le délai prévu, elle recule brièvement
+et refait un balayage. Elle reprend l'avance seulement si une nouvelle mesure avant est valide et
+dégagée.
 
 ## Commandes CLI de secours
 
