@@ -8,5 +8,7 @@ interface_pico_node:
     timeout_lecture: 0.02
     # Intervalle entre les rappels de la dernière consigne moteur au Pico.
     periode_maintien_s: 0.25
+    # Durée maximale sans nouvelle consigne ROS avant de forcer l'arrêt des moteurs.
+    delai_expiration_consigne_moteurs_s: 0.5
     # Intervalle entre les demandes de mesure ultrason envoyées au Pico.
     periode_distance_s: 0.10

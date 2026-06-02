@@ -5,12 +5,13 @@ Nœud ROS 2 qui relie les interfaces ROS au transport série (UART) du Pico.
 
 from __future__ import annotations
 
+from time import monotonic
+from typing import Final
+
 import rclpy
 import serial
 
 from rclpy.node import Node
-
-from typing import Final
 
 from commun.msg import ConsigneMoteurs
 from std_msgs.msg import Int32, String
@@ -48,18 +49,27 @@ class NoeudInterfacePico(Node):
         self.declare_parameter('debit', 115200)
         self.declare_parameter('timeout_lecture', 0.1)
         self.declare_parameter('periode_maintien_s', 0.1)
+        self.declare_parameter('delai_expiration_consigne_moteurs_s', 0.5)
         self.declare_parameter('periode_distance_s', 0.5)
 
         self.port = str(self.get_parameter('port').value)
         self.debit = int(self.get_parameter('debit').value)
         timeout_lecture = float(self.get_parameter('timeout_lecture').value)
         periode_maintien_s = float(self.get_parameter('periode_maintien_s').value)
+        self.delai_expiration_consigne_moteurs_s = float(
+            self.get_parameter('delai_expiration_consigne_moteurs_s').value
+        )
         periode_distance_s = float(self.get_parameter('periode_distance_s').value)
 
         if timeout_lecture <= 0.0:
             raise ValueError("Le paramètre 'timeout_lecture' doit être strictement positif.")
         if periode_maintien_s <= 0.0:
             raise ValueError("Le paramètre 'periode_maintien_s' doit être strictement positif.")
+        if self.delai_expiration_consigne_moteurs_s <= 0.0:
+            raise ValueError(
+                "Le paramètre 'delai_expiration_consigne_moteurs_s' "
+                'doit être strictement positif.'
+            )
         if periode_distance_s <= 0.0:
             raise ValueError("Le paramètre 'periode_distance_s' doit être strictement positif.")
         self.transport = TransportSeriePico(
@@ -74,6 +84,7 @@ class NoeudInterfacePico(Node):
         self._indisponibilite_uart_journalisee = False
 
         self.derniere_consigne_moteurs: tuple[int, int] | None = None
+        self.instant_derniere_consigne_moteurs_s: float | None = None
 
         self.publisher_etat = self.create_publisher(
             String,
@@ -100,9 +111,9 @@ class NoeudInterfacePico(Node):
         self.service_stop = self.create_service(Trigger, SERVICE_STOP, self._gerer_stop_callback)
         self.service_ping = self.create_service(Trigger, SERVICE_PING, self._gerer_ping_callback)
 
-        # Un timer relit le port sans boucle bloquante, un autre renvoie la consigne
-        # des moteurs mémorisée avant le timeout de 500 ms du Pico et le dernier demande
-        # la distance.
+        # Un timer relit le port sans boucle bloquante, un autre renvoie temporairement
+        # la consigne mémorisée avant le timeout de 500 ms du Pico et le dernier demande
+        # la distance. Une commande ROS trop ancienne est remplacée par un arrêt.
         self.timer_lecture = self.create_timer(
             timeout_lecture,
             self._lire_et_traiter_reponse_uart_callback
@@ -174,6 +185,7 @@ class NoeudInterfacePico(Node):
             return
 
         self.derniere_consigne_moteurs = (gauche, droite)
+        self.instant_derniere_consigne_moteurs_s = monotonic()
 
     # --- Callbacks des services ---
 
@@ -182,6 +194,7 @@ class NoeudInterfacePico(Node):
         Demande l'arrêt moteur et mémorise une consigne des moteurs nulle.
         """
 
+        self._memoriser_arret_moteurs()
         try:
             self.transport.stop()
         except (serial.SerialException, OSError) as erreur:
@@ -189,8 +202,6 @@ class NoeudInterfacePico(Node):
             reponse.success = False
             reponse.message = f'STOP non envoyé : {erreur}'
             return reponse
-
-        self.derniere_consigne_moteurs = (0, 0)
         reponse.success = True
         reponse.message = 'Commande STOP acceptée.'
         return reponse
@@ -231,7 +242,7 @@ class NoeudInterfacePico(Node):
 
     def _maintenir_derniere_consigne_moteurs_callback(self) -> None:
         """
-        Répète la dernière consigne des moteurs valide pour éviter le timeout du Pico.
+        Répète temporairement la dernière consigne valide avant le timeout du Pico.
         """
 
         if self.derniere_consigne_moteurs is None:
@@ -240,6 +251,20 @@ class NoeudInterfacePico(Node):
             return
 
         gauche, droite = self.derniere_consigne_moteurs
+        if (
+            (gauche != 0 or droite != 0)
+            and (
+                self.instant_derniere_consigne_moteurs_s is None
+                or monotonic() - self.instant_derniere_consigne_moteurs_s
+                > self.delai_expiration_consigne_moteurs_s
+            )
+        ):
+            self.get_logger().warn(
+                'Consigne moteur ROS expirée : arrêt explicite envoyé au Pico.'
+            )
+            self._memoriser_arret_moteurs()
+            gauche, droite = self.derniere_consigne_moteurs
+
         try:
             self.transport.set_moteurs(gauche, droite)
         except (serial.SerialException, OSError) as erreur:
@@ -280,11 +305,20 @@ class NoeudInterfacePico(Node):
 
     # --- Méthodes privées utilitaires ---
 
+    def _memoriser_arret_moteurs(self) -> None:
+        """
+        Remplace toute ancienne consigne moteur par un arrêt sécuritaire.
+        """
+
+        self.derniere_consigne_moteurs = (0, 0)
+        self.instant_derniere_consigne_moteurs_s = None
+
     def _signaler_erreur_uart(self, message: str) -> None:
         """
         Ferme le port après une erreur UART déjà expliquée dans les logs.
         """
 
+        self._memoriser_arret_moteurs()
         self.get_logger().error(message)
         self.transport.fermer()
         self._uart_disponible = False
@@ -297,6 +331,8 @@ class NoeudInterfacePico(Node):
 
         try:
             self.transport.connecter()
+            if not self._uart_disponible:
+                self.transport.stop()
         except (serial.SerialException, OSError) as erreur:
             if self._uart_disponible:
                 self.get_logger().error(f'Liaison UART perdue: {erreur}')
@@ -304,13 +340,16 @@ class NoeudInterfacePico(Node):
                 self.get_logger().warn(
                     f'Liaison UART indisponible au démarrage ou en reprise: {erreur}'
                 )
+            self._memoriser_arret_moteurs()
+            self.transport.fermer()
             self._uart_disponible = False
             self._indisponibilite_uart_journalisee = True
             return False
 
         if not self._uart_disponible:
+            self._memoriser_arret_moteurs()
             self.get_logger().info(
-                f'Interface Pico ouverte sur {self.port} à {self.debit} bauds.'
+                f'Interface Pico ouverte sur {self.port} à {self.debit} bauds avec arrêt moteur.'
             )
         self._uart_disponible = True
         self._indisponibilite_uart_journalisee = False
@@ -323,6 +362,7 @@ class NoeudInterfacePico(Node):
         Demande l'arrêt moteur puis ferme le port série avant l'arrêt complet du nœud.
         """
 
+        self._memoriser_arret_moteurs()
         try:
             self.transport.stop()
         except (serial.SerialException, OSError) as erreur:

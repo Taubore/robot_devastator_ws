@@ -106,7 +106,7 @@ Aucun.
 | Période | Callback | Rôle |
 |---|---|---|
 | Paramètre `timeout_lecture` | `_lire_et_traiter_reponse_uart_callback` | Lire une éventuelle ligne UART sans boucle bloquante. |
-| Paramètre `periode_maintien_s` | `_maintenir_derniere_consigne_moteurs_callback` | Répéter la dernière consigne moteur valide avant le timeout du Pico. |
+| Paramètre `periode_maintien_s` | `_maintenir_derniere_consigne_moteurs_callback` | Répéter temporairement la dernière consigne moteur valide ou transmettre un arrêt si elle expire. |
 | Paramètre `periode_distance_s` | `_demander_distance_callback` | Envoyer périodiquement la commande UART `DIST`. |
 
 **Paramètres déclarés et lus**
@@ -117,6 +117,7 @@ Aucun.
 | `debit` | `115200` | `115200` | Débit UART en bauds. |
 | `timeout_lecture` | `0.1` | `0.02` | Durée maximale d'une lecture UART et période du timer de lecture. |
 | `periode_maintien_s` | `0.1` | `0.25` | Intervalle de répétition de la dernière consigne moteur. |
+| `delai_expiration_consigne_moteurs_s` | `0.5` | `0.5` | Durée maximale sans nouvelle consigne ROS avant un arrêt explicite. |
 | `periode_distance_s` | `0.5` | `0.10` | Intervalle entre deux demandes de distance ultrason. |
 
 ### `evitement_obstacle_node`

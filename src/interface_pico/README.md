@@ -28,10 +28,17 @@
 - `debit` : débit UART, par défaut `115200`
 - `timeout_lecture` : timeout de lecture série, par défaut `0.1`
 - `periode_maintien_s` : période de renvoi de la dernière consigne, par défaut `0.1`
+- `delai_expiration_consigne_moteurs_s` : délai maximal sans nouvelle consigne ROS avant un arrêt
+  explicite, par défaut `0.5`
 - `periode_distance_s` : période des demandes `DIST`, par défaut `0.5`
 
 Le lancement Devastator charge `config/interface_pico.yaml` depuis `robot_devastator_bringup`.
-Les valeurs actives sont `0.02 s`, `0.25 s` et `0.10 s` pour ces trois paramètres.
+Les valeurs actives sont `0.02 s`, `0.25 s`, `0.5 s` et `0.10 s` pour ces quatre paramètres.
+
+Le nœud répète temporairement la dernière consigne moteur afin de respecter le timeout du Pico.
+Si aucune nouvelle consigne ROS n'arrive avant le délai d'expiration, il transmet et mémorise
+un arrêt. Après une erreur ou une reconnexion UART, il repart aussi à l'arrêt et attend une
+nouvelle consigne ROS avant d'autoriser un mouvement.
 
 ## Lancement dans Devastator
 

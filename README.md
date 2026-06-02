@@ -109,6 +109,10 @@ minimale de rotation. Si aucun dégagement n'est trouvé dans le délai prévu, 
 et refait un balayage. Elle reprend l'avance seulement si une nouvelle mesure avant est valide et
 dégagée.
 
+Par sécurité, `interface_pico_node` maintient une consigne moteur seulement pendant un délai borné.
+Sans nouvelle consigne ROS pendant `0.5 s`, ou après une erreur UART, il transmet et mémorise un
+arrêt. Une reconnexion UART repart également à l'arrêt avant d'accepter une nouvelle commande.
+
 Au lancement de l'autonomie simple, `annonces_audio` vérifie les annonces configurées et demande à
 `voix_piper` de générer uniquement les fichiers WAV manquants. Les fichiers sont conservés dans
 `~/.cache/robot_devastator/audio`, puis réutilisés aux lancements suivants afin de ne pas ralentir

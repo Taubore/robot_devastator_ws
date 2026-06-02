@@ -11,6 +11,8 @@ regroupés dans `src/robot_devastator_bringup/config/interface_pico.yaml` :
 - `timeout_lecture` : attente maximale d'une lecture UART, actuellement `0.02 s`
 - `periode_maintien_s` : intervalle entre les rappels de la dernière consigne moteur,
   actuellement `0.25 s`
+- `delai_expiration_consigne_moteurs_s` : délai maximal sans nouvelle consigne ROS avant un arrêt
+  explicite, actuellement `0.5 s`
 - `periode_distance_s` : intervalle entre les demandes de mesure ultrason, actuellement `0.10 s`
 
 Le comportement d'autonomie simple est configuré dans
@@ -164,7 +166,10 @@ confirme pas à lui seul la réception d'une réponse du Pico. Pour observer une
 
 ### Sécurité
 
-- arrêt automatique si aucune commande valide reçue depuis plus de `500 ms`
+- arrêt automatique par le Pico si aucune commande UART valide n'est reçue depuis plus de `500 ms`
+- arrêt explicite par `interface_pico_node` si aucune nouvelle consigne moteur ROS n'est reçue
+  depuis plus de `500 ms`
+- neutralisation de l'ancienne consigne moteur après une erreur ou une reconnexion UART
 - tentative d'envoi de `STOP` par `interface_pico_node` avant la fermeture de la liaison UART
 
 ## Règles de conception
