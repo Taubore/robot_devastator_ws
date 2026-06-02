@@ -44,7 +44,7 @@ communes du projet.
 
 | Service | Type | Serveur | Client connu | Rôle |
 |---|---|---|---|---|
-| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico_node` | Outil de diagnostic | Vérifier que la chaîne ROS 2 vers Pico répond |
+| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico_node` | Outil de diagnostic | Demander l'envoi de `PING` au Pico ; le succès confirme l'envoi UART, pas la réception d'une réponse |
 | `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico_node` | Outil de diagnostic | Demander un arrêt explicite au Pico |
 | `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `principal` | Générer à l'avance un fichier WAV absent du cache persistant |
 | `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `principal` | Jouer un fichier WAV déjà généré |
@@ -53,9 +53,9 @@ communes du projet.
 
 Aucune action ROS 2 n'est implémentée actuellement.
 
-## Nodes ROS 2
+## Nœuds ROS 2
 
-| Node | Package | Exécutable / module | État | Rôle |
+| Nœud | Package | Exécutable / module | État | Rôle |
 |---|---|---|---|---|
 | `interface_pico_node` | `interface_pico` | `interface_pico_node` / `interface_pico.interface_pico` | Actif | Exposer les topics et services Pico, puis traduire les commandes ROS 2 vers UART |
 | `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, balayer avec la tourelle, puis tourner jusqu'à trouver un dégagement |
@@ -112,7 +112,7 @@ dégagée.
 Au lancement de l'autonomie simple, `principal` vérifie les annonces configurées et demande à
 `voix_piper` de générer uniquement les fichiers WAV manquants. Les fichiers sont conservés dans
 `~/.cache/robot_devastator/audio`, puis réutilisés aux lancements suivants afin de ne pas ralentir
-le comportement du robot sur Raspberry Pi 4. Les annonces peuvent proposer plusieurs variantes;
+le comportement du robot sur Raspberry Pi 4. Les annonces peuvent proposer plusieurs variantes ;
 une chaîne vide dans `config/principal.yaml` représente une variante silencieuse.
 
 ## Commandes CLI de secours
@@ -139,8 +139,9 @@ ros2 service call /pico/stop std_srvs/srv/Trigger
 
 ## Documentation détaillée
 
-- [État actuel](docs/etat.md)
+- [Carte ROS 2 pour l'apprentissage](docs/carte_ros_apprentissage.md)
+- [Journal des essais](docs/journal_essais.md)
 - [Architecture cible](docs/architecture_cible.md)
 - [Paramètres techniques](docs/parametres.md)
-- [Connexions des composantes matériel](docs/connexions.md)
-- [Inventaire des composantes matériel principales](docs/inventaire_composantes.md)
+- [Connexions des composantes matérielles](docs/connexions.md)
+- [Inventaire des composantes matérielles principales](docs/inventaire_composantes.md)

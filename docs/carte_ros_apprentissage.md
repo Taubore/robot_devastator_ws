@@ -95,7 +95,7 @@ et de paramètres décrits plus bas.
 | Service | Type | Rôle |
 |---|---|---|
 | `/pico/stop` | `std_srvs/srv/Trigger` | Envoyer `STOP` au Pico et mémoriser la consigne moteur `(0, 0)`. |
-| `/pico/ping` | `std_srvs/srv/Trigger` | Envoyer `PING` au Pico pour vérifier la chaîne de communication. |
+| `/pico/ping` | `std_srvs/srv/Trigger` | Envoyer `PING` au Pico. Le succès confirme l'envoi UART, pas la réception d'une réponse. |
 
 **Clients de services utilisés**
 
@@ -105,9 +105,9 @@ Aucun.
 
 | Période | Callback | Rôle |
 |---|---|---|
-| Paramètre `timeout_lecture` | `_lire_et_publier_etat` | Lire une éventuelle ligne UART sans boucle bloquante. |
-| Paramètre `periode_maintien_s` | `_maintenir_derniere_consigne` | Répéter la dernière consigne moteur valide avant le timeout du Pico. |
-| Paramètre `periode_distance_s` | `_demander_distance` | Envoyer périodiquement la commande UART `DIST`. |
+| Paramètre `timeout_lecture` | `_lire_et_traiter_reponse_uart_callback` | Lire une éventuelle ligne UART sans boucle bloquante. |
+| Paramètre `periode_maintien_s` | `_maintenir_derniere_consigne_moteurs_callback` | Répéter la dernière consigne moteur valide avant le timeout du Pico. |
+| Paramètre `periode_distance_s` | `_demander_distance_callback` | Envoyer périodiquement la commande UART `DIST`. |
 
 **Paramètres déclarés et lus**
 
@@ -176,6 +176,9 @@ Aucun.
 | `duree_rotation_recherche_max_s` | `4.0` | `3.0` | Durée maximale de rotation avant un recul de récupération. |
 | `duree_recul_s` | `0.45` | `2.0` | Durée du recul de récupération. |
 | `marge_choix_direction_mm` | `120` | `120` | Écart minimal entre gauche et droite pour changer le côté choisi. |
+
+Les valeurs `45°` et `140°` sont celles de la configuration active. Leur association physique avec
+les côtés gauche et droit doit être confirmée sur le robot par un essai manuel de la tourelle.
 
 ### `principal`
 
@@ -288,7 +291,7 @@ Aucun.
 
 | Service | Type | Serveur | Client connu dans le workspace | Rôle |
 |---|---|---|---|---|
-| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico_node` | Aucun client interne connu | Vérifier la chaîne ROS 2 vers UART en envoyant `PING`. |
+| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico_node` | Aucun client interne connu | Envoyer `PING` sur l'UART ; le succès ne confirme pas la réception d'une réponse. |
 | `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico_node` | Aucun client interne connu | Demander un arrêt explicite des moteurs au Pico. |
 | `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `principal` | Générer un fichier WAV absent du cache persistant. |
 | `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `principal` | Jouer un fichier WAV existant. |
@@ -330,7 +333,7 @@ l'autonomie simple actuelle du robot.
   doit pas y être cherchée.
 - `evitement_obstacle_node` contient la machine d'états : c'est le fichier principal à lire pour
   comprendre les décisions du robot.
-- `principal` transforme des événements de haut niveau en demandes audio; il ne pilote pas les
+- `principal` transforme des événements de haut niveau en demandes audio ; il ne pilote pas les
   moteurs.
 - `voix_piper` isole les appels aux programmes externes `piper` et `aplay`.
 - Aucun serveur ou client d'action ROS 2 n'est défini dans le code actuel.

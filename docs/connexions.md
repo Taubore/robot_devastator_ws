@@ -1,8 +1,4 @@
 # Connexions — Devastator
-| Header 1 | Header 2 |
-| --- | --- |
-| Cell 1 | Cell 2 |
-
 
 ## Raspberry Pi 4
 
@@ -50,7 +46,7 @@
 | ---  | Grove Ultrasonic Ranger   | 3,3V   | Rouge   |                                                                                                                                     |
 | ---  | Grove Ultrasonic Ranger   | GND    | Noir    |                                                                                                                                     |
 
-## Faisceau PS2 non connectés à cette étape
+## Fils du faisceau PS2 non connectés à cette étape
 
 | Fil   | Usage                 | Commentaire   |
 | ----- | --------------------- | ------------- |

@@ -8,14 +8,28 @@ regroupés dans `src/robot_devastator_bringup/config/interface_pico.yaml` :
 
 - `port` : port UART, actuellement `/dev/ttyS0`
 - `debit` : débit UART, actuellement `115200`
-- `timeout_lecture` : attente maximale d'une lecture UART
-- `periode_maintien_s` : intervalle entre les rappels de la dernière consigne moteur
-- `periode_distance_s` : intervalle entre les demandes de mesure ultrason
+- `timeout_lecture` : attente maximale d'une lecture UART, actuellement `0.02 s`
+- `periode_maintien_s` : intervalle entre les rappels de la dernière consigne moteur,
+  actuellement `0.25 s`
+- `periode_distance_s` : intervalle entre les demandes de mesure ultrason, actuellement `0.10 s`
 
 Le comportement d'autonomie simple est configuré dans
-`src/robot_devastator_bringup/config/autonomie_simple.yaml`. Les vitesses d'avance, de rotation et
-de recul sont actuellement fixées à `300`, soit le seuil minimal observé pour obtenir un mouvement
-fiable des moteurs.
+`src/robot_devastator_bringup/config/autonomie_simple.yaml`. Les consignes moteur actives sont :
+
+- avance lente : `500`
+- rotation de recherche : `500`
+- recul de récupération : `300`
+
+Les angles configurés pour la tourelle sont :
+
+- centre : `95°`
+- gauche : `45°`
+- droite : `140°`
+
+L'association physique entre les angles `45°` et `140°` et les côtés gauche / droite doit être
+confirmée sur le robot. Pour la vérifier sans démarrer l'autonomie, lancer uniquement
+`interface_pico.launch.yaml`, puis publier successivement les trois angles avec les commandes
+documentées dans `src/interface_pico/README.md`.
 
 ## Affectation GPIO (validée)
 
@@ -132,6 +146,12 @@ fiable des moteurs.
 - `STOP`
 - `SET <gauche> <droite>`
 - `STATUS`
+- `DIST`
+- `SERVO <angle_deg>`
+
+Le service ROS 2 `/pico/ping` confirme que la commande `PING` a été envoyée sur l'UART. Il ne
+confirme pas à lui seul la réception d'une réponse du Pico. Pour observer une réponse éventuelle,
+écouter le topic `/pico/etat`.
 
 ### Convention de consigne
 
@@ -145,6 +165,7 @@ fiable des moteurs.
 ### Sécurité
 
 - arrêt automatique si aucune commande valide reçue depuis plus de `500 ms`
+- tentative d'envoi de `STOP` par `interface_pico_node` avant la fermeture de la liaison UART
 
 ## Règles de conception
 

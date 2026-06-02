@@ -318,10 +318,18 @@ class NoeudInterfacePico(Node):
 
     def destroy_node(self) -> bool:
         """
-        Ferme le port série avant l'arrêt complet du nœud.
+        Demande l'arrêt moteur puis ferme le port série avant l'arrêt complet du nœud.
         """
 
-        self.transport.fermer()
+        try:
+            self.transport.stop()
+        except (serial.SerialException, OSError) as erreur:
+            self.get_logger().error(
+                f'Commande STOP impossible pendant la fermeture : {erreur}'
+            )
+        finally:
+            self.transport.fermer()
+
         return super().destroy_node()
 
 
