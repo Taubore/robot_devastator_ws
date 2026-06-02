@@ -31,7 +31,7 @@
                 "-lc",
                 "./scripts/nettoyer_packages_ros.sh commun interface_pico robot_devastator robot_devastator_bringup"
             ],
-            "group": "build",            
+            "group": "build",
             "problemMatcher": []
         },
         {

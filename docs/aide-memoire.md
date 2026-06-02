@@ -28,7 +28,7 @@
 | Nav2 | Navigation autonome avancée. |
 
 # Types standards
-ROS 2 contient beaucoup de types standards. Ils sont organisés par packages. 
+ROS 2 contient beaucoup de types standards. Ils sont organisés par packages.
 
 Les plus importants sont :
 
@@ -70,4 +70,3 @@ Type : commun/msg/ConsigneMoteurs
 Approprié, car tu as deux valeurs liées : gauche et droite.
 
 À moyen terme, certains types standards pourraient devenir plus pertinents. Par exemple, si ton sonar devient un vrai capteur ROS 2 mieux structuré, sensor_msgs/msg/Range serait plus expressif que std_msgs/msg/Int32, parce qu’il peut porter une distance avec un contexte de capteur. Mais ne change pas maintenant : pour ton étape actuelle, Int32 en millimètres est simple, testable et suffisant.
-

@@ -17,6 +17,7 @@ from commun.msg import ConsigneMoteurs
 
 DUREE_MAX_S: Final[float] = 2.0
 DUREE_PAR_DEFAUT_S: Final[float] = 1.0
+INTERVALLE_CONSIGNE_S: Final[float] = 0.1
 INTERVALLE_ARRET_S: Final[float] = 0.1
 NOMBRE_PUBLICATIONS_ARRET: Final[int] = 3
 TOPIC_COMMANDE_MOTEURS: Final[str] = '/pico/commande_moteurs'
@@ -60,13 +61,13 @@ def _creer_analyseur_arguments() -> argparse.ArgumentParser:
         '--duree',
         default=DUREE_PAR_DEFAUT_S,
         type=_lire_duree,
-        help=f'durée en secondes, maximum {DUREE_MAX_S} (défaut: %(default)s)',
+        help=f'durée en secondes, maximum {DUREE_MAX_S} (défaut : %(default)s)',
     )
     analyseur.add_argument(
         '--vitesse',
         default=VITESSE_PAR_DEFAUT,
         type=_lire_vitesse,
-        help=f'consigne commune limitée à ±{VITESSE_MAX_ESSAI} (défaut: %(default)s)',
+        help=f'consigne commune limitée à ±{VITESSE_MAX_ESSAI} (défaut : %(default)s)',
     )
     return analyseur
 
@@ -98,19 +99,27 @@ def main(args: list[str] | None = None) -> None:
             f'Essai moteur à {arguments.vitesse} pendant {arguments.duree:.1f} s. '
             'Les roues doivent être dans le vide.'
         )
-        publication.publish(consigne)
-        time.sleep(arguments.duree)
+        fin_essai_s = time.monotonic() + arguments.duree
+        while time.monotonic() < fin_essai_s:
+            publication.publish(consigne)
+            temps_restant_s = fin_essai_s - time.monotonic()
+            time.sleep(min(INTERVALLE_CONSIGNE_S, max(0.0, temps_restant_s)))
     finally:
         # Répéter l'arrêt laisse le temps à DDS de transmettre la consigne avant la fermeture.
-        arret = ConsigneMoteurs()
-        arret.gauche = 0
-        arret.droite = 0
-        for _ in range(NOMBRE_PUBLICATIONS_ARRET):
-            publication.publish(arret)
-            time.sleep(INTERVALLE_ARRET_S)
-        noeud.get_logger().info('Arrêt moteur explicite publié.')
-        noeud.destroy_node()
-        rclpy.shutdown()
+        try:
+            arret = ConsigneMoteurs()
+            arret.gauche = 0
+            arret.droite = 0
+            for _ in range(NOMBRE_PUBLICATIONS_ARRET):
+                publication.publish(arret)
+                time.sleep(INTERVALLE_ARRET_S)
+            noeud.get_logger().info('Arrêt moteur explicite publié.')
+        finally:
+            try:
+                noeud.destroy_node()
+            finally:
+                if rclpy.ok():
+                    rclpy.shutdown()
 
 
 if __name__ == '__main__':

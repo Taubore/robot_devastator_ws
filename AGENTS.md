@@ -38,7 +38,8 @@ testées au moins à un niveau fonctionnel simple, puis documentées :
 - autonomie simple au sonar avec tourelle servo et comportement d’évitement d’obstacle ;
 - lecture des encodeurs quadrature des moteurs via `interface_pico`, avec publication ROS 2
   exploitable ;
-- téléopération par manette PS2 et/ou clavier de l'ordinateur Legion-Linux via SSH (Raspberry Pi 4 lorsque cela aide les essais matériels ;
+- téléopération par manette PS2 et/ou clavier de l'ordinateur Legion-Linux via SSH
+  sur Raspberry Pi 4 lorsque cela aide les essais matériels ;
 - voix française avec Piper pour retours sonores simples ;
 - affichage local sur module Waveshare LCD 2" ST7789V pour visage et pages d’état ;
 - intégration du Slamtec RPLIDAR A1M8 pour découverte de la chaîne lidar, cartographie ou

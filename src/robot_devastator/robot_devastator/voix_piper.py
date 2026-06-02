@@ -8,7 +8,7 @@ from commun.srv import JouerAudio
 import rclpy
 from rclpy.node import Node
 
-PIPER_EXECUTABLE = '/usr/local/bin/piper'
+DEFAULT_PIPER_EXECUTABLE = '/usr/local/bin/piper'
 
 # Répertoire persistant utilisé comme cache pour les fichiers WAV nommés.
 AUDIO_CACHE_DIR = Path.home() / '.cache' / 'robot_devastator' / 'audio'
@@ -33,6 +33,7 @@ class VoixPiper(Node):
             'piper_model',
             '/opt/piper/voix/fr_FR-siwis-low.onnx',
         )
+        self.declare_parameter('piper_executable', DEFAULT_PIPER_EXECUTABLE)
         self.declare_parameter(
             'piper_config',
             '/opt/piper/voix/fr_FR-siwis-low.onnx.json',
@@ -43,6 +44,9 @@ class VoixPiper(Node):
         self.piper_model = (
             self.get_parameter('piper_model').get_parameter_value().string_value
         )
+        self.piper_executable = (
+            self.get_parameter('piper_executable').get_parameter_value().string_value
+        )
         self.piper_config = (
             self.get_parameter('piper_config').get_parameter_value().string_value
         )
@@ -52,6 +56,8 @@ class VoixPiper(Node):
         self.command_timeout_s = (
             self.get_parameter('command_timeout_s').get_parameter_value().double_value
         )
+        if not self.piper_executable:
+            raise ValueError("Le paramètre 'piper_executable' ne peut pas être vide.")
         if self.command_timeout_s <= 0.0:
             raise ValueError(
                 "Le paramètre 'command_timeout_s' doit être strictement positif."
@@ -105,7 +111,7 @@ class VoixPiper(Node):
 
             subprocess.run(
                 [
-                    PIPER_EXECUTABLE,
+                    self.piper_executable,
                     '--model', self.piper_model,
                     '--config', self.piper_config,
                     '--output_file', str(chemin_audio),

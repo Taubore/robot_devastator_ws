@@ -9,8 +9,6 @@
   <buildtool_depend>ament_python</buildtool_depend>
 
   <depend>commun</depend>
-  <depend>launch</depend>
-  <depend>launch_ros</depend>
   <depend>python3-serial</depend>
   <depend>rclpy</depend>
   <depend>std_msgs</depend>

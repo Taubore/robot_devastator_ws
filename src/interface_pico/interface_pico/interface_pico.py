@@ -155,7 +155,7 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.set_servo(angle)
         except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Commande tourelle impossible: {erreur}')
+            self._signaler_erreur_uart(f'Commande tourelle impossible : {erreur}')
 
     def _recevoir_consigne_moteurs_callback(self, message: ConsigneMoteurs) -> None:
         """
@@ -181,7 +181,7 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.set_moteurs(gauche, droite)
         except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Envoi UART impossible: {erreur}')
+            self._signaler_erreur_uart(f'Envoi UART impossible : {erreur}')
             return
 
         self.derniere_consigne_moteurs = (gauche, droite)
@@ -198,7 +198,7 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.stop()
         except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Commande STOP impossible: {erreur}')
+            self._signaler_erreur_uart(f'Commande STOP impossible : {erreur}')
             reponse.success = False
             reponse.message = f'STOP non envoyé : {erreur}'
             return reponse
@@ -214,14 +214,14 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.ping()
         except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Commande PING impossible: {erreur}')
+            self._signaler_erreur_uart(f'Commande PING impossible : {erreur}')
             reponse.success = False
             reponse.message = f'PING non envoyé : {erreur}'
             return reponse
 
         reponse.success = True
         reponse.message = (
-            'Commande PING envoyée sur UART; réponse éventuelle publiée sur /pico/etat.'
+            'Commande PING envoyée sur UART ; réponse éventuelle publiée sur /pico/etat.'
         )
         return reponse
 
@@ -238,7 +238,7 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.demander_distance()
         except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Demande de distance impossible: {erreur}')
+            self._signaler_erreur_uart(f'Demande de distance impossible : {erreur}')
 
     def _maintenir_derniere_consigne_moteurs_callback(self) -> None:
         """
@@ -268,7 +268,9 @@ class NoeudInterfacePico(Node):
         try:
             self.transport.set_moteurs(gauche, droite)
         except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Maintien de consigne des moteurs impossible: {erreur}')
+            self._signaler_erreur_uart(
+                f'Maintien de consigne des moteurs impossible : {erreur}'
+            )
 
     def _lire_et_traiter_reponse_uart_callback(self) -> None:
         """
@@ -280,7 +282,7 @@ class NoeudInterfacePico(Node):
         try:
             ligne = self.transport.lire_ligne()
         except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Lecture UART impossible: {erreur}')
+            self._signaler_erreur_uart(f'Lecture UART impossible : {erreur}')
             return
 
         if not ligne:
@@ -335,10 +337,10 @@ class NoeudInterfacePico(Node):
                 self.transport.stop()
         except (serial.SerialException, OSError) as erreur:
             if self._uart_disponible:
-                self.get_logger().error(f'Liaison UART perdue: {erreur}')
+                self.get_logger().error(f'Liaison UART perdue : {erreur}')
             elif not self._indisponibilite_uart_journalisee:
                 self.get_logger().warn(
-                    f'Liaison UART indisponible au démarrage ou en reprise: {erreur}'
+                    f'Liaison UART indisponible au démarrage ou en reprise : {erreur}'
                 )
             self._memoriser_arret_moteurs()
             self.transport.fermer()
@@ -349,7 +351,8 @@ class NoeudInterfacePico(Node):
         if not self._uart_disponible:
             self._memoriser_arret_moteurs()
             self.get_logger().info(
-                f'Interface Pico ouverte sur {self.port} à {self.debit} bauds avec arrêt moteur.'
+                f'Interface Pico ouverte sur {self.port} à {self.debit} bauds '
+                'avec arrêt moteur.'
             )
         self._uart_disponible = True
         self._indisponibilite_uart_journalisee = False

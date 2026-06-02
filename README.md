@@ -113,9 +113,9 @@ Par sécurité, `interface_pico_node` maintient une consigne moteur seulement pe
 Sans nouvelle consigne ROS pendant `0.5 s`, ou après une erreur UART, il transmet et mémorise un
 arrêt. Une reconnexion UART repart également à l'arrêt avant d'accepter une nouvelle commande.
 
-Au lancement de l'autonomie simple, `annonces_audio` vérifie les annonces configurées et demande à
-`voix_piper` de générer uniquement les fichiers WAV manquants. Les fichiers sont conservés dans
-`~/.cache/robot_devastator/audio`, puis réutilisés aux lancements suivants afin de ne pas ralentir
+Au lancement de l'autonomie simple, `annonces_audio` demande à `voix_piper` de préparer les annonces
+configurées. `voix_piper` génère uniquement les fichiers WAV manquants, les conserve dans
+`~/.cache/robot_devastator/audio`, puis les réutilise aux lancements suivants afin de ne pas ralentir
 le comportement du robot sur Raspberry Pi 4. Les annonces peuvent proposer plusieurs variantes ;
 une chaîne vide dans `config/annonces_audio.yaml` représente une variante silencieuse.
 

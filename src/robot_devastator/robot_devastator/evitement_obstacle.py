@@ -206,7 +206,7 @@ class EvitementObstacle(Node):
         )
 
         self.get_logger().info(
-            "Évitement d'obstacle simple démarré: "
+            "Évitement d'obstacle simple démarré : "
             f'distance_arret_mm={self.distance_arret_mm}, '
             f'vitesse_avance={self.vitesse_avance}.'
         )
@@ -230,7 +230,7 @@ class EvitementObstacle(Node):
 
         if distance_mm <= 0:
             self.get_logger().warn(
-                f'Distance ultrason invalide reçue: {distance_mm} mm.'
+                f'Distance ultrason invalide reçue : {distance_mm} mm.'
             )
             self.derniere_distance_mm = None
             self.nombre_mesures_degagement = 0

@@ -59,8 +59,8 @@ La configuration de débogage `Nœud Python ROS 2` permet de lancer directement
 ## Test rapide
 
 Lancer uniquement avec les roues dans le vide. Le script applique une vitesse faible de `300`
-pendant `1 s`, puis publie un arrêt explicite attendu. La vitesse est volontairement limitée à
-`±300` et la durée à `2 s` au maximum.
+pendant `1 s`, renouvelle cette consigne pendant l'essai, puis publie un arrêt explicite attendu.
+La vitesse est volontairement limitée à `±300` et la durée à `2 s` au maximum.
 
 ```bash
 ros2 run interface_pico essai_moteurs_borne

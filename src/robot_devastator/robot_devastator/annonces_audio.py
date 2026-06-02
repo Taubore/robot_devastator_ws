@@ -9,7 +9,6 @@ from commun.srv import GenererAudio, JouerAudio
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from robot_devastator.voix_piper import AUDIO_CACHE_DIR
 from std_msgs.msg import String
 
 TOPIC_EVENEMENT_ROBOT: Final[str] = '/robot/evenement'
@@ -76,7 +75,6 @@ class AnnoncesAudio(Node):
             self._recevoir_evenement_callback,
             TAILLE_FILE_MESSAGES,
         )
-        self.get_logger().info(f'Cache audio persistant utilisé : {AUDIO_CACHE_DIR}.')
 
     def _charger_annonces(self) -> dict[str, list[VarianteAnnonce | None]]:
         """Charge les variantes configurées ; une chaîne vide représente le silence."""
@@ -129,20 +127,15 @@ class AnnoncesAudio(Node):
         return True
 
     def preparer_annonces_audio(self) -> None:
-        """Demande la génération préalable de chaque fichier WAV encore manquant."""
+        """Demande la préparation de chaque fichier WAV configuré."""
         for variantes in self.annonces.values():
             for variante in variantes:
                 if variante is None:
                     continue
-                chemin_audio = AUDIO_CACHE_DIR / f'{variante.nom_fichier}.wav'
-                if chemin_audio.is_file():
-                    self.get_logger().info(f'Fichier audio déjà présent : {chemin_audio}.')
-                    continue
-                self.get_logger().info(f'Fichier audio manquant : {chemin_audio}.')
                 self._generer_audio(variante)
 
     def _generer_audio(self, variante: VarianteAnnonce) -> None:
-        """Génère une variante manquante et journalise le résultat du service."""
+        """Demande la préparation d'une variante et journalise le résultat du service."""
         requete = GenererAudio.Request()
         requete.nom_fichier = variante.nom_fichier
         requete.texte = variante.texte

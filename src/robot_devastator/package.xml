@@ -12,7 +12,6 @@
   <!-- Bibliothèque cliente Python de ROS 2. Indispensable pour créer des nœuds, publishers, subscribers, etc. -->
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
-  <depend>std_srvs</depend>
 
   <!-- Dépendance vers le package local d'interfaces. -->
   <depend>commun</depend>

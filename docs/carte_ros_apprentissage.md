@@ -189,7 +189,7 @@ les côtés gauche et droit doit être confirmée sur le robot par un essai manu
 | Fichier Python | `src/robot_devastator/robot_devastator/annonces_audio.py` |
 | Classe | `AnnoncesAudio` |
 | Exécutable ROS 2 | `annonces_audio` |
-| Rôle | Préparer les fichiers WAV manquants au démarrage et demander une annonce lors d'un événement du robot. |
+| Rôle | Demander la préparation des fichiers WAV configurés au démarrage et une annonce lors d'un événement du robot. |
 
 **Publishers créés**
 
@@ -209,7 +209,7 @@ Aucun.
 
 | Service | Type | Rôle |
 |---|---|---|
-| `/generer_audio` | `commun/srv/GenererAudio` | Demander la génération préalable d'un fichier WAV absent du cache. |
+| `/generer_audio` | `commun/srv/GenererAudio` | Demander la préparation préalable d'un fichier WAV configuré. |
 | `/jouer_audio` | `commun/srv/JouerAudio` | Demander la lecture asynchrone d'un fichier WAV existant. |
 
 **Timers créés**
@@ -221,7 +221,7 @@ Aucun.
 | Paramètre | Valeur par défaut dans le code | Valeur dans `config/annonces_audio.yaml` | Rôle |
 |---|---:|---:|---|
 | `delai_min_repetition_s` | `3.0` | `3.0` | Empêcher la répétition trop rapprochée d'un même événement parlé. |
-| `preparer_audio_au_demarrage` | `true` | `true` | Générer les WAV manquants lors du démarrage. |
+| `preparer_audio_au_demarrage` | `true` | `true` | Demander la préparation des WAV configurés lors du démarrage. |
 | `jouer_annonce_demarrage` | `true` | `true` | Jouer l'annonce `demarrage` après la préparation initiale. |
 | `annonces.demarrage` | Tableau de chaînes déclaré sans valeur explicite | Configuré | Variantes possibles pour l'événement `demarrage`. |
 | `annonces.autonomie_demarre` | Tableau de chaînes déclaré sans valeur explicite | Configuré | Variantes possibles pour l'événement `autonomie_demarre`. |
@@ -273,6 +273,7 @@ Aucun.
 
 | Paramètre | Valeur par défaut dans le code | Valeur dans `config/voix_piper.yaml` | Rôle |
 |---|---|---|---|
+| `piper_executable` | `/usr/local/bin/piper` | `/usr/local/bin/piper` | Chemin de l'exécutable Piper. |
 | `piper_model` | `/opt/piper/voix/fr_FR-siwis-low.onnx` | `/opt/piper/voix/fr_FR-siwis-low.onnx` | Chemin du modèle vocal Piper. |
 | `piper_config` | `/opt/piper/voix/fr_FR-siwis-low.onnx.json` | `/opt/piper/voix/fr_FR-siwis-low.onnx.json` | Chemin de la configuration du modèle Piper. |
 | `audio_output` | `~/.cache/robot_devastator/audio/derniere_sortie.wav` | Aucun | Fichier utilisé lorsqu'aucun nom n'est fourni dans une requête. |
