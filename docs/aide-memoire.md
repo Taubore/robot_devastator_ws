@@ -1,4 +1,10 @@
-# Aide-mémoire des éléments ROS 2
+# À retenir
+- subscription : quand ROS me parle
+- publisher : je parle à ROS
+- service : on me pose une question ponctuelle
+- timer : je fais quelque chose régulièrement
+
+# Éléments ROS 2
 | Élément | Description courte |
 |---|---|
 | Workspace | Dossier global du projet ROS 2. |

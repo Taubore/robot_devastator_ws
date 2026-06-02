@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Nœud ROS 2 simple qui relie les interfaces ROS au transport série du Pico."""
+"""
+Nœud ROS 2 qui relie les interfaces ROS au transport série (UART) du Pico.
+"""
 
 from __future__ import annotations
+
+import rclpy
+import serial
+
+from rclpy.node import Node
 
 from typing import Final
 
 from commun.msg import ConsigneMoteurs
-import rclpy
-from rclpy.node import Node
-import serial
 from std_msgs.msg import Int32, String
 from std_srvs.srv import Trigger
 
@@ -31,7 +35,9 @@ SERVICE_STOP: Final[str] = '/pico/stop'
 
 
 class NoeudInterfacePico(Node):
-    """Adapte ROS 2 vers la liaison UART du Pico sans logique complexe."""
+    """
+    Adapte ROS 2 vers la liaison UART du Pico sans logique complexe.
+    """
 
     def __init__(self) -> None:
         super().__init__('interface_pico_node')
@@ -67,7 +73,7 @@ class NoeudInterfacePico(Node):
         self._uart_disponible = False
         self._indisponibilite_uart_journalisee = False
 
-        self.derniere_consigne: tuple[int, int] | None = None
+        self.derniere_consigne_moteurs: tuple[int, int] | None = None
 
         self.publisher_etat = self.create_publisher(
             String,
@@ -79,31 +85,35 @@ class NoeudInterfacePico(Node):
             TOPIC_DISTANCE_ULTRASON,
             TAILLE_FILE_MESSAGES,
         )
-        self.abonnement_consigne = self.create_subscription(
+        self.abonnement_consigne_moteurs = self.create_subscription(
             ConsigneMoteurs,
             TOPIC_COMMANDE_MOTEURS,
-            self._recevoir_consigne_moteurs,
+            self._recevoir_consigne_moteurs_callback,
             TAILLE_FILE_MESSAGES,
         )
         self.abonnement_tourelle = self.create_subscription(
             Int32,
             TOPIC_COMMANDE_TOURELLE,
-            self._recevoir_commande_tourelle,
+            self._recevoir_commande_tourelle_callback,
             TAILLE_FILE_MESSAGES,
         )
-        self.service_stop = self.create_service(Trigger, SERVICE_STOP, self._gerer_stop)
-        self.service_ping = self.create_service(Trigger, SERVICE_PING, self._gerer_ping)
+        self.service_stop = self.create_service(Trigger, SERVICE_STOP, self._gerer_stop_callback)
+        self.service_ping = self.create_service(Trigger, SERVICE_PING, self._gerer_ping_callback)
 
-        # Un timer pour relire le port sans boucle bloquante, un autre pour
-        # renvoyer la consigne mémorisée avant le timeout de 500 ms du Pico.
-        self.timer_lecture = self.create_timer(timeout_lecture, self._lire_et_publier_etat)
-        self.timer_maintien = self.create_timer(
+        # Un timer relit le port sans boucle bloquante, un autre renvoie la consigne
+        # des moteurs mémorisée avant le timeout de 500 ms du Pico et le dernier demande
+        # la distance.
+        self.timer_lecture = self.create_timer(
+            timeout_lecture,
+            self._lire_et_traiter_reponse_uart_callback
+        )
+        self.timer_maintien_consigne_moteurs = self.create_timer(
             periode_maintien_s,
-            self._maintenir_derniere_consigne,
+            self._maintenir_derniere_consigne_moteurs_callback,
         )
         self.timer_distance = self.create_timer(
             periode_distance_s,
-            self._demander_distance,
+            self._demander_distance_callback,
         )
 
         if periode_maintien_s >= 0.5:
@@ -114,18 +124,13 @@ class NoeudInterfacePico(Node):
 
         self._verifier_liaison_serie()
 
-    def _demander_distance(self) -> None:
-        """Demande périodiquement une mesure de distance au Pico."""
-        if not self._verifier_liaison_serie():
-            return
+    # --- Callbacks des subscriptions ---
 
-        try:
-            self.transport.demander_distance()
-        except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Demande de distance impossible: {erreur}')
+    def _recevoir_commande_tourelle_callback(self, message: Int32) -> None:
+        """
+        Envoie une consigne d'angle valide au servo de tourelle.
+        """
 
-    def _recevoir_commande_tourelle(self, message: Int32) -> None:
-        """Envoyer une consigne d'angle valide au servo de tourelle."""
         angle = int(message.data)
 
         if not ANGLE_SERVO_MIN <= angle <= ANGLE_SERVO_MAX:
@@ -141,15 +146,153 @@ class NoeudInterfacePico(Node):
         except (serial.SerialException, OSError) as erreur:
             self._signaler_erreur_uart(f'Commande tourelle impossible: {erreur}')
 
+    def _recevoir_consigne_moteurs_callback(self, message: ConsigneMoteurs) -> None:
+        """
+        Envoie immédiatement une consigne moteur valide.
+        """
+
+        gauche = int(message.gauche)
+        droite = int(message.droite)
+
+        if not VALEUR_MOTEUR_MIN <= gauche <= VALEUR_MOTEUR_MAX:
+            self.get_logger().warn(
+                f'Consigne du moteur gauche ignorée car hors plage : {gauche}'
+            )
+            return
+        if not VALEUR_MOTEUR_MIN <= droite <= VALEUR_MOTEUR_MAX:
+            self.get_logger().warn(
+                f'Consigne du moteur droit ignorée car hors plage : {droite}'
+            )
+            return
+        if not self._verifier_liaison_serie():
+            return
+
+        try:
+            self.transport.set_moteurs(gauche, droite)
+        except (serial.SerialException, OSError) as erreur:
+            self._signaler_erreur_uart(f'Envoi UART impossible: {erreur}')
+            return
+
+        self.derniere_consigne_moteurs = (gauche, droite)
+
+    # --- Callbacks des services ---
+
+    def _gerer_stop_callback(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
+        """
+        Demande l'arrêt moteur et mémorise une consigne des moteurs nulle.
+        """
+
+        try:
+            self.transport.stop()
+        except (serial.SerialException, OSError) as erreur:
+            self._signaler_erreur_uart(f'Commande STOP impossible: {erreur}')
+            reponse.success = False
+            reponse.message = f'STOP non envoyé : {erreur}'
+            return reponse
+
+        self.derniere_consigne_moteurs = (0, 0)
+        reponse.success = True
+        reponse.message = 'Commande STOP acceptée.'
+        return reponse
+
+    def _gerer_ping_callback(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
+        """
+        Traite simplement `PING`.
+        """
+
+        try:
+            self.transport.ping()
+        except (serial.SerialException, OSError) as erreur:
+            self._signaler_erreur_uart(f'Commande PING impossible: {erreur}')
+            reponse.success = False
+            reponse.message = f'PING non envoyé : {erreur}'
+            return reponse
+
+        reponse.success = True
+        reponse.message = 'Commande PING acceptée.'
+        return reponse
+
+    # --- Callbacks des timers ---
+
+    def _demander_distance_callback(self) -> None:
+        """
+        Demande périodiquement une mesure de distance au Pico.
+        """
+
+        if not self._verifier_liaison_serie():
+            return
+
+        try:
+            self.transport.demander_distance()
+        except (serial.SerialException, OSError) as erreur:
+            self._signaler_erreur_uart(f'Demande de distance impossible: {erreur}')
+
+    def _maintenir_derniere_consigne_moteurs_callback(self) -> None:
+        """
+        Répète la dernière consigne des moteurs valide pour éviter le timeout du Pico.
+        """
+
+        if self.derniere_consigne_moteurs is None:
+            return
+        if not self._verifier_liaison_serie():
+            return
+
+        gauche, droite = self.derniere_consigne_moteurs
+        try:
+            self.transport.set_moteurs(gauche, droite)
+        except (serial.SerialException, OSError) as erreur:
+            self._signaler_erreur_uart(f'Maintien de consigne des moteurs impossible: {erreur}')
+
+    def _lire_et_traiter_reponse_uart_callback(self) -> None:
+        """
+        Publie en ROS 2 toute ligne texte éventuellement renvoyée par le Pico.
+        """
+
+        if not self._verifier_liaison_serie():
+            return
+        try:
+            ligne = self.transport.lire_ligne()
+        except (serial.SerialException, OSError) as erreur:
+            self._signaler_erreur_uart(f'Lecture UART impossible: {erreur}')
+            return
+
+        if not ligne:
+            return
+
+        message = String()
+        message.data = ligne
+        self.publisher_etat.publish(message)
+
+        # Une valeur numérique représente une distance. Les autres lignes sont
+        # des messages texte du Pico à journaliser selon leur gravité.
+        if ligne.isdecimal():
+            message_distance = Int32()
+            message_distance.data = int(ligne)
+            self.publisher_distance.publish(message_distance)
+        elif ligne.startswith('ERREUR'):
+            self.get_logger().error(f'Réponse UART du Pico : {ligne}')
+        elif ligne.startswith('WARN'):
+            self.get_logger().warn(f'Réponse UART du Pico : {ligne}')
+        else:
+            self.get_logger().debug(f'Réponse UART du Pico : {ligne}')
+
+    # --- Méthodes privées utilitaires ---
+
     def _signaler_erreur_uart(self, message: str) -> None:
-        """Ferme le port après une erreur UART déjà expliquée dans les logs."""
+        """
+        Ferme le port après une erreur UART déjà expliquée dans les logs.
+        """
+
         self.get_logger().error(message)
         self.transport.fermer()
         self._uart_disponible = False
         self._indisponibilite_uart_journalisee = True
 
     def _verifier_liaison_serie(self) -> bool:
-        """Essaie d'ouvrir la liaison Pico et journalise les transitions d'état."""
+        """
+        Essaie d'ouvrir la liaison Pico et journalise les transitions d'état.
+        """
+
         try:
             self.transport.connecter()
         except (serial.SerialException, OSError) as erreur:
@@ -171,110 +314,22 @@ class NoeudInterfacePico(Node):
         self._indisponibilite_uart_journalisee = False
         return True
 
-    def _recevoir_consigne_moteurs(self, message: ConsigneMoteurs) -> None:
-        """Envoyer immédiatement une consigne moteur valide."""
-        gauche = int(message.gauche)
-        droite = int(message.droite)
-
-        if not VALEUR_MOTEUR_MIN <= gauche <= VALEUR_MOTEUR_MAX:
-            self.get_logger().warn(
-                f'Consigne gauche ignorée car hors plage : {gauche}'
-            )
-            return
-        if not VALEUR_MOTEUR_MIN <= droite <= VALEUR_MOTEUR_MAX:
-            self.get_logger().warn(
-                f'Consigne droite ignorée car hors plage : {droite}'
-            )
-            return
-        if not self._verifier_liaison_serie():
-            return
-
-        try:
-            self.transport.set_moteurs(gauche, droite)
-        except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Envoi UART impossible: {erreur}')
-            return
-
-        self.derniere_consigne = (gauche, droite)
-
-    def _maintenir_derniere_consigne(self) -> None:
-        """Répète la dernière consigne valide pour éviter le timeout du Pico."""
-        if self.derniere_consigne is None:
-            return
-        if not self._verifier_liaison_serie():
-            return
-
-        gauche, droite = self.derniere_consigne
-        try:
-            self.transport.set_moteurs(gauche, droite)
-        except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Maintien de consigne impossible: {erreur}')
-
-    def _lire_et_publier_etat(self) -> None:
-        """Publie en ROS 2 toute ligne texte éventuellement renvoyée par le Pico."""
-        if not self._verifier_liaison_serie():
-            return
-        try:
-            ligne = self.transport.lire_ligne()
-        except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Lecture UART impossible: {erreur}')
-            return
-
-        if not ligne:
-            return
-
-        message = String()
-        message.data = ligne
-        self.publisher_etat.publish(message)
-
-        if ligne.isdecimal():
-            message_distance = Int32()
-            message_distance.data = int(ligne)
-            self.publisher_distance.publish(message_distance)
-        elif ligne.startswith('ERREUR'):
-            self.get_logger().error(f'Réponse UART du Pico : {ligne}')
-        elif ligne.startswith('WARN'):
-            self.get_logger().warn(f'Réponse UART du Pico : {ligne}')
-        else:
-            self.get_logger().debug(f'Réponse UART du Pico : {ligne}')
-
-    def _gerer_stop(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
-        """Demande l'arrêt moteur et mémorise une consigne nulle."""
-        try:
-            self.transport.stop()
-        except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Commande STOP impossible: {erreur}')
-            reponse.success = False
-            reponse.message = f'STOP non envoyé : {erreur}'
-            return reponse
-
-        self.derniere_consigne = (0, 0)
-        reponse.success = True
-        reponse.message = 'Commande STOP acceptée.'
-        return reponse
-
-    def _gerer_ping(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
-        """Traite simplement `PING`."""
-        try:
-            self.transport.ping()
-        except (serial.SerialException, OSError) as erreur:
-            self._signaler_erreur_uart(f'Commande PING impossible: {erreur}')
-            reponse.success = False
-            reponse.message = f'PING non envoyé : {erreur}'
-            return reponse
-
-        reponse.success = True
-        reponse.message = 'Commande PING acceptée.'
-        return reponse
+    # --- Cycle de vie du nœud ---
 
     def destroy_node(self) -> bool:
-        """Ferme le port série avant l'arrêt complet du nœud."""
+        """
+        Ferme le port série avant l'arrêt complet du nœud.
+        """
+
         self.transport.fermer()
         return super().destroy_node()
 
 
 def main(args: list[str] | None = None) -> None:
-    """Initialise ROS 2 puis exécute le nœud jusqu'à son arrêt."""
+    """
+    Initialise ROS 2 puis exécute le nœud jusqu'à son arrêt.
+    """
+
     rclpy.init(args=args)
     noeud: NoeudInterfacePico | None = None
 
