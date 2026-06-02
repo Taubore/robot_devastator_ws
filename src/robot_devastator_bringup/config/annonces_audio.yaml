@@ -1,4 +1,4 @@
-principal:
+annonces_audio:
   ros__parameters:
     # Empêche une annonce identique de se répéter trop rapidement.
     delai_min_repetition_s: 3.0

@@ -38,7 +38,7 @@ communes du projet.
 | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle_node` | `interface_pico_node` | Commander l'angle du servo de tourelle en degrés |
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico_node` | `evitement_obstacle_node` | Publier la distance ultrason mesurée en millimètres |
 | `/pico/etat` | `std_msgs/msg/String` | `interface_pico_node` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
-| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle_node` | `principal` | Signaler uniquement les transitions significatives du comportement autonome |
+| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle_node` | `annonces_audio` | Signaler uniquement les transitions significatives du comportement autonome |
 
 ### Services
 
@@ -46,8 +46,8 @@ communes du projet.
 |---|---|---|---|---|
 | `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico_node` | Outil de diagnostic | Demander l'envoi de `PING` au Pico ; le succès confirme l'envoi UART, pas la réception d'une réponse |
 | `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico_node` | Outil de diagnostic | Demander un arrêt explicite au Pico |
-| `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `principal` | Générer à l'avance un fichier WAV absent du cache persistant |
-| `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `principal` | Jouer un fichier WAV déjà généré |
+| `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `annonces_audio` | Générer à l'avance un fichier WAV absent du cache persistant |
+| `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `annonces_audio` | Jouer un fichier WAV déjà généré |
 
 ### Actions
 
@@ -59,8 +59,8 @@ Aucune action ROS 2 n'est implémentée actuellement.
 |---|---|---|---|---|
 | `interface_pico_node` | `interface_pico` | `interface_pico_node` / `interface_pico.interface_pico` | Actif | Exposer les topics et services Pico, puis traduire les commandes ROS 2 vers UART |
 | `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, balayer avec la tourelle, puis tourner jusqu'à trouver un dégagement |
-| `principal` | `robot_devastator` | `principal` / `robot_devastator.principal` | Actif | Préparer les annonces audio et demander leur lecture selon les événements du robot |
-| `voix_piper` | `robot_devastator` | `voix_piper_service` / `robot_devastator.voix_piper_service` | Actif | Générer et jouer les fichiers WAV persistants avec Piper |
+| `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les annonces audio et demander leur lecture selon les événements du robot |
+| `voix_piper` | `robot_devastator` | `voix_piper` / `robot_devastator.voix_piper` | Actif | Générer et jouer les fichiers WAV persistants avec Piper |
 
 ## Interfaces personnalisées
 
@@ -98,7 +98,7 @@ Les configurations de `.vscode/launch.json` servent seulement au debug direct d'
 précis avec F5 :
 
 `Nœud Python ROS 2` demande le module Python à exécuter, par exemple
-`robot_devastator.evitement_obstacle`, `robot_devastator.principal` ou
+`robot_devastator.evitement_obstacle`, `robot_devastator.annonces_audio` ou
 `interface_pico.interface_pico`.
 
 L'autonomie simple fait avancer lentement le robot lorsque la distance ultrason est suffisante.
@@ -109,11 +109,11 @@ minimale de rotation. Si aucun dégagement n'est trouvé dans le délai prévu, 
 et refait un balayage. Elle reprend l'avance seulement si une nouvelle mesure avant est valide et
 dégagée.
 
-Au lancement de l'autonomie simple, `principal` vérifie les annonces configurées et demande à
+Au lancement de l'autonomie simple, `annonces_audio` vérifie les annonces configurées et demande à
 `voix_piper` de générer uniquement les fichiers WAV manquants. Les fichiers sont conservés dans
 `~/.cache/robot_devastator/audio`, puis réutilisés aux lancements suivants afin de ne pas ralentir
 le comportement du robot sur Raspberry Pi 4. Les annonces peuvent proposer plusieurs variantes ;
-une chaîne vide dans `config/principal.yaml` représente une variante silencieuse.
+une chaîne vide dans `config/annonces_audio.yaml` représente une variante silencieuse.
 
 ## Commandes CLI de secours
 

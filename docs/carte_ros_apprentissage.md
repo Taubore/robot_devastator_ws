@@ -14,7 +14,7 @@ evitement_obstacle_node
   └─ publie les événements significatifs
           │
           ▼
-principal ── demande la génération ou la lecture audio ──► voix_piper
+annonces_audio ── demande la génération ou la lecture audio ──► voix_piper
 
 interface_pico_node
   ├─ traduit les commandes ROS 2 en lignes UART vers le Pico WH
@@ -55,8 +55,8 @@ Ce package ne contient aucun fichier Python important.
 | Fichier Python | Rôle |
 |---|---|
 | `src/robot_devastator/robot_devastator/evitement_obstacle.py` | Définit la machine d'états de l'autonomie simple. |
-| `src/robot_devastator/robot_devastator/principal.py` | Définit l'orchestrateur des annonces audio. |
-| `src/robot_devastator/robot_devastator/voix_piper_service.py` | Définit les services de génération et de lecture audio avec Piper et `aplay`. |
+| `src/robot_devastator/robot_devastator/annonces_audio.py` | Définit l'orchestrateur des annonces audio. |
+| `src/robot_devastator/robot_devastator/voix_piper.py` | Définit les services de génération et de lecture audio avec Piper et `aplay`. |
 | `src/robot_devastator/setup.py` | Déclare les trois exécutables ROS 2 Python du package. |
 
 #### `robot_devastator_bringup`
@@ -180,14 +180,14 @@ Aucun.
 Les valeurs `45°` et `140°` sont celles de la configuration active. Leur association physique avec
 les côtés gauche et droit doit être confirmée sur le robot par un essai manuel de la tourelle.
 
-### `principal`
+### `annonces_audio`
 
 | Élément | Valeur |
 |---|---|
 | Package | `robot_devastator` |
-| Fichier Python | `src/robot_devastator/robot_devastator/principal.py` |
-| Classe | `Principal` |
-| Exécutable ROS 2 | `principal` |
+| Fichier Python | `src/robot_devastator/robot_devastator/annonces_audio.py` |
+| Classe | `AnnoncesAudio` |
+| Exécutable ROS 2 | `annonces_audio` |
 | Rôle | Préparer les fichiers WAV manquants au démarrage et demander une annonce lors d'un événement du robot. |
 
 **Publishers créés**
@@ -217,7 +217,7 @@ Aucun.
 
 **Paramètres déclarés et lus**
 
-| Paramètre | Valeur par défaut dans le code | Valeur dans `config/principal.yaml` | Rôle |
+| Paramètre | Valeur par défaut dans le code | Valeur dans `config/annonces_audio.yaml` | Rôle |
 |---|---:|---:|---|
 | `delai_min_repetition_s` | `3.0` | `3.0` | Empêcher la répétition trop rapprochée d'un même événement parlé. |
 | `preparer_audio_au_demarrage` | `true` | `true` | Générer les WAV manquants lors du démarrage. |
@@ -240,9 +240,9 @@ variante silencieuse participant au tirage aléatoire.
 | Élément | Valeur |
 |---|---|
 | Package | `robot_devastator` |
-| Fichier Python | `src/robot_devastator/robot_devastator/voix_piper_service.py` |
+| Fichier Python | `src/robot_devastator/robot_devastator/voix_piper.py` |
 | Classe | `VoixPiper` |
-| Exécutable ROS 2 | `voix_piper_service` |
+| Exécutable ROS 2 | `voix_piper` |
 | Rôle | Exposer la génération de fichiers WAV par Piper et leur lecture par `aplay`. |
 
 **Publishers créés**
@@ -285,7 +285,7 @@ Aucun.
 | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | `evitement_obstacle_node` | `interface_pico_node` | Commander l'angle du servo de tourelle en degrés. |
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico_node` | `evitement_obstacle_node` | Publier la distance ultrason en millimètres. |
 | `/pico/etat` | `std_msgs/msg/String` | `interface_pico_node` | Aucun consommateur interne connu | Publier les lignes texte reçues du Pico pour le diagnostic. |
-| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle_node` | `principal` | Diffuser les transitions significatives de l'autonomie simple. |
+| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle_node` | `annonces_audio` | Diffuser les transitions significatives de l'autonomie simple. |
 
 ## Services
 
@@ -293,8 +293,8 @@ Aucun.
 |---|---|---|---|---|
 | `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico_node` | Aucun client interne connu | Envoyer `PING` sur l'UART ; le succès ne confirme pas la réception d'une réponse. |
 | `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico_node` | Aucun client interne connu | Demander un arrêt explicite des moteurs au Pico. |
-| `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `principal` | Générer un fichier WAV absent du cache persistant. |
-| `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `principal` | Jouer un fichier WAV existant. |
+| `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `annonces_audio` | Générer un fichier WAV absent du cache persistant. |
+| `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `annonces_audio` | Jouer un fichier WAV existant. |
 
 ## Fichiers de lancement
 
@@ -312,8 +312,8 @@ actionneurs, les mesures ultrason et les services de diagnostic.
 | Nœud lancé | Package | Exécutable | Fichier de paramètres |
 |---|---|---|---|
 | `interface_pico_node` | `interface_pico` | `interface_pico_node` | `src/robot_devastator_bringup/config/interface_pico.yaml` |
-| `voix_piper` | `robot_devastator` | `voix_piper_service` | `src/robot_devastator_bringup/config/voix_piper.yaml` |
-| `principal` | `robot_devastator` | `principal` | `src/robot_devastator_bringup/config/principal.yaml` |
+| `voix_piper` | `robot_devastator` | `voix_piper` | `src/robot_devastator_bringup/config/voix_piper.yaml` |
+| `annonces_audio` | `robot_devastator` | `annonces_audio` | `src/robot_devastator_bringup/config/annonces_audio.yaml` |
 | `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` | `src/robot_devastator_bringup/config/autonomie_simple.yaml` |
 
 **Objectif :** assembler le pont Pico, l'évitement d'obstacle et les annonces audio pour obtenir
@@ -333,7 +333,7 @@ l'autonomie simple actuelle du robot.
   doit pas y être cherchée.
 - `evitement_obstacle_node` contient la machine d'états : c'est le fichier principal à lire pour
   comprendre les décisions du robot.
-- `principal` transforme des événements de haut niveau en demandes audio ; il ne pilote pas les
+- `annonces_audio` transforme des événements de haut niveau en demandes audio ; il ne pilote pas les
   moteurs.
 - `voix_piper` isole les appels aux programmes externes `piper` et `aplay`.
 - Aucun serveur ou client d'action ROS 2 n'est défini dans le code actuel.
@@ -345,7 +345,7 @@ l'autonomie simple actuelle du robot.
 - Les outils lancés manuellement avec `ros2 topic`, `ros2 service` ou depuis un autre dépôt peuvent
   ajouter des producteurs, consommateurs ou clients qui ne sont pas visibles ici.
 - Les services `generer_audio` et `jouer_audio` sont créés avec des noms relatifs dans
-  `voix_piper_service.py`. Avec les lancements actuels sans namespace, ROS 2 les résout en
+  `voix_piper.py`. Avec les lancements actuels sans namespace, ROS 2 les résout en
   `/generer_audio` et `/jouer_audio`.
 - `/pico/etat` publie toutes les lignes UART reçues. Une ligne composée uniquement de chiffres est
   aussi publiée sur `/pico/distance_ultrason_mm`; la carte ne suppose pas d'autres formats de réponse

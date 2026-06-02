@@ -9,7 +9,7 @@ from commun.srv import GenererAudio, JouerAudio
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from robot_devastator.voix_piper_service import AUDIO_CACHE_DIR
+from robot_devastator.voix_piper import AUDIO_CACHE_DIR
 from std_msgs.msg import String
 
 TOPIC_EVENEMENT_ROBOT: Final[str] = '/robot/evenement'
@@ -41,11 +41,11 @@ class VarianteAnnonce:
     texte: str
 
 
-class Principal(Node):
+class AnnoncesAudio(Node):
     """Prépare les annonces audio et les joue selon les événements du robot."""
 
     def __init__(self) -> None:
-        super().__init__('principal')
+        super().__init__('annonces_audio')
         self.declare_parameter('delai_min_repetition_s', 3.0)
         self.declare_parameter('preparer_audio_au_demarrage', True)
         self.declare_parameter('jouer_annonce_demarrage', True)
@@ -224,7 +224,7 @@ class Principal(Node):
 def main(args: list[str] | None = None) -> None:
     """Initialise ROS 2, prépare les fichiers WAV, puis écoute les événements."""
     rclpy.init(args=args)
-    node = Principal()
+    node = AnnoncesAudio()
     try:
         services_disponibles = node.attendre_services_audio()
         if services_disponibles and node.preparer_audio_au_demarrage:

@@ -26,8 +26,8 @@ setup(
     entry_points={
         'console_scripts': [
             'evitement_obstacle = robot_devastator.evitement_obstacle:main',
-            'principal = robot_devastator.principal:main',
-            'voix_piper_service = robot_devastator.voix_piper_service:main',
+            'annonces_audio = robot_devastator.annonces_audio:main',
+            'voix_piper = robot_devastator.voix_piper:main',
         ],
     },
 )
