@@ -1,0 +1,8 @@
+voix_piper:
+  ros__parameters:
+    # Modèle vocal français installé sur le Raspberry Pi 4.
+    piper_model: /opt/piper/voix/fr_FR-siwis-low.onnx
+    # Configuration associée au modèle vocal Piper.
+    piper_config: /opt/piper/voix/fr_FR-siwis-low.onnx.json
+    # Durée maximale accordée à Piper et à aplay avant de signaler un échec.
+    command_timeout_s: 15.0

@@ -270,12 +270,12 @@ Aucun.
 
 **Paramètres déclarés et lus**
 
-| Paramètre | Valeur par défaut dans le code | Fichier YAML de lancement | Rôle |
+| Paramètre | Valeur par défaut dans le code | Valeur dans `config/voix_piper.yaml` | Rôle |
 |---|---|---|---|
-| `piper_model` | `/opt/piper/voix/fr_FR-siwis-low.onnx` | Aucun | Chemin du modèle vocal Piper. |
-| `piper_config` | `/opt/piper/voix/fr_FR-siwis-low.onnx.json` | Aucun | Chemin de la configuration du modèle Piper. |
+| `piper_model` | `/opt/piper/voix/fr_FR-siwis-low.onnx` | `/opt/piper/voix/fr_FR-siwis-low.onnx` | Chemin du modèle vocal Piper. |
+| `piper_config` | `/opt/piper/voix/fr_FR-siwis-low.onnx.json` | `/opt/piper/voix/fr_FR-siwis-low.onnx.json` | Chemin de la configuration du modèle Piper. |
 | `audio_output` | `~/.cache/robot_devastator/audio/derniere_sortie.wav` | Aucun | Fichier utilisé lorsqu'aucun nom n'est fourni dans une requête. |
-| `command_timeout_s` | `15.0` | Aucun | Durée maximale accordée à Piper et à `aplay`. |
+| `command_timeout_s` | `15.0` | `15.0` | Durée maximale accordée à Piper et à `aplay`. |
 
 ## Topics
 
@@ -312,7 +312,7 @@ actionneurs, les mesures ultrason et les services de diagnostic.
 | Nœud lancé | Package | Exécutable | Fichier de paramètres |
 |---|---|---|---|
 | `interface_pico_node` | `interface_pico` | `interface_pico_node` | `src/robot_devastator_bringup/config/interface_pico.yaml` |
-| `voix_piper` | `robot_devastator` | `voix_piper_service` | Aucun |
+| `voix_piper` | `robot_devastator` | `voix_piper_service` | `src/robot_devastator_bringup/config/voix_piper.yaml` |
 | `principal` | `robot_devastator` | `principal` | `src/robot_devastator_bringup/config/principal.yaml` |
 | `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` | `src/robot_devastator_bringup/config/autonomie_simple.yaml` |
 

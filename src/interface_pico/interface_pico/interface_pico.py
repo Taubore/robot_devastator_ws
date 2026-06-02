@@ -197,7 +197,7 @@ class NoeudInterfacePico(Node):
 
     def _gerer_ping_callback(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
         """
-        Traite simplement `PING`.
+        Envoie `PING` sans attendre une réponse du Pico.
         """
 
         try:
@@ -209,7 +209,9 @@ class NoeudInterfacePico(Node):
             return reponse
 
         reponse.success = True
-        reponse.message = 'Commande PING acceptée.'
+        reponse.message = (
+            'Commande PING envoyée sur UART; réponse éventuelle publiée sur /pico/etat.'
+        )
         return reponse
 
     # --- Callbacks des timers ---

@@ -11,6 +11,8 @@ launch:
     exec: voix_piper_service
     name: voix_piper
     output: screen
+    param:
+    - from: $(find-pkg-share robot_devastator_bringup)/config/voix_piper.yaml
 - node:
     pkg: robot_devastator
     exec: principal

@@ -20,6 +20,9 @@
 
 # Composantes acquises mais non utilisées ou mises de côté temporairement
 
+La couche logicielle de voix Piper est active dans ROS 2. Les composantes audio I2S ci-dessous
+restent gelées tant que leur chaîne matérielle n'est pas intégrée et validée sur le robot.
+
 | ID | Nom | Catégorie | Rôle | État | Description |
 |---|---|---|---|---|---|
 | PS2 | Manette Lynxmotion PS2 | Interface opérateur | Téléopération | Gelé | Manette utilisable pour tests manuels. |
