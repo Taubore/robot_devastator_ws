@@ -91,6 +91,5 @@ ros2 topic pub --once /pico/commande_tourelle_deg std_msgs/msg/Int32 "{data: 140
 ```
 
 La configuration active de l'autonomie utilise `95` pour le centre, `45` pour la gauche et `140`
-pour la droite. L'association physique entre `45` et `140` et les côtés gauche / droite doit être
-confirmée sur le robot en observant les trois positions pendant ce test. Aucune logique de balayage
-automatique ou d'évitement d'obstacle n'est ajoutée dans `interface_pico`.
+pour la droite. Cette association a été validée physiquement sur le robot. Aucune logique de
+balayage automatique ou d'évitement d'obstacle n'est ajoutée dans `interface_pico`.

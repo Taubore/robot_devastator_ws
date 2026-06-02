@@ -28,10 +28,10 @@ Les angles configurés pour la tourelle sont :
 - gauche : `45°`
 - droite : `140°`
 
-L'association physique entre les angles `45°` et `140°` et les côtés gauche / droite doit être
-confirmée sur le robot. Pour la vérifier sans démarrer l'autonomie, lancer uniquement
-`interface_pico.launch.yaml`, puis publier successivement les trois angles avec les commandes
-documentées dans `src/interface_pico/README.md`.
+Association validée sur le robot :
+
+- `45°` oriente la tourelle vers la gauche ;
+- `140°` oriente la tourelle vers la droite.
 
 ## Affectation GPIO (validée)
 

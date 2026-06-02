@@ -178,8 +178,8 @@ Aucun.
 | `duree_recul_s` | `0.45` | `2.0` | Durée du recul de récupération. |
 | `marge_choix_direction_mm` | `120` | `120` | Écart minimal entre gauche et droite pour changer le côté choisi. |
 
-Les valeurs `45°` et `140°` sont celles de la configuration active. Leur association physique avec
-les côtés gauche et droit doit être confirmée sur le robot par un essai manuel de la tourelle.
+Les valeurs `45°` et `140°` sont celles de la configuration active. L'essai manuel de la tourelle
+confirme que `45°` pointe à gauche et que `140°` pointe à droite.
 
 ### `annonces_audio`
 

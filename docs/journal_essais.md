@@ -1,3 +1,17 @@
+### 2026-06-02 — Validation des angles de tourelle
+
+**Objectif :**
+Confirmer l'association physique entre les angles de servo configurés et les côtés gauche / droite.
+
+**Résultat observé :**
+- `45°` oriente la tourelle vers la gauche.
+- `140°` oriente la tourelle vers la droite.
+- `95°` reste l'angle central utilisé par l'autonomie simple.
+
+**Décision :**
+- La configuration active est cohérente avec le montage physique.
+- Aucun correctif de code ou de YAML n'est requis pour les angles de tourelle.
+
 ### 2026-06-01 — Évitement d’obstacles avec tourelle ultrason
 
 **Objectif :**
