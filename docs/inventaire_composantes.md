@@ -2,7 +2,7 @@
 
 | ID | Nom | Catégorie | Rôle | État | Description |
 |---|---|---|---|---|---|
-| RASPI4 | Raspberry Pi 4 4 GB | Nano-ordinateur | Logique haut niveau ROS 2 | Actif | Ordinateur principal du robot. Exécute ROS 2 Jazzy, coordonne les noeuds, prend les décisions haut niveau. |
+| RASPI4 | Raspberry Pi 4 4 GB | Nano-ordinateur | Logique haut niveau ROS 2 | Actif | Ordinateur principal du robot. Exécute ROS 2 Jazzy, coordonne les nœuds, prend les décisions haut niveau. |
 | PICO_WH | Raspberry Pi Pico WH | Microcontrôleur | Bas niveau temps réel | Actif | Contrôle les moteurs, lit les signaux rapides et communique avec le Raspberry Pi 4 par UART. |
 | MDD3A | Cytron MDD3A | Contrôleur moteur | Gère les moteurs | Actif | Pilote deux moteurs DC à partir des signaux PWM du Pico. |
 | FIT0521_G | DFRobot FIT0521 gauche | Moteur | Traction gauche | Actif | Moteur DC 6 V avec encodeur intégré. Utilisé pour la roue gauche. |

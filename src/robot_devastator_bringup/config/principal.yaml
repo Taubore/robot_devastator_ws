@@ -14,11 +14,11 @@ principal:
       - 'autonomie_demarre_01|Mode autonomie activé.'
     annonces.obstacle_detecte:
       - 'obstacle_detecte_01|Obstacle détecté.'
-      - 'obstacle_detecte_03|Oupss, il y a quelque chose.'
+      - 'obstacle_detecte_03|Oups, il y a quelque chose.'
       - 'obstacle_detecte_04|Quelque chose à contourner.'
       - 'obstacle_detecte_05|Obstacle droit devant, je dois contourner.'
       - 'analyse_obstacle_01|Recherche d’un passage.'
-      - 'analyse_obstacle_02|Il ya un obstacle, je cherche une solution.'
+      - 'analyse_obstacle_02|Il y a un obstacle, je cherche une solution.'
       - ''
       - ''
       - ''

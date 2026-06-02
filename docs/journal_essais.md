@@ -14,7 +14,7 @@ balayage gauche/droite, rotation vers le côté dégagé et reprise.
 **Résultat observé :**
 Le robot avance, détecte les obstacles, arrête les moteurs, balaie avec la tourelle,
 choisit un côté, tourne et reprend l’avance. Le comportement est basique, mais
-fonctionne correctement. Si il tourne trop longtemps, après un délai, il va reculer un peu
+fonctionne correctement. S'il tourne trop longtemps, après un délai, il va reculer un peu
 et reprendre.
 
 **Décision :**

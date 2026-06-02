@@ -73,13 +73,13 @@ class Principal(Node):
         self.abonnement_evenement = self.create_subscription(
             String,
             TOPIC_EVENEMENT_ROBOT,
-            self._recevoir_evenement,
+            self._recevoir_evenement_callback,
             TAILLE_FILE_MESSAGES,
         )
         self.get_logger().info(f'Cache audio persistant utilisé : {AUDIO_CACHE_DIR}.')
 
     def _charger_annonces(self) -> dict[str, list[VarianteAnnonce | None]]:
-        """Charge les variantes configurées; une chaîne vide représente le silence."""
+        """Charge les variantes configurées ; une chaîne vide représente le silence."""
         annonces: dict[str, list[VarianteAnnonce | None]] = {}
         noms_fichiers: set[str] = set()
         for evenement in EVENEMENTS_ANNONCES:
@@ -161,7 +161,7 @@ class Principal(Node):
             f'{reponse.chemin_fichier}'
         )
 
-    def _recevoir_evenement(self, message: String) -> None:
+    def _recevoir_evenement_callback(self, message: String) -> None:
         """Choisit une variante et demande sa lecture sans bloquer l'orchestrateur."""
         self.jouer_annonce(message.data)
 

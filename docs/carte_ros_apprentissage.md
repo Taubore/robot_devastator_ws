@@ -155,7 +155,7 @@ Aucun.
 
 | Période | Callback | Rôle |
 |---|---|---|
-| Paramètre `periode_publication_s` | `_publier_consigne_selon_distance` | Faire progresser la machine d'états et publier une consigne sécuritaire. |
+| Paramètre `periode_publication_s` | `_publier_consigne_selon_distance_callback` | Faire progresser la machine d'états et publier une consigne sécuritaire. |
 
 **Paramètres déclarés et lus**
 

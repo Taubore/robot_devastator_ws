@@ -197,12 +197,12 @@ class EvitementObstacle(Node):
         self.abonnement_distance = self.create_subscription(
             Int32,
             TOPIC_DISTANCE_ULTRASON,
-            self._recevoir_distance,
+            self._recevoir_distance_callback,
             TAILLE_FILE_MESSAGES,
         )
         self.timer_publication = self.create_timer(
             self.periode_publication_s,
-            self._publier_consigne_selon_distance,
+            self._publier_consigne_selon_distance_callback,
         )
 
         self.get_logger().info(
@@ -223,7 +223,7 @@ class EvitementObstacle(Node):
             )
         return valeur_bornee
 
-    def _recevoir_distance(self, message: Int32) -> None:
+    def _recevoir_distance_callback(self, message: Int32) -> None:
         """Mémorise la dernière distance valide reçue du Pico."""
         distance_mm = int(message.data)
         self.numero_derniere_distance += 1
@@ -251,7 +251,7 @@ class EvitementObstacle(Node):
             else:
                 self.nombre_mesures_degagement = 0
 
-    def _publier_consigne_selon_distance(self) -> None:
+    def _publier_consigne_selon_distance_callback(self) -> None:
         """Fait progresser l'évitement et publie une consigne moteur sécuritaire."""
         if self.etat == EtatEvitement.AVANCE:
             self._gerer_avance()

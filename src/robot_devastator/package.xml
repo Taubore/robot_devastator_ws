@@ -9,7 +9,7 @@
   <!-- Outil de build principal. ament_python est adapté aux packages ROS 2 écrits en Python. -->
   <buildtool_depend>ament_python</buildtool_depend>
 
-  <!-- Bibliothèque cliente Python de ROS 2. Indispensable pour créer des noeuds, publishers, subscribers, etc. -->
+  <!-- Bibliothèque cliente Python de ROS 2. Indispensable pour créer des nœuds, publishers, subscribers, etc. -->
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
