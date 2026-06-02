@@ -46,10 +46,12 @@ La configuration de débogage `Nœud Python ROS 2` permet de lancer directement
 
 ## Test rapide
 
-Publier une consigne moteur avec les roues dans le vide :
+Lancer uniquement avec les roues dans le vide. Le script applique une vitesse faible de `300`
+pendant `1 s`, puis publie un arrêt explicite attendu. La vitesse est volontairement limitée à
+`±300` et la durée à `2 s` au maximum.
 
 ```bash
-ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs "{gauche: 300, droite: 300}"
+ros2 run interface_pico essai_moteurs_borne
 ```
 
 Tester les services :

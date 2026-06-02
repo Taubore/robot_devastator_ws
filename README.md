@@ -131,8 +131,8 @@ ros2 launch robot_devastator_bringup autonomie_simple.launch.yaml
 ```
 
 ```bash
-# Roues dans le vide : une valeur inférieure à 300 peut ne pas faire tourner les moteurs.
-ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs "{gauche: 300, droite: 300}"
+# Roues dans le vide : essai bref à faible vitesse, suivi d'un arrêt explicite attendu.
+ros2 run interface_pico essai_moteurs_borne
 ros2 service call /pico/ping std_srvs/srv/Trigger
 ros2 service call /pico/stop std_srvs/srv/Trigger
 ```
