@@ -9,9 +9,9 @@ evitement_obstacle_node:
     # Angle du sonar utilisé pour surveiller la direction d'avance du robot.
     angle_tourelle_centre_deg: 95
     # Angle du sonar utilisé pour mesurer le dégagement disponible à gauche.
-    angle_tourelle_gauche_deg: 140
+    angle_tourelle_gauche_deg: 45
     # Angle du sonar utilisé pour mesurer le dégagement disponible à droite.
-    angle_tourelle_droite_deg: 45
+    angle_tourelle_droite_deg: 140
     # Attente après chaque mouvement du servo avant d'utiliser une nouvelle mesure.
     delai_stabilisation_tourelle_s: 0.35
     # Distance avant requise pendant la rotation pour considérer la voie dégagée.
