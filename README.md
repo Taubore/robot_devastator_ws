@@ -34,18 +34,18 @@ communes du projet.
 
 | Topic | Type | Producteur | Consommateur | Rôle |
 |---|---|---|---|---|
-| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle_node` | `interface_pico_node` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
-| `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle_node` | `interface_pico_node` | Commander l'angle du servo de tourelle en degrés |
-| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico_node` | `evitement_obstacle_node` | Publier la distance ultrason mesurée en millimètres |
-| `/pico/etat` | `std_msgs/msg/String` | `interface_pico_node` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
-| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle_node` | `annonces_audio` | Signaler uniquement les transitions significatives du comportement autonome |
+| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle` | `interface_pico` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
+| `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle` | `interface_pico` | Commander l'angle du servo de tourelle en degrés |
+| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico` | `evitement_obstacle` | Publier la distance ultrason mesurée en millimètres |
+| `/pico/etat` | `std_msgs/msg/String` | `interface_pico` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
+| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle` | `annonces_audio` | Signaler uniquement les transitions significatives du comportement autonome |
 
 ### Services
 
 | Service | Type | Serveur | Client connu | Rôle |
 |---|---|---|---|---|
-| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico_node` | Outil de diagnostic | Demander l'envoi de `PING` au Pico ; le succès confirme l'envoi UART, pas la réception d'une réponse |
-| `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico_node` | Outil de diagnostic | Demander un arrêt explicite au Pico |
+| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander l'envoi de `PING` au Pico ; le succès confirme l'envoi UART, pas la réception d'une réponse |
+| `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander un arrêt explicite au Pico |
 | `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `annonces_audio` | Générer à l'avance un fichier WAV absent du cache persistant |
 | `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `annonces_audio` | Jouer un fichier WAV déjà généré |
 
@@ -55,10 +55,14 @@ Aucune action ROS 2 n'est implémentée actuellement.
 
 ## Nœuds ROS 2
 
+Convention retenue : les noms de nœuds et d'exécutables sont en `snake_case`, sans suffixe
+technique `_node` systématique. Les clés racines des fichiers YAML de paramètres reprennent le
+nom exact du nœud lancé.
+
 | Nœud | Package | Exécutable / module | État | Rôle |
 |---|---|---|---|---|
-| `interface_pico_node` | `interface_pico` | `interface_pico_node` / `interface_pico.interface_pico` | Actif | Exposer les topics et services Pico, puis traduire les commandes ROS 2 vers UART |
-| `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, balayer avec la tourelle, puis tourner jusqu'à trouver un dégagement |
+| `interface_pico` | `interface_pico` | `interface_pico` / `interface_pico.interface_pico` | Actif | Exposer les topics et services Pico, puis traduire les commandes ROS 2 vers UART |
+| `evitement_obstacle` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, balayer avec la tourelle, puis tourner jusqu'à trouver un dégagement |
 | `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les annonces audio et demander leur lecture selon les événements du robot |
 | `voix_piper` | `robot_devastator` | `voix_piper` / `robot_devastator.voix_piper` | Actif | Générer et jouer les fichiers WAV persistants avec Piper |
 
@@ -109,7 +113,7 @@ minimale de rotation. Si aucun dégagement n'est trouvé dans le délai prévu, 
 et refait un balayage. Elle reprend l'avance seulement si une nouvelle mesure avant est valide et
 dégagée.
 
-Par sécurité, `interface_pico_node` maintient une consigne moteur seulement pendant un délai borné.
+Par sécurité, `interface_pico` maintient une consigne moteur seulement pendant un délai borné.
 Sans nouvelle consigne ROS pendant `0.5 s`, ou après une erreur UART, il transmet et mémorise un
 arrêt. Une reconnexion UART repart également à l'arrêt avant d'accepter une nouvelle commande.
 

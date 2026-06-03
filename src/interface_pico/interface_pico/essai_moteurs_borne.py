@@ -89,7 +89,7 @@ def main(args: list[str] | None = None) -> None:
 
         if publication.get_subscription_count() == 0:
             raise RuntimeError(
-                "Aucun abonné détecté. Lancer d'abord interface_pico_node, puis recommencer."
+                "Aucun abonné détecté. Lancer d'abord interface_pico, puis recommencer."
             )
 
         consigne = ConsigneMoteurs()

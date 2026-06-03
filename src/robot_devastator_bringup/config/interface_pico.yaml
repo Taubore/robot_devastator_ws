@@ -1,4 +1,4 @@
-interface_pico_node:
+interface_pico:
   ros__parameters:
     # Port série matériel relié au Raspberry Pi Pico WH.
     port: /dev/ttyS0

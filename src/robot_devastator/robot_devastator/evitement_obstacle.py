@@ -61,7 +61,7 @@ class EvitementObstacle(Node):
     """Nœud d'autonomie simple basé sur une distance ultrason orientable."""
 
     def __init__(self) -> None:
-        super().__init__('evitement_obstacle_node')
+        super().__init__('evitement_obstacle')
 
         self.declare_parameter('distance_arret_mm', 350)
         self.declare_parameter('vitesse_avance', 500)

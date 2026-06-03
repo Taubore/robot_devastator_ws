@@ -7,7 +7,7 @@
 - `interface_pico/transport_serie_pico.py` : couche UART brute. Ce fichier ouvre le port
   série, envoie les commandes texte terminées par fin de ligne et lit les lignes éventuelles
   renvoyées par le Pico.
-- `interface_pico/interface_pico.py` : nœud ROS 2 `interface_pico_node`. Ce fichier adapte
+- `interface_pico/interface_pico.py` : nœud ROS 2 `interface_pico`. Ce fichier adapte
   ROS 2 vers le transport série, expose les topics, services, paramètres et timers.
 
 ## Interfaces ROS 2

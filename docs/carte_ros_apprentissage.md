@@ -8,7 +8,7 @@ de guide de lecture : elle ne remplace pas l'observation du graphe ROS 2 pendant
 Le flux principal de l'autonomie simple est le suivant :
 
 ```text
-evitement_obstacle_node
+evitement_obstacle
   ├─ publie les commandes moteurs et tourelle
   ├─ reçoit la distance ultrason
   └─ publie les événements significatifs
@@ -16,7 +16,7 @@ evitement_obstacle_node
           ▼
 annonces_audio ── demande la génération ou la lecture audio ──► voix_piper
 
-interface_pico_node
+interface_pico
   ├─ traduit les commandes ROS 2 en lignes UART vers le Pico WH
   └─ traduit les réponses UART du Pico WH en topics ROS 2
 ```
@@ -46,9 +46,9 @@ Ce package ne contient aucun fichier Python important.
 
 | Fichier Python | Rôle |
 |---|---|
-| `src/interface_pico/interface_pico/interface_pico.py` | Définit le nœud ROS 2 `interface_pico_node`. |
+| `src/interface_pico/interface_pico/interface_pico.py` | Définit le nœud ROS 2 `interface_pico`. |
 | `src/interface_pico/interface_pico/transport_serie_pico.py` | Isole l'échange UART en lignes ASCII avec le Pico WH. Ce fichier ne définit pas de nœud ROS 2. |
-| `src/interface_pico/setup.py` | Déclare l'exécutable ROS 2 Python `interface_pico_node`. |
+| `src/interface_pico/setup.py` | Déclare l'exécutable ROS 2 Python `interface_pico`. |
 
 #### `robot_devastator`
 
@@ -66,14 +66,18 @@ et de paramètres décrits plus bas.
 
 ## Nœuds ROS 2
 
-### `interface_pico_node`
+Les noms de nœuds et d'exécutables suivent une convention simple en `snake_case`, sans suffixe
+technique `_node` systématique. Chaque fichier YAML de paramètres utilise comme clé racine le nom
+exact du nœud lancé.
+
+### `interface_pico`
 
 | Élément | Valeur |
 |---|---|
 | Package | `interface_pico` |
 | Fichier Python | `src/interface_pico/interface_pico/interface_pico.py` |
-| Classe | `NoeudInterfacePico` |
-| Exécutable ROS 2 | `interface_pico_node` |
+| Classe | `InterfacePico` |
+| Exécutable ROS 2 | `interface_pico` |
 | Rôle | Adapter les topics et services ROS 2 aux commandes UART comprises par le Pico WH, puis republier les réponses utiles du Pico. |
 
 **Publishers créés**
@@ -120,7 +124,7 @@ Aucun.
 | `delai_expiration_consigne_moteurs_s` | `0.5` | `0.5` | Durée maximale sans nouvelle consigne ROS avant un arrêt explicite. |
 | `periode_distance_s` | `0.5` | `0.10` | Intervalle entre deux demandes de distance ultrason. |
 
-### `evitement_obstacle_node`
+### `evitement_obstacle`
 
 | Élément | Valeur |
 |---|---|
@@ -283,18 +287,18 @@ Aucun.
 
 | Topic | Type | Producteur connu dans le workspace | Consommateur connu dans le workspace | Rôle |
 |---|---|---|---|---|
-| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle_node` | `interface_pico_node` | Transmettre les consignes des moteurs gauche et droit vers le Pico. |
-| `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | `evitement_obstacle_node` | `interface_pico_node` | Commander l'angle du servo de tourelle en degrés. |
-| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico_node` | `evitement_obstacle_node` | Publier la distance ultrason en millimètres. |
-| `/pico/etat` | `std_msgs/msg/String` | `interface_pico_node` | Aucun consommateur interne connu | Publier les lignes texte reçues du Pico pour le diagnostic. |
-| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle_node` | `annonces_audio` | Diffuser les transitions significatives de l'autonomie simple. |
+| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle` | `interface_pico` | Transmettre les consignes des moteurs gauche et droit vers le Pico. |
+| `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | `evitement_obstacle` | `interface_pico` | Commander l'angle du servo de tourelle en degrés. |
+| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico` | `evitement_obstacle` | Publier la distance ultrason en millimètres. |
+| `/pico/etat` | `std_msgs/msg/String` | `interface_pico` | Aucun consommateur interne connu | Publier les lignes texte reçues du Pico pour le diagnostic. |
+| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle` | `annonces_audio` | Diffuser les transitions significatives de l'autonomie simple. |
 
 ## Services
 
 | Service | Type | Serveur | Client connu dans le workspace | Rôle |
 |---|---|---|---|---|
-| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico_node` | Aucun client interne connu | Envoyer `PING` sur l'UART ; le succès ne confirme pas la réception d'une réponse. |
-| `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico_node` | Aucun client interne connu | Demander un arrêt explicite des moteurs au Pico. |
+| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Aucun client interne connu | Envoyer `PING` sur l'UART ; le succès ne confirme pas la réception d'une réponse. |
+| `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico` | Aucun client interne connu | Demander un arrêt explicite des moteurs au Pico. |
 | `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `annonces_audio` | Générer un fichier WAV absent du cache persistant. |
 | `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `annonces_audio` | Jouer un fichier WAV existant. |
 
@@ -304,7 +308,7 @@ Aucun.
 
 | Nœud lancé | Package | Exécutable | Fichier de paramètres |
 |---|---|---|---|
-| `interface_pico_node` | `interface_pico` | `interface_pico_node` | `src/robot_devastator_bringup/config/interface_pico.yaml` |
+| `interface_pico` | `interface_pico` | `interface_pico` | `src/robot_devastator_bringup/config/interface_pico.yaml` |
 
 **Objectif :** lancer uniquement le pont UART vers le Pico afin de tester progressivement les
 actionneurs, les mesures ultrason et les services de diagnostic.
@@ -313,10 +317,10 @@ actionneurs, les mesures ultrason et les services de diagnostic.
 
 | Nœud lancé | Package | Exécutable | Fichier de paramètres |
 |---|---|---|---|
-| `interface_pico_node` | `interface_pico` | `interface_pico_node` | `src/robot_devastator_bringup/config/interface_pico.yaml` |
+| `interface_pico` | `interface_pico` | `interface_pico` | `src/robot_devastator_bringup/config/interface_pico.yaml` |
 | `voix_piper` | `robot_devastator` | `voix_piper` | `src/robot_devastator_bringup/config/voix_piper.yaml` |
 | `annonces_audio` | `robot_devastator` | `annonces_audio` | `src/robot_devastator_bringup/config/annonces_audio.yaml` |
-| `evitement_obstacle_node` | `robot_devastator` | `evitement_obstacle` | `src/robot_devastator_bringup/config/autonomie_simple.yaml` |
+| `evitement_obstacle` | `robot_devastator` | `evitement_obstacle` | `src/robot_devastator_bringup/config/autonomie_simple.yaml` |
 
 **Objectif :** assembler le pont Pico, l'évitement d'obstacle et les annonces audio pour obtenir
 l'autonomie simple actuelle du robot.
@@ -331,9 +335,9 @@ l'autonomie simple actuelle du robot.
 
 ## Points à retenir pour l'étude
 
-- `interface_pico_node` est une couche d'adaptation matérielle. La logique de décision autonome ne
+- `interface_pico` est une couche d'adaptation matérielle. La logique de décision autonome ne
   doit pas y être cherchée.
-- `evitement_obstacle_node` contient la machine d'états : c'est le fichier principal à lire pour
+- `evitement_obstacle` contient la machine d'états : c'est le fichier principal à lire pour
   comprendre les décisions du robot.
 - `annonces_audio` transforme des événements de haut niveau en demandes audio ; il ne pilote pas les
   moteurs.

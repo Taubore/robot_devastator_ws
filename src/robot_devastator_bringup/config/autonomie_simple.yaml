@@ -1,4 +1,4 @@
-evitement_obstacle_node:
+evitement_obstacle:
   ros__parameters:
     # Distance avant minimale avant de déclencher l'arrêt et le balayage de la tourelle.
     distance_arret_mm: 350

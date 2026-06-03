@@ -26,7 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'essai_moteurs_borne = interface_pico.essai_moteurs_borne:main',
-            'interface_pico_node = interface_pico.interface_pico:main',
+            'interface_pico = interface_pico.interface_pico:main',
         ],
     },
 )

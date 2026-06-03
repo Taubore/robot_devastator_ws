@@ -3,7 +3,7 @@
 
 ## Configuration ROS 2 de l'interface Pico
 
-Le nœud `interface_pico_node` utilise la liaison UART vers le Pico WH. Les paramètres actifs sont
+Le nœud `interface_pico` utilise la liaison UART vers le Pico WH. Les paramètres actifs sont
 regroupés dans `src/robot_devastator_bringup/config/interface_pico.yaml` :
 
 - `port` : port UART, actuellement `/dev/ttyS0`
@@ -167,10 +167,10 @@ confirme pas à lui seul la réception d'une réponse du Pico. Pour observer une
 ### Sécurité
 
 - arrêt automatique par le Pico si aucune commande UART valide n'est reçue depuis plus de `500 ms`
-- arrêt explicite par `interface_pico_node` si aucune nouvelle consigne moteur ROS n'est reçue
+- arrêt explicite par `interface_pico` si aucune nouvelle consigne moteur ROS n'est reçue
   depuis plus de `500 ms`
 - neutralisation de l'ancienne consigne moteur après une erreur ou une reconnexion UART
-- tentative d'envoi de `STOP` par `interface_pico_node` avant la fermeture de la liaison UART
+- tentative d'envoi de `STOP` par `interface_pico` avant la fermeture de la liaison UART
 
 ## Règles de conception
 

@@ -35,13 +35,13 @@ SERVICE_PING: Final[str] = '/pico/ping'
 SERVICE_STOP: Final[str] = '/pico/stop'
 
 
-class NoeudInterfacePico(Node):
+class InterfacePico(Node):
     """
     Adapte ROS 2 vers la liaison UART du Pico sans logique complexe.
     """
 
     def __init__(self) -> None:
-        super().__init__('interface_pico_node')
+        super().__init__('interface_pico')
 
         # Ces paramètres couvrent l'essentiel du câblage série et du maintien
         # périodique demandé par le Pico.
@@ -384,10 +384,10 @@ def main(args: list[str] | None = None) -> None:
     """
 
     rclpy.init(args=args)
-    noeud: NoeudInterfacePico | None = None
+    noeud: InterfacePico | None = None
 
     try:
-        noeud = NoeudInterfacePico()
+        noeud = InterfacePico()
         rclpy.spin(noeud)
     except KeyboardInterrupt:
         pass
