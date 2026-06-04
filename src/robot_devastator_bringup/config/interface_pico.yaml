@@ -12,3 +12,7 @@ interface_pico:
     delai_expiration_consigne_moteurs_s: 0.5
     # Intervalle entre les demandes de mesure ultrason envoyées au Pico.
     periode_distance_s: 0.10
+    # Intervalle entre les demandes de compteurs encodeurs envoyées au Pico.
+    periode_encodeurs_s: 0.10
+    # Délai maximal pendant lequel un service attend sa confirmation UART.
+    delai_attente_reponse_service_s: 1.0

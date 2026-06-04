@@ -15,12 +15,35 @@
 - Topic d'entrée `/pico/commande_moteurs` : message `commun/msg/ConsigneMoteurs`
 - Topic d'entrée `/pico/commande_tourelle_deg` : message `std_msgs/msg/Int32`, angle servo
   de tourelle en degrés de `0` à `180`
-- Service `/pico/stop` : `std_srvs/srv/Trigger`
-- Service `/pico/ping` : `std_srvs/srv/Trigger`, confirme l'envoi UART de `PING`, mais pas la
-  réception d'une réponse du Pico
-- Topic d'état `/pico/etat` : `std_msgs/msg/String`
+- Service `/pico/stop` : `std_srvs/srv/Trigger`, envoie `STOP_MOT` et attend `OK STOP_MOT`
+- Service `/pico/ping` : `std_srvs/srv/Trigger`, envoie `PING` et réussit seulement si le Pico
+  répond `OK PING` dans le délai configuré
+- Service `/pico/reset_encodeurs` : `std_srvs/srv/Trigger`, envoie `RESET_ENC` et attend
+  `OK RESET_ENC`
+- Topic d'état `/pico/etat` : `std_msgs/msg/String`, publie les lignes UART reçues du Pico
 - Topic publié `/pico/distance_ultrason_mm` : message `std_msgs/msg/Int32`, distance
-  ultrason en millimètres lorsque le Pico répond à `DIST` par une ligne entière
+  ultrason en millimètres lorsque le Pico répond à `SONAR` par `OK SONAR <distance_mm>`
+- Topic publié `/pico/encodeurs` : message `commun/msg/EtatEncodeurs`, ticks gauche et droit
+  lorsque le Pico répond à `ENC` par `OK ENC <gauche_ticks> <droite_ticks>`
+
+## Protocole UART utilisé
+
+Le nœud utilise directement le protocole texte courant du firmware Pico, sans alias vers les
+anciennes commandes :
+
+| Action ROS 2 | Commande UART | Réponse attendue |
+|---|---|---|
+| Ping | `PING` | `OK PING` |
+| Arrêt moteur | `STOP_MOT` | `OK STOP_MOT` |
+| Consigne moteur | `SET_MOT <gauche> <droite>` | `OK SET_MOT <gauche> <droite>` |
+| Servo tourelle | `SET_SERVO <angle>` | `OK SET_SERVO <angle>` |
+| Sonar | `SONAR` | `OK SONAR <distance_mm>` |
+| Encodeurs | `ENC` | `OK ENC <gauche_ticks> <droite_ticks>` |
+| Reset encodeurs | `RESET_ENC` | `OK RESET_ENC` |
+| État Pico | `STATUS` | `OK STATUS <gauche> <droite> <actif>` |
+
+Les lignes spontanées `READY` et `AVERT TIMEOUT` sont publiées sur `/pico/etat` et journalisées,
+mais elles ne sont pas confondues avec les confirmations attendues par les services.
 
 ## Paramètres
 
@@ -30,10 +53,14 @@
 - `periode_maintien_s` : période de renvoi de la dernière consigne, par défaut `0.1`
 - `delai_expiration_consigne_moteurs_s` : délai maximal sans nouvelle consigne ROS avant un arrêt
   explicite, par défaut `0.5`
-- `periode_distance_s` : période des demandes `DIST`, par défaut `0.5`
+- `periode_distance_s` : période des demandes `SONAR`, par défaut `0.5`
+- `periode_encodeurs_s` : période des demandes `ENC`, par défaut `0.1`
+- `delai_attente_reponse_service_s` : délai maximal d'attente des confirmations de services,
+  par défaut `1.0`
 
 Le lancement Devastator charge `config/interface_pico.yaml` depuis `robot_devastator_bringup`.
-Les valeurs actives sont `0.02 s`, `0.25 s`, `0.5 s` et `0.10 s` pour ces quatre paramètres.
+Les valeurs actives sont `0.02 s`, `0.25 s`, `0.5 s`, `0.10 s`, `0.10 s` et `1.0 s` pour les
+paramètres temporels ci-dessus.
 
 Le nœud répète temporairement la dernière consigne moteur afin de respecter le timeout du Pico.
 Si aucune nouvelle consigne ROS n'arrive avant le délai d'expiration, il transmet et mémorise
@@ -71,15 +98,17 @@ Tester les services :
 ```bash
 ros2 service call /pico/ping std_srvs/srv/Trigger
 ros2 service call /pico/stop std_srvs/srv/Trigger
+ros2 service call /pico/reset_encodeurs std_srvs/srv/Trigger
 ```
 
-Le succès de `/pico/ping` indique uniquement que la commande `PING` a été envoyée sur l'UART.
-Observer `/pico/etat` pour vérifier la réception d'une réponse éventuelle du Pico.
+Le succès de `/pico/ping` indique que la réponse `OK PING` a été reçue dans le délai configuré.
+Observer `/pico/etat` pour voir les réponses et événements UART bruts du Pico.
 
-Lire la distance ultrason :
+Lire les mesures publiées périodiquement :
 
 ```bash
 ros2 topic echo /pico/distance_ultrason_mm
+ros2 topic echo /pico/encodeurs
 ```
 
 Tester les positions documentées du servo de tourelle :

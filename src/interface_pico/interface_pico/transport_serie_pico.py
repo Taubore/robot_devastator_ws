@@ -70,7 +70,7 @@ class TransportSeriePico:
 
     def stop(self) -> None:
         """Demande l'arrêt immédiat des moteurs."""
-        self.envoyer_commande("STOP")
+        self.envoyer_commande("STOP_MOT")
 
     def demander_status(self) -> None:
         """Demande un état texte simple au Pico."""
@@ -78,13 +78,21 @@ class TransportSeriePico:
 
     def demander_distance(self) -> None:
         """Demande au Pico une mesure de distance ultrason en millimètres."""
-        self.envoyer_commande("DIST")
+        self.envoyer_commande("SONAR")
+
+    def demander_encodeurs(self) -> None:
+        """Demande au Pico les compteurs quadrature gauche et droit."""
+        self.envoyer_commande("ENC")
+
+    def reset_encodeurs(self) -> None:
+        """Demande au Pico la remise à zéro des compteurs d'encodeurs."""
+        self.envoyer_commande("RESET_ENC")
 
     def set_servo(self, angle: int) -> None:
         """Envoie une consigne d'angle au servo de tourelle."""
         if not ANGLE_SERVO_MIN <= angle <= ANGLE_SERVO_MAX:
             raise ValueError("angle hors plage 0..180")
-        self.envoyer_commande(f"SERVO {angle}")
+        self.envoyer_commande(f"SET_SERVO {angle}")
 
     def set_moteurs(self, gauche: int, droite: int) -> None:
         """Envoie une consigne moteur brute gauche/droite."""
@@ -92,4 +100,4 @@ class TransportSeriePico:
             raise ValueError("gauche hors plage -1000..1000")
         if not VALEUR_MOTEUR_MIN <= droite <= VALEUR_MOTEUR_MAX:
             raise ValueError("droite hors plage -1000..1000")
-        self.envoyer_commande(f"SET {gauche} {droite}")
+        self.envoyer_commande(f"SET_MOT {gauche} {droite}")

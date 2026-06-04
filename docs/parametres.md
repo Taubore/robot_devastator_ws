@@ -14,6 +14,10 @@ regroupés dans `src/robot_devastator_bringup/config/interface_pico.yaml` :
 - `delai_expiration_consigne_moteurs_s` : délai maximal sans nouvelle consigne ROS avant un arrêt
   explicite, actuellement `0.5 s`
 - `periode_distance_s` : intervalle entre les demandes de mesure ultrason, actuellement `0.10 s`
+- `periode_encodeurs_s` : intervalle entre les demandes de compteurs encodeurs, actuellement
+  `0.10 s`
+- `delai_attente_reponse_service_s` : délai maximal d'attente des confirmations UART pour les
+  services, actuellement `1.0 s`
 
 Le comportement d'autonomie simple est configuré dans
 `src/robot_devastator_bringup/config/autonomie_simple.yaml`. Les consignes moteur actives sont :
@@ -142,18 +146,24 @@ Association validée sur le robot :
 - Débit prévu : 115200 bauds
 - Format de commande : texte ASCII terminé par fin de ligne
 
-### Commandes prévues
+### Commandes utilisées
 
-- `PING`
-- `STOP`
-- `SET <gauche> <droite>`
-- `STATUS`
-- `DIST`
-- `SERVO <angle_deg>`
+Le protocole UART texte courant du Pico est utilisé sans alias vers les anciennes commandes :
 
-Le service ROS 2 `/pico/ping` confirme que la commande `PING` a été envoyée sur l'UART. Il ne
-confirme pas à lui seul la réception d'une réponse du Pico. Pour observer une réponse éventuelle,
-écouter le topic `/pico/etat`.
+- `PING` → `OK PING`
+- `STOP_MOT` → `OK STOP_MOT`
+- `SET_MOT <gauche> <droite>` → `OK SET_MOT <gauche> <droite>`
+- `STATUS` → `OK STATUS <gauche> <droite> <actif>`
+- `SONAR` → `OK SONAR <distance_mm>`
+- `SET_SERVO <angle>` → `OK SET_SERVO <angle>`
+- `ENC` → `OK ENC <gauche_ticks> <droite_ticks>`
+- `RESET_ENC` → `OK RESET_ENC`
+
+Les lignes spontanées `READY` et `AVERT TIMEOUT` peuvent aussi être reçues. Elles sont publiées
+sur `/pico/etat`, mais ne remplacent pas les confirmations attendues par les services.
+
+Le service ROS 2 `/pico/ping` réussit seulement si la réponse `OK PING` est reçue dans le délai
+configuré par `delai_attente_reponse_service_s`.
 
 ### Convention de consigne
 
@@ -170,7 +180,7 @@ confirme pas à lui seul la réception d'une réponse du Pico. Pour observer une
 - arrêt explicite par `interface_pico` si aucune nouvelle consigne moteur ROS n'est reçue
   depuis plus de `500 ms`
 - neutralisation de l'ancienne consigne moteur après une erreur ou une reconnexion UART
-- tentative d'envoi de `STOP` par `interface_pico` avant la fermeture de la liaison UART
+- tentative d'envoi de `STOP_MOT` par `interface_pico` avant la fermeture de la liaison UART
 
 ## Règles de conception
 

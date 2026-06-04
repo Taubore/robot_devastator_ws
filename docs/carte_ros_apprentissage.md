@@ -85,7 +85,8 @@ exact du nœud lancé.
 | Topic | Type | Rôle |
 |---|---|---|
 | `/pico/etat` | `std_msgs/msg/String` | Publier chaque ligne texte reçue du Pico. |
-| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | Publier une ligne UART numérique comme distance ultrason en millimètres. |
+| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | Publier les réponses `OK SONAR <distance_mm>` comme distance ultrason en millimètres. |
+| `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | Publier les réponses `OK ENC <gauche_ticks> <droite_ticks>` comme ticks encodeurs. |
 
 **Subscriptions créées**
 
@@ -98,8 +99,9 @@ exact du nœud lancé.
 
 | Service | Type | Rôle |
 |---|---|---|
-| `/pico/stop` | `std_srvs/srv/Trigger` | Envoyer `STOP` au Pico et mémoriser la consigne moteur `(0, 0)`. |
-| `/pico/ping` | `std_srvs/srv/Trigger` | Envoyer `PING` au Pico. Le succès confirme l'envoi UART, pas la réception d'une réponse. |
+| `/pico/stop` | `std_srvs/srv/Trigger` | Envoyer `STOP_MOT` au Pico et mémoriser la consigne moteur `(0, 0)`. |
+| `/pico/ping` | `std_srvs/srv/Trigger` | Envoyer `PING` au Pico et attendre `OK PING`. |
+| `/pico/reset_encodeurs` | `std_srvs/srv/Trigger` | Envoyer `RESET_ENC` au Pico et attendre `OK RESET_ENC`. |
 
 **Clients de services utilisés**
 
@@ -111,7 +113,8 @@ Aucun.
 |---|---|---|
 | Paramètre `timeout_lecture` | `_lire_et_traiter_reponse_uart_callback` | Lire une éventuelle ligne UART sans boucle bloquante. |
 | Paramètre `periode_maintien_s` | `_maintenir_derniere_consigne_moteurs_callback` | Répéter temporairement la dernière consigne moteur valide ou transmettre un arrêt si elle expire. |
-| Paramètre `periode_distance_s` | `_demander_distance_callback` | Envoyer périodiquement la commande UART `DIST`. |
+| Paramètre `periode_distance_s` | `_demander_distance_callback` | Envoyer périodiquement la commande UART `SONAR`. |
+| Paramètre `periode_encodeurs_s` | `_demander_encodeurs_callback` | Envoyer périodiquement la commande UART `ENC`. |
 
 **Paramètres déclarés et lus**
 
@@ -123,6 +126,8 @@ Aucun.
 | `periode_maintien_s` | `0.1` | `0.25` | Intervalle de répétition de la dernière consigne moteur. |
 | `delai_expiration_consigne_moteurs_s` | `0.5` | `0.5` | Durée maximale sans nouvelle consigne ROS avant un arrêt explicite. |
 | `periode_distance_s` | `0.5` | `0.10` | Intervalle entre deux demandes de distance ultrason. |
+| `periode_encodeurs_s` | `0.1` | `0.10` | Intervalle entre deux demandes de compteurs encodeurs. |
+| `delai_attente_reponse_service_s` | `1.0` | `1.0` | Délai d'attente des confirmations UART utilisées par les services. |
 
 ### `evitement_obstacle`
 

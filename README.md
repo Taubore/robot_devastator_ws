@@ -37,6 +37,7 @@ communes du projet.
 | `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle` | `interface_pico` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
 | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle` | `interface_pico` | Commander l'angle du servo de tourelle en degrés |
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico` | `evitement_obstacle` | Publier la distance ultrason mesurée en millimètres |
+| `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | Outil de diagnostic ou futur calcul d'odométrie | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
 | `/pico/etat` | `std_msgs/msg/String` | `interface_pico` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
 | `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle` | `annonces_audio` | Signaler uniquement les transitions significatives du comportement autonome |
 
@@ -44,8 +45,9 @@ communes du projet.
 
 | Service | Type | Serveur | Client connu | Rôle |
 |---|---|---|---|---|
-| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander l'envoi de `PING` au Pico ; le succès confirme l'envoi UART, pas la réception d'une réponse |
-| `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander un arrêt explicite au Pico |
+| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Envoyer `PING` et réussir seulement si le Pico répond `OK PING` dans le délai |
+| `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander un arrêt explicite au Pico avec `STOP_MOT` |
+| `/pico/reset_encodeurs` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Remettre à zéro les compteurs d'encodeurs avec `RESET_ENC` |
 | `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `annonces_audio` | Générer à l'avance un fichier WAV absent du cache persistant |
 | `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `annonces_audio` | Jouer un fichier WAV déjà généré |
 
@@ -71,6 +73,7 @@ nom exact du nœud lancé.
 | Interface | Type | Rôle |
 |---|---|---|
 | `commun/msg/ConsigneMoteurs` | Message | Transporter les consignes moteur gauche et droite, sur une plage prévue de `-1000` à `1000` |
+| `commun/msg/EtatEncodeurs` | Message | Transporter les ticks des encodeurs gauche et droit publiés par `interface_pico` |
 | `commun/srv/GenererAudio` | Service | Demander la génération d'un fichier audio à partir d'un texte |
 | `commun/srv/JouerAudio` | Service | Demander la lecture d'un fichier audio existant |
 
@@ -144,6 +147,33 @@ ros2 run interface_pico essai_moteurs_borne
 ros2 service call /pico/ping std_srvs/srv/Trigger
 ros2 service call /pico/stop std_srvs/srv/Trigger
 ```
+
+Procédure courte sur Raspberry Pi 4 avec le firmware Pico récent :
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install --packages-select commun interface_pico robot_devastator_bringup
+source install/setup.bash
+ros2 launch robot_devastator_bringup interface_pico.launch.yaml
+```
+
+Dans d'autres terminaux sourcés, garder les roues dans le vide et un arrêt accessible :
+
+```bash
+ros2 service call /pico/ping std_srvs/srv/Trigger
+ros2 service call /pico/stop std_srvs/srv/Trigger
+ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs \
+  "{gauche: 200, droite: 200}"
+ros2 topic echo /pico/distance_ultrason_mm
+ros2 service call /pico/reset_encodeurs std_srvs/srv/Trigger
+ros2 topic echo /pico/encodeurs
+ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs \
+  "{gauche: -200, droite: -200}"
+ros2 service call /pico/stop std_srvs/srv/Trigger
+```
+
+Les ticks doivent augmenter en marche avant et diminuer en marche arrière. Si un moteur tourne dans
+le mauvais sens, corriger le câblage au MDD3A plutôt que le logiciel.
 
 ## Documentation détaillée
 
