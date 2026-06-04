@@ -1,0 +1,2 @@
+int32 gauche_ticks
+int32 droite_ticks
