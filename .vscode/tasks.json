@@ -13,6 +13,17 @@
             "problemMatcher": []
         },
         {
+            "label": "ROS 2 - Nettoyer packages Devastator",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "./scripts/nettoyer_packages_ros.sh commun interface_pico robot_devastator robot_devastator_bringup"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
             "label": "ROS 2 - Build complet",
             "type": "shell",
             "command": "bash",
@@ -24,12 +35,12 @@
             "problemMatcher": []
         },
         {
-            "label": "ROS 2 - Nettoyer packages Devastator",
+            "label": "ROS 2 - Nettoyer workspace complet",
             "type": "shell",
             "command": "bash",
             "args": [
                 "-lc",
-                "./scripts/nettoyer_packages_ros.sh commun interface_pico robot_devastator robot_devastator_bringup"
+                "./scripts/nettoyer_workspace_ros.sh"
             ],
             "group": "build",
             "problemMatcher": []
