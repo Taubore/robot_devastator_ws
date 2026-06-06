@@ -21,30 +21,30 @@
 
 ## Pico
 
-| GPIO | Composante                | Broche | Couleur | Commentaire                                                                                                                         |
-| ---- | ------------------------- | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Raspberry Pi              | RX     | Vert    | UART TX du Pico vers RX du Raspberry Pi via résistance série 1 kΩ                                                                   |
-| 1    | Raspberry Pi              | TX     | Jaune   | UART RX du Pico depuis TX du Raspberry Pi via résistance série 1 kΩ ; ligne critique au démarrage du Pico si le Pi4 est déjà allumé |
-| GND  | Raspberry Pi              | GND    | Noir    | Masse commune UART                                                                                                                  |
-| 2    | MDD3A                     | M1A    | Jaune   |                                                                                                                                     |
-| 3    | MDD3A                     | M1B    | Blanc   |                                                                                                                                     |
-| 4    | MDD3A                     | M2A    | Jaune   |                                                                                                                                     |
-| 5    | MDD3A                     | M2B    | Vert    |                                                                                                                                     |
-| GND  | MDD3A                     | GND    | Noir    |                                                                                                                                     |
-| 10   | FIT0521 - Encodeur droit  | A      | Vert    |                                                                                                                                     |
-| 11   | FIT0521 - Encodeur droit  | B      | Jaune   |                                                                                                                                     |
-| ---  | FIT0521 - Encodeur droit  | 3,3V   | Bleu    |                                                                                                                                     |
-| ---  | FIT0521 - Encodeur droit  | GND    | Noir    |                                                                                                                                     |
-| 12   | FIT0521 - Encodeur gauche | A      | Vert    |                                                                                                                                     |
-| 13   | FIT0521 - Encodeur gauche | B      | Jaune   |                                                                                                                                     |
-| ---  | FIT0521 - Encodeur gauche | 3,3V   | Bleu    |                                                                                                                                     |
-| ---  | FIT0521 - Encodeur gauche | GND    | Noir    |                                                                                                                                     |
-| 15   | HS-422 / Tourelle         | SIG    | Jaune   |                                                                                                                                     |
-| ---  | HS-422 / Tourelle         | 5 V    | Rouge   |                                                                                                                                     |
-| ---  | HS-422 / Tourelle         | GND    | Noir    |                                                                                                                                     |
-| 14   | Grove Ultrasonic Ranger   | SIG    | Jaune   |                                                                                                                                     |
-| ---  | Grove Ultrasonic Ranger   | 3,3V   | Rouge   |                                                                                                                                     |
-| ---  | Grove Ultrasonic Ranger   | GND    | Noir    |                                                                                                                                     |
+| GPIO | Composante | Broche | Couleur | Commentaire |
+| --- | --- | --- | --- | --- |
+| 0 | Raspberry Pi | RX | Vert | UART TX du Pico vers RX du Raspberry Pi via résistance série 1 kΩ |
+| 1 | Raspberry Pi | TX | Jaune | UART RX du Pico depuis TX du Raspberry Pi via résistance série 1 kΩ ; ligne critique au démarrage du Pico si le Pi4 est déjà allumé |
+| GND | Raspberry Pi | GND | Noir | Masse commune UART |
+| 2 | MDD3A | M1A | Jaune | Droit |
+| 3 | MDD3A | M1B | Blanc | Droit |
+| 4 | MDD3A | M2A | Jaune | Gauche |
+| 5 | MDD3A | M2B | Vert | Gauche |
+| GND | MDD3A | GND | Noir |  |
+| 10 | FIT0521 - Encodeur gauche | A | Vert |  |
+| 11 | FIT0521 - Encodeur gauche | B | Jaune |  |
+| --- | FIT0521 - Encodeur gauche | 3,3V | Bleu |  |
+| --- | FIT0521 - Encodeur gauche | GND | Noir |  |
+| 12 | FIT0521 - Encodeur droit | A | Vert |  |
+| 13 | FIT0521 - Encodeur droit | B | Jaune |  |
+| --- | FIT0521 - Encodeur droit | 3,3V | Bleu |  |
+| --- | FIT0521 - Encodeur droit | GND | Noir |  |
+| 15 | HS-422 / Tourelle | SIG | Jaune |  |
+| --- | HS-422 / Tourelle | 5 V | Rouge |  |
+| --- | HS-422 / Tourelle | GND | Noir |  |
+| 14 | Grove Ultrasonic Ranger | SIG | Jaune |  |
+| --- | Grove Ultrasonic Ranger | 3,3V | Rouge |  |
+| --- | Grove Ultrasonic Ranger | GND | Noir |  |
 
 ## Fils du faisceau PS2 non connectés à cette étape
 
