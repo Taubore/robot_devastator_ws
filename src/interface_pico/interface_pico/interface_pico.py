@@ -39,7 +39,7 @@ SERVICE_RESET_ENCODEURS: Final[str] = '/pico/reset_encodeurs'
 
 class InterfacePico(Node):
     """
-    Adapte ROS 2 vers la liaison UART du Pico sans logique complexe.
+    Traduit les commandes ROS 2 vers UART et publie les états Pico.
     """
 
     def __init__(self) -> None:
