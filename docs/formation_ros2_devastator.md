@@ -183,6 +183,19 @@ sans nouvelle architecture.
 7. Réactiver ensuite un seul sous-système gelé selon le besoin pédagogique le plus immédiat,
    probablement la manette PS2 ou le RPLIDAR.
 
+## Jalons pédagogiques globaux
+
+1. Cartographier le système ROS 2 actuel.
+2. Stabiliser le contrat Pico ↔ ROS 2.
+3. Valider téléopération et arrêt fiable.
+4. Formaliser les diagnostics rapides.
+5. Documenter l’autonomie simple comme machine à états.
+6. Ajouter une description robot minimale en URDF/Xacro.
+7. Mettre en place TF et visualisation RViz.
+8. Exploiter les encodeurs pour une odométrie simple.
+9. Créer un banc logiciel ou simulateur minimal.
+10. Décider objectivement si RPLIDAR/Nav2 sont intégrés sur Devastator ou reportés à RobotPi.
+
 ## Points ouverts
 
 - Seul `src/interface_pico` contient un README de package. Les responsabilités de `commun`,
@@ -201,4 +214,3 @@ sans nouvelle architecture.
 
 - 2026-06-07 — Création de la fiche de formation ROS 2 Devastator à partir de `AGENTS.md`,
   `README.md`, des documents techniques et du README de `interface_pico`.
-  
