@@ -32,6 +32,7 @@ flowchart TB
     end
 
     subgraph INTERFACES["Interface opérateur et retours"]
+        CLAV_X8["Mini clavier USB sans-fil Rii X8"]
         PS2["Manette Lynxmotion PS2"]
         AUDIO_I2S["MAX98357 + PCM5102A"]
         HP_BF37["Visaton BF 37"]
@@ -68,6 +69,7 @@ flowchart TB
     ULTRASON --> PICO_WH
     PICO_WH --> RASPI4
 
+    CLAV_X8 --> RASPI4
     PS2 --> RASPI4
     RASPI4 --> AUDIO_I2S
     AUDIO_I2S --> HP_BF37
@@ -87,7 +89,8 @@ flowchart TB
     class RASPI4,PICO_WH,MDD3A,FIT0521_G,FIT0521_D,ULTRASON,SERVO_TOUR actif
     class BATT_LOGIQUE,BATT_MOTEUR,VOLTM_LOGIQUE,VOLTM_MOTEUR actif
     class BUCK_3V3,BUCK_5V,ALIM_LOGIQUE,SW_LOGIQUE actif
+    class CLAV_X8,AUDIO_I2S,HP_BF37 actif
 
-    class PS2,AUDIO_I2S,HP_BF37,RPLIDAR gele
+    class PS2,RPLIDAR gele
 
     class INA260,REALSENSE,LCD2,MIC_ARRAY futur

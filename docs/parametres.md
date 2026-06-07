@@ -192,7 +192,9 @@ configuré par `delai_attente_reponse_service_s`.
 - Les résistances série UART 1 kΩ font partie du montage courant
 - La ligne Raspberry Pi TX → Pico RX doit être considérée comme ligne sensible au démarrage du Pico
 
-# Interface manette Lynxmotion PS2 ↔ Raspberry Pi 4 (retenue)
+# Interface manette Lynxmotion PS2 ↔ Raspberry Pi 4 
+
+Cette interface est gelé puisque l'usage du clavier USB sans-fil Rii X8 est beaucoup plus simple d'usage et permet beaucoup plus de latitude pour téléopérer le robot et interagir avec lui. La manette pourra être implémentée si un besoin de contrôle plus ergonomique et précis est requis. En effet, il est plus commode de contrôler finement les mouvement du robot manuellement à l'aide de la manette PS2 que via des petits boutons sur un clavier USB sans-fil.
 
 ## Alimentation
 
