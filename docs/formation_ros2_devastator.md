@@ -1,5 +1,22 @@
 # Formation ROS 2 Devastator
 
+## Source de référence (pour séance de reprise ou avant audit)
+
+Dépôt officiel :
+https://github.com/Taubore/robot_devastator_ws
+
+Branche de référence :
+`main`
+
+Commit de référence consulté (`git rev-parse HEAD`):
+e94f3d4f128063f4d073e75d5cb23fe1083b8574
+
+Date de vérification :
+2026-06-07
+
+Note :
+Ce commit identifie l’état du dépôt utilisé pour rédiger ou valider ce document. Il ne prétend pas être le commit contenant nécessairement cette version du document.
+
 ## Objectif de la formation Devastator
 
 Devastator sert de plateforme d'apprentissage progressive pour relier la robotique réelle,
@@ -150,6 +167,8 @@ Les lignes spontanées `READY` et `AVERT TIMEOUT` peuvent aussi être reçues et
 | `HP_BF37` | Visaton BF 37 | Sortie sonore du robot |
 | `CLAV_X8` | Mini clavier USB sans-fil Rii X8 | Téléopération et interactions manuelles simples |
 
+Note : `CLAV_X8` est actif comme périphérique Linux standard connecté au Raspberry Pi 4. Il ne nécessite aucun nœud ROS 2 dédié, car Ubuntu le gère comme clavier USB/HID. Il sert aux interactions humaines locales, aux raccourcis, au terminal ou aux essais manuels simples.
+
 ### Gelés
 
 | ID | Composant | Rôle prévu |
@@ -178,8 +197,7 @@ sans nouvelle architecture.
    rotation, recul de récupération et reprise d'avance.
 4. Documenter les limites observées de l'évitement d'obstacle après tests réels.
 5. Exploiter les encodeurs d'abord en diagnostic simple avant de viser une odométrie.
-6. Utiliser le clavier Rii X8 pour des essais manuels simples avant de décider si la manette PS2
-   vaut une intégration ROS 2 dédiée.
+6. Utiliser le clavier Rii X8 pour les essais humains locaux, sans intégration ROS 2 dédiée, avant de décider si la manette PS2 vaut une intégration ROS 2.
 7. Réactiver ensuite un seul sous-système gelé selon le besoin pédagogique le plus immédiat,
    probablement la manette PS2 ou le RPLIDAR.
 
@@ -201,14 +219,30 @@ sans nouvelle architecture.
 - Seul `src/interface_pico` contient un README de package. Les responsabilités de `commun`,
   `robot_devastator` et `robot_devastator_bringup` sont déduites du README principal, des
   manifestes et des fichiers présents.
-- Le clavier Rii X8 est actif comme périphérique USB, mais aucune interface ROS 2 dédiée au clavier
-  n'est documentée actuellement.
+- Le clavier Rii X8 est actif comme périphérique USB/HID standard géré par Ubuntu sur Raspberry Pi 4. Il ne nécessite pas d’interface ROS 2 dédiée tant qu’il sert seulement aux interactions humaines locales.
 - La manette PS2 a un câblage retenu dans la documentation, mais elle est gelée tant que le clavier
   Rii X8 répond mieux au besoin courant.
 - Les encodeurs sont publiés par `interface_pico`, mais aucun nœud d'odométrie n'est documenté
   actuellement.
 - `arret_robot` est configuré dans les annonces audio, mais sa publication effective n'est pas
   clairement établie par les documents de haut niveau.
+
+## Règle de reprise
+
+Au début de chaque séance, relire :
+1. `AGENTS.md` ;
+2. `README.md` ;
+3. ce fichier : `docs/formation_ros2_devastator.md` ;
+4. les fichiers `docs/`, `src/`, `launch/` ou `config/` touchés par la séance.
+
+Chaque reprise commence par :
+- dernier jalon validé ;
+- prochaine action concrète ;
+- prochain test observable ;
+- risque matériel principal ;
+- fichier(s) à modifier ou à ne pas modifier.
+
+GitHub `main` reste la source principale. Les fichiers joints, souvenirs de conversation et notes locales sont secondaires si une divergence existe.
 
 ## Journal court
 
