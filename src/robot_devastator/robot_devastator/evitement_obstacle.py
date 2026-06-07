@@ -58,7 +58,9 @@ class CoteRotation(Enum):
 
 
 class EvitementObstacle(Node):
-    """Nœud d'autonomie simple basé sur une distance ultrason orientable."""
+    """
+    Nœud expérimental d'autonomie simple qui permet au robot d'éviter les obstacles.
+    """
 
     def __init__(self) -> None:
         super().__init__('evitement_obstacle')

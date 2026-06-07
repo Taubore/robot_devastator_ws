@@ -41,7 +41,9 @@ class VarianteAnnonce:
 
 
 class AnnoncesAudio(Node):
-    """Prépare les annonces audio et les joue selon les événements du robot."""
+    """
+    Prépare les annonces audio et les joue selon les événements du robot.
+    """
 
     def __init__(self) -> None:
         super().__init__('annonces_audio')

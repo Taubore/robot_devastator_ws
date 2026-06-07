@@ -21,7 +21,9 @@ DEFAULT_COMMAND_TIMEOUT_S = 15.0
 
 
 class VoixPiper(Node):
-    """Expose les services ROS 2 de génération et de lecture audio."""
+    """
+    Génère et joue les fichiers WAV avec Piper
+    """
 
     def __init__(self):
         super().__init__('voix_piper')
