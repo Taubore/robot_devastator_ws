@@ -6,6 +6,8 @@
 UART texte. Il expose des topics et services ROS 2, valide les plages simples, envoie les commandes
 ASCII au Pico, lit les lignes UART reçues et republie les informations utiles dans ROS 2.
 
+Il traduit dans les deux sens : commandes ROS 2 vers commandes UART, et réponses/événements UART vers topics ou réponses de services ROS 2.
+
 Le nœud ne décide pas du comportement du robot. Il ne fait pas d'évitement d'obstacle, ne calcule
 pas d'odométrie et ne corrige pas le sens des moteurs en logiciel.
 
