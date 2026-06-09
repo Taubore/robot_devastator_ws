@@ -15,7 +15,8 @@
 - Topic d'entrée `/pico/commande_moteurs` : message `commun/msg/ConsigneMoteurs`
 - Topic d'entrée `/pico/commande_tourelle_deg` : message `std_msgs/msg/Int32`, angle servo
   de tourelle en degrés de `0` à `180`
-- Service `/pico/stop` : `std_srvs/srv/Trigger`, envoie `STOP_MOT` et attend `OK STOP_MOT`
+- Service `/pico/stop_moteurs` : `std_srvs/srv/Trigger`, envoie `STOP_MOT` et attend
+  `OK STOP_MOT`
 - Service `/pico/ping` : `std_srvs/srv/Trigger`, envoie `PING` et réussit seulement si le Pico
   répond `OK PING` dans le délai configuré
 - Service `/pico/reset_encodeurs` : `std_srvs/srv/Trigger`, envoie `RESET_ENC` et attend
@@ -97,7 +98,7 @@ Tester les services :
 
 ```bash
 ros2 service call /pico/ping std_srvs/srv/Trigger
-ros2 service call /pico/stop std_srvs/srv/Trigger
+ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ros2 service call /pico/reset_encodeurs std_srvs/srv/Trigger
 ```
 

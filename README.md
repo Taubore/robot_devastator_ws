@@ -46,7 +46,7 @@ communes du projet.
 | Service | Type | Serveur | Client connu | Rôle |
 |---|---|---|---|---|
 | `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Envoyer `PING` et réussir seulement si le Pico répond `OK PING` dans le délai |
-| `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander un arrêt explicite au Pico avec `STOP_MOT` |
+| `/pico/stop_moteurs` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander un arrêt explicite des moteurs au Pico avec `STOP_MOT` |
 | `/pico/reset_encodeurs` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Remettre à zéro les compteurs d'encodeurs avec `RESET_ENC` |
 | `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `annonces_audio` | Générer à l'avance un fichier WAV absent du cache persistant |
 | `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `annonces_audio` | Jouer un fichier WAV déjà généré |
@@ -145,7 +145,7 @@ ros2 launch robot_devastator_bringup autonomie_simple.launch.yaml
 # Roues dans le vide : essai bref à faible vitesse, suivi d'un arrêt explicite attendu.
 ros2 run interface_pico essai_moteurs_borne
 ros2 service call /pico/ping std_srvs/srv/Trigger
-ros2 service call /pico/stop std_srvs/srv/Trigger
+ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ```
 
 Procédure courte sur Raspberry Pi 4 avec le firmware Pico récent :
@@ -161,7 +161,7 @@ Dans d'autres terminaux sourcés, garder les roues dans le vide et un arrêt acc
 
 ```bash
 ros2 service call /pico/ping std_srvs/srv/Trigger
-ros2 service call /pico/stop std_srvs/srv/Trigger
+ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs \
   "{gauche: 200, droite: 200}"
 ros2 topic echo /pico/distance_ultrason_mm
@@ -169,7 +169,7 @@ ros2 service call /pico/reset_encodeurs std_srvs/srv/Trigger
 ros2 topic echo /pico/encodeurs
 ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs \
   "{gauche: -200, droite: -200}"
-ros2 service call /pico/stop std_srvs/srv/Trigger
+ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ```
 
 Les ticks doivent augmenter en marche avant et diminuer en marche arrière. Si un moteur tourne dans

@@ -61,7 +61,7 @@ Acceptable pour du diagnostic brut.
 Type : std_srvs/srv/Trigger
 Très approprié.
 
-/pico/stop
+/pico/stop_moteurs
 Type : std_srvs/srv/Trigger
 Très approprié.
 

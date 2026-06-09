@@ -33,7 +33,7 @@ TOPIC_DISTANCE_ULTRASON: Final[str] = '/pico/distance_ultrason_mm'
 TOPIC_ENCODEURS: Final[str] = '/pico/encodeurs'
 TOPIC_ETAT_PICO: Final[str] = '/pico/etat'
 SERVICE_PING: Final[str] = '/pico/ping'
-SERVICE_STOP: Final[str] = '/pico/stop'
+SERVICE_STOP_MOTEURS: Final[str] = '/pico/stop_moteurs'
 SERVICE_RESET_ENCODEURS: Final[str] = '/pico/reset_encodeurs'
 
 
@@ -128,7 +128,11 @@ class InterfacePico(Node):
             self._recevoir_commande_tourelle_callback,
             TAILLE_FILE_MESSAGES,
         )
-        self.service_stop = self.create_service(Trigger, SERVICE_STOP, self._gerer_stop_callback)
+        self.service_stop_moteurs = self.create_service(
+            Trigger,
+            SERVICE_STOP_MOTEURS,
+            self._gerer_stop_moteurs_callback,
+        )
         self.service_ping = self.create_service(Trigger, SERVICE_PING, self._gerer_ping_callback)
         self.service_reset_encodeurs = self.create_service(
             Trigger,
@@ -218,31 +222,34 @@ class InterfacePico(Node):
 
     # --- Callbacks des services ---
 
-    def _gerer_stop_callback(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
+    def _gerer_stop_moteurs_callback(
+        self,
+        _requete: object,
+        reponse: Trigger.Response,
+    ) -> Trigger.Response:
         """
         Demande l'arrêt moteur et mémorise une consigne des moteurs nulle.
         """
 
         self._memoriser_arret_moteurs()
         if not self._verifier_liaison_serie():
-            reponse.success = False
-            reponse.message = 'STOP_MOT non envoyé : liaison UART indisponible.'
+            self._remplir_reponse_service_indisponible(reponse, 'STOP_MOT')
             return reponse
 
         try:
-            self.transport.stop()
+            self.transport.stop_moteurs()
             confirmation = self._attendre_reponse_attendue('OK STOP_MOT')
         except (serial.SerialException, OSError) as erreur:
             self._signaler_erreur_uart(f'Commande STOP_MOT impossible : {erreur}')
-            reponse.success = False
-            reponse.message = f'STOP_MOT non envoyé : {erreur}'
+            self._remplir_reponse_service_erreur(reponse, 'STOP_MOT', erreur)
             return reponse
 
-        reponse.success = confirmation
-        if confirmation:
-            reponse.message = 'Commande STOP_MOT confirmée par le Pico.'
-        else:
-            reponse.message = 'Commande STOP_MOT envoyée sans confirmation OK STOP_MOT.'
+        self._remplir_reponse_service_confirmation(
+            reponse,
+            'STOP_MOT',
+            'OK STOP_MOT',
+            confirmation,
+        )
         return reponse
 
     def _gerer_ping_callback(self, _requete: object, reponse: Trigger.Response) -> Trigger.Response:
@@ -251,8 +258,7 @@ class InterfacePico(Node):
         """
 
         if not self._verifier_liaison_serie():
-            reponse.success = False
-            reponse.message = 'PING non envoyé : liaison UART indisponible.'
+            self._remplir_reponse_service_indisponible(reponse, 'PING')
             return reponse
 
         try:
@@ -260,15 +266,15 @@ class InterfacePico(Node):
             confirmation = self._attendre_reponse_attendue('OK PING')
         except (serial.SerialException, OSError) as erreur:
             self._signaler_erreur_uart(f'Commande PING impossible : {erreur}')
-            reponse.success = False
-            reponse.message = f'PING non envoyé : {erreur}'
+            self._remplir_reponse_service_erreur(reponse, 'PING', erreur)
             return reponse
 
-        reponse.success = confirmation
-        if confirmation:
-            reponse.message = 'Réponse OK PING reçue du Pico.'
-        else:
-            reponse.message = 'Commande PING envoyée sans réponse OK PING dans le délai.'
+        self._remplir_reponse_service_confirmation(
+            reponse,
+            'PING',
+            'OK PING',
+            confirmation,
+        )
         return reponse
 
     def _gerer_reset_encodeurs_callback(
@@ -281,8 +287,7 @@ class InterfacePico(Node):
         """
 
         if not self._verifier_liaison_serie():
-            reponse.success = False
-            reponse.message = 'RESET_ENC non envoyé : liaison UART indisponible.'
+            self._remplir_reponse_service_indisponible(reponse, 'RESET_ENC')
             return reponse
 
         try:
@@ -290,15 +295,15 @@ class InterfacePico(Node):
             confirmation = self._attendre_reponse_attendue('OK RESET_ENC')
         except (serial.SerialException, OSError) as erreur:
             self._signaler_erreur_uart(f'Commande RESET_ENC impossible : {erreur}')
-            reponse.success = False
-            reponse.message = f'RESET_ENC non envoyé : {erreur}'
+            self._remplir_reponse_service_erreur(reponse, 'RESET_ENC', erreur)
             return reponse
 
-        reponse.success = confirmation
-        if confirmation:
-            reponse.message = 'Compteurs encodeurs remis à zéro par le Pico.'
-        else:
-            reponse.message = 'Commande RESET_ENC envoyée sans confirmation OK RESET_ENC.'
+        self._remplir_reponse_service_confirmation(
+            reponse,
+            'RESET_ENC',
+            'OK RESET_ENC',
+            confirmation,
+        )
         return reponse
 
     # --- Callbacks des timers ---
@@ -428,6 +433,51 @@ class InterfacePico(Node):
 
         self.get_logger().debug(f'Réponse UART du Pico : {ligne}')
         return None
+
+    def _remplir_reponse_service_confirmation(
+        self,
+        reponse: Trigger.Response,
+        commande: str,
+        confirmation_attendue: str,
+        confirmation: bool,
+    ) -> None:
+        """
+        Applique le même format de succès ou d'échec pour les services Pico.
+        """
+
+        reponse.success = confirmation
+        if confirmation:
+            reponse.message = f'{confirmation_attendue} confirmé par le Pico.'
+        else:
+            reponse.message = (
+                f'Échec {commande} : confirmation {confirmation_attendue} '
+                'non reçue dans le délai.'
+            )
+
+    def _remplir_reponse_service_indisponible(
+        self,
+        reponse: Trigger.Response,
+        commande: str,
+    ) -> None:
+        """
+        Signale un service Pico impossible parce que la liaison UART est indisponible.
+        """
+
+        reponse.success = False
+        reponse.message = f'Échec {commande} : liaison UART indisponible.'
+
+    def _remplir_reponse_service_erreur(
+        self,
+        reponse: Trigger.Response,
+        commande: str,
+        erreur: serial.SerialException | OSError,
+    ) -> None:
+        """
+        Signale un service Pico interrompu par une erreur UART.
+        """
+
+        reponse.success = False
+        reponse.message = f'Échec {commande} : {erreur}'
 
     def _traiter_reponse_ok(self, morceaux: list[str], ligne: str) -> str | None:
         """
@@ -572,7 +622,7 @@ class InterfacePico(Node):
         try:
             self.transport.connecter()
             if not self._uart_disponible:
-                self.transport.stop()
+                self.transport.stop_moteurs()
         except (serial.SerialException, OSError) as erreur:
             if self._uart_disponible:
                 self.get_logger().error(f'Liaison UART perdue : {erreur}')
@@ -605,7 +655,7 @@ class InterfacePico(Node):
 
         self._memoriser_arret_moteurs()
         try:
-            self.transport.stop()
+            self.transport.stop_moteurs()
         except (serial.SerialException, OSError) as erreur:
             self.get_logger().error(
                 f'Commande STOP_MOT impossible pendant la fermeture : {erreur}'

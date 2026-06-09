@@ -108,7 +108,7 @@ Nœuds et exécutables connus :
 | Service | Type | Serveur | Client connu | Rôle |
 |---|---|---|---|---|
 | `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Diagnostic | Envoyer `PING` et attendre `OK PING` |
-| `/pico/stop` | `std_srvs/srv/Trigger` | `interface_pico` | Diagnostic | Envoyer `STOP_MOT` et attendre `OK STOP_MOT` |
+| `/pico/stop_moteurs` | `std_srvs/srv/Trigger` | `interface_pico` | Diagnostic | Envoyer `STOP_MOT` et attendre `OK STOP_MOT` |
 | `/pico/reset_encodeurs` | `std_srvs/srv/Trigger` | `interface_pico` | Diagnostic | Envoyer `RESET_ENC` et attendre `OK RESET_ENC` |
 | `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `annonces_audio` | Générer un fichier WAV absent du cache |
 | `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `annonces_audio` | Jouer un fichier WAV existant |
@@ -243,6 +243,16 @@ Chaque reprise commence par :
 - fichier(s) à modifier ou à ne pas modifier.
 
 GitHub `main` reste la source principale. Les fichiers joints, souvenirs de conversation et notes locales sont secondaires si une divergence existe.
+
+## Décisions validées
+- rqt_graph sera exécuté sur Lenovo-Linux, pas sur le Raspberry Pi 4.
+- Le Raspberry Pi 4 reste l’environnement d’exécution matérielle via SSH.
+- ROS_DOMAIN_ID reste non défini pour l’instant, car la découverte ROS 2 fonctionne correctement avec le domaine par défaut.
+
+## Tests validés
+- rqt_graph sur Lenovo-Linux détecte les nœuds ROS 2 lancés sur le Raspberry Pi 4.
+- ros2 node list, ros2 topic list, ros2 service list fonctionnels dans sur le Raspberry Pi 4 qu'à partir de Lenovo-Linux.
+- ros2 service call et ros2 topic echo ont également été testé avec deux services et deux topic.
 
 ## Journal court
 

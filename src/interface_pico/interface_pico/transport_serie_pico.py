@@ -68,7 +68,7 @@ class TransportSeriePico:
         """Demande au Pico de répondre pour tester la liaison logique."""
         self.envoyer_commande("PING")
 
-    def stop(self) -> None:
+    def stop_moteurs(self) -> None:
         """Demande l'arrêt immédiat des moteurs."""
         self.envoyer_commande("STOP_MOT")
 
