@@ -1,0 +1,10 @@
+teleop_clavier:
+  ros__parameters:
+    # Vitesse faible par défaut pour les premiers essais roues dans le vide.
+    vitesse_initiale: 300
+    # Bornes de vitesse manuelle ajustables au clavier avec = et -.
+    vitesse_min: 300
+    vitesse_max: 1000
+    pas_vitesse: 50
+    # Période de lecture clavier et de publication de la consigne manuelle.
+    periode_publication_s: 0.1

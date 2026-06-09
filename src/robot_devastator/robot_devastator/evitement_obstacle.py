@@ -14,7 +14,7 @@ from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 from std_msgs.msg import Int32, String
 
-TOPIC_COMMANDE_MOTEURS: Final[str] = '/pico/commande_moteurs'
+TOPIC_COMMANDE_MOTEURS: Final[str] = '/robot/commande_moteurs/autonomie'
 TOPIC_COMMANDE_TOURELLE: Final[str] = '/pico/commande_tourelle_deg'
 TOPIC_DISTANCE_ULTRASON: Final[str] = '/pico/distance_ultrason_mm'
 TOPIC_EVENEMENT_ROBOT: Final[str] = '/robot/evenement'

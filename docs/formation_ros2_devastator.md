@@ -48,17 +48,20 @@ moteurs, lit le sonar, oriente la tourelle et publie les mesures utiles vers ROS
 - l'arrêt est protégé côté Pico et côté `interface_pico` par un délai de `500 ms` ;
 - le sonar Grove est monté sur une tourelle servo Hitec HS-422 ;
 - l'autonomie simple avec évitement d'obstacle est expérimentale ;
+- l'arbitrage moteur évite que la téléopération clavier et l'autonomie publient directement en
+  même temps vers le Pico ;
 - les encodeurs FIT0521 sont lus par le Pico et publiés dans ROS 2 ;
 - la voix française avec Piper, la chaîne audio I2S et le haut-parleur sont actifs et testés ;
-- le mini clavier USB sans-fil Rii X8 est actif pour les interactions et essais manuels simples ;
+- le mini clavier USB sans-fil Rii X8 sert à la capacité permanente `teleop_clavier` ;
 - les lancements principaux sont centralisés dans `robot_devastator_bringup`.
 
 Les fichiers de lancement documentés sont :
 
 | Lancement | Rôle |
 |---|---|
+| `devastator.launch.yaml` | Lance le robot avec interface Pico, arbitre, clavier, autonomie simple et audio |
 | `interface_pico.launch.yaml` | Lance seulement le pont ROS 2 vers le Pico |
-| `autonomie_simple.launch.yaml` | Lance `interface_pico`, `voix_piper`, `annonces_audio` et `evitement_obstacle` |
+| `autonomie_simple.launch.yaml` | Alternative de test autonome sans clavier, avec arbitre en mode `autonomie` |
 
 ## Packages ROS 2 existants
 
@@ -74,6 +77,8 @@ Nœuds et exécutables connus :
 | Nœud | Package | Exécutable | État | Rôle |
 |---|---|---|---|---|
 | `interface_pico` | `interface_pico` | `interface_pico` | Actif | Expose les topics et services Pico, puis traduit les commandes ROS 2 vers UART |
+| `arbitre_commande_moteurs` | `robot_devastator` | `arbitre_commande_moteurs` | Actif | Sélectionne une seule source moteur active avant le topic Pico |
+| `teleop_clavier` | `robot_devastator` | `teleop_clavier` | Actif | Conduit le robot au clavier et bascule entre mode manuel et autonomie |
 | `evitement_obstacle` | `robot_devastator` | `evitement_obstacle` | Expérimental | Avance lentement, détecte un obstacle, balaie la tourelle et cherche un dégagement |
 | `annonces_audio` | `robot_devastator` | `annonces_audio` | Actif | Écoute les événements du robot et demande la lecture d'annonces configurées |
 | `voix_piper` | `robot_devastator` | `voix_piper` | Actif | Génère et joue des fichiers WAV avec Piper |
@@ -85,7 +90,10 @@ Nœuds et exécutables connus :
 
 | Topic | Type | Producteur connu | Consommateur connu | Rôle |
 |---|---|---|---|---|
-| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle`, outils de test | `interface_pico` | Envoyer les consignes gauche et droite au Pico |
+| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `arbitre_commande_moteurs`, outils de test | `interface_pico` | Envoyer la commande moteur active au Pico |
+| `/robot/commande_moteurs/manuelle` | `commun/msg/ConsigneMoteurs` | `teleop_clavier` | `arbitre_commande_moteurs` | Porter les consignes clavier |
+| `/robot/commande_moteurs/autonomie` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle` | `arbitre_commande_moteurs` | Porter les consignes autonomes |
+| `/robot/mode_conduite` | `std_msgs/msg/String` | `teleop_clavier` | `arbitre_commande_moteurs` | Demander le mode `manuel` ou `autonomie` |
 | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | `evitement_obstacle`, outils de test | `interface_pico` | Commander l'angle du servo de tourelle en degrés |
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico` | `evitement_obstacle`, diagnostic | Publier la distance sonar en millimètres |
 | `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | Diagnostic, futur calcul d'odométrie | Publier les ticks encodeurs gauche et droit |
@@ -165,9 +173,10 @@ Les lignes spontanées `READY` et `AVERT TIMEOUT` peuvent aussi être reçues et
 | `SW_LOGIQUE` | Interrupteur alimentation logique | Mise sous tension logique |
 | `AUDIO_I2S` | MAX98357 + PCM5102A | Amplification et conversion audio |
 | `HP_BF37` | Visaton BF 37 | Sortie sonore du robot |
-| `CLAV_X8` | Mini clavier USB sans-fil Rii X8 | Téléopération et interactions manuelles simples |
+| `CLAV_X8` | Mini clavier USB sans-fil Rii X8 | Téléopération clavier locale et SSH |
 
-Note : `CLAV_X8` est actif comme périphérique Linux standard connecté au Raspberry Pi 4. Il ne nécessite aucun nœud ROS 2 dédié, car Ubuntu le gère comme clavier USB/HID. Il sert aux interactions humaines locales, aux raccourcis, au terminal ou aux essais manuels simples.
+Note : `CLAV_X8` reste un périphérique Linux standard géré par Ubuntu. La capacité ROS 2
+`teleop_clavier` lit le terminal local ou SSH, sans pilote clavier dédié.
 
 ### Gelés
 
@@ -197,7 +206,8 @@ sans nouvelle architecture.
    rotation, recul de récupération et reprise d'avance.
 4. Documenter les limites observées de l'évitement d'obstacle après tests réels.
 5. Exploiter les encodeurs d'abord en diagnostic simple avant de viser une odométrie.
-6. Utiliser le clavier Rii X8 pour les essais humains locaux, sans intégration ROS 2 dédiée, avant de décider si la manette PS2 vaut une intégration ROS 2.
+6. Valider la téléopération clavier permanente sur Raspberry Pi 4, puis décider si la manette PS2
+   apporte encore un gain réel.
 7. Réactiver ensuite un seul sous-système gelé selon le besoin pédagogique le plus immédiat,
    probablement la manette PS2 ou le RPLIDAR.
 
@@ -219,7 +229,8 @@ sans nouvelle architecture.
 - Seul `src/interface_pico` contient un README de package. Les responsabilités de `commun`,
   `robot_devastator` et `robot_devastator_bringup` sont déduites du README principal, des
   manifestes et des fichiers présents.
-- Le clavier Rii X8 est actif comme périphérique USB/HID standard géré par Ubuntu sur Raspberry Pi 4. Il ne nécessite pas d’interface ROS 2 dédiée tant qu’il sert seulement aux interactions humaines locales.
+- Le clavier Rii X8 est actif comme périphérique USB/HID standard géré par Ubuntu sur Raspberry Pi 4.
+  La capacité ROS 2 `teleop_clavier` l'utilise via le terminal, localement ou par SSH.
 - La manette PS2 a un câblage retenu dans la documentation, mais elle est gelée tant que le clavier
   Rii X8 répond mieux au besoin courant.
 - Les encodeurs sont publiés par `interface_pico`, mais aucun nœud d'odométrie n'est documenté
@@ -260,3 +271,5 @@ GitHub `main` reste la source principale. Les fichiers joints, souvenirs de conv
   `README.md`, des documents techniques et du README de `interface_pico`.
 - 2026-06-08 - la phase 1 a été validée : test CLI sur Raspberry Pi 4 via SSH fonctionnel, et observation du graphe ROS 2 depuis Legion-Linux avec rqt_graph sur le même réseau et le même ROS_DOMAIN_ID. Fichier `contrat_pico_ros2.md` a été créé, il documente clairement le rôle du node interface_pico.
 - 2026-06-09 - Phase 3A validée sur Raspberry Pi 4 via SSH, roues dans le vide : la sécurité moteur CLI arrête bien les moteurs par expiration de consigne, mais un arrêt fiable de téléopération doit aussi arrêter ou neutraliser la source de commande active.
+- 2026-06-09 - La téléopération clavier devient une capacité permanente `teleop_clavier`.
+  Un arbitre moteur centralise les consignes manuelles et autonomes avant `/pico/commande_moteurs`.

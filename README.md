@@ -34,7 +34,10 @@ communes du projet.
 
 | Topic | Type | Producteur | Consommateur | Rôle |
 |---|---|---|---|---|
-| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle`, `teleoperation_clavier` | `interface_pico` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
+| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `arbitre_commande_moteurs` | `interface_pico` | Envoyer la commande moteur active vers le Pico |
+| `/robot/commande_moteurs/manuelle` | `commun/msg/ConsigneMoteurs` | `teleop_clavier` | `arbitre_commande_moteurs` | Porter les consignes issues du clavier |
+| `/robot/commande_moteurs/autonomie` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle` | `arbitre_commande_moteurs` | Porter les consignes issues de l'autonomie simple |
+| `/robot/mode_conduite` | `std_msgs/msg/String` | `teleop_clavier` | `arbitre_commande_moteurs` | Choisir `manuel` ou `autonomie` comme source moteur active |
 | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle` | `interface_pico` | Commander l'angle du servo de tourelle en degrés |
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico` | `evitement_obstacle` | Publier la distance ultrason mesurée en millimètres |
 | `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | Outil de diagnostic ou futur calcul d'odométrie | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
@@ -64,8 +67,9 @@ nom exact du nœud lancé.
 | Nœud | Package | Exécutable / module | État | Rôle |
 |---|---|---|---|---|
 | `interface_pico` | `interface_pico` | `interface_pico` / `interface_pico.interface_pico` | Actif | Exposer les topics et services Pico, puis traduire les commandes ROS 2 vers UART |
+| `arbitre_commande_moteurs` | `robot_devastator` | `arbitre_commande_moteurs` / `robot_devastator.arbitre_commande_moteurs` | Actif | Sélectionner une seule source moteur active avant `/pico/commande_moteurs` |
 | `evitement_obstacle` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, balayer avec la tourelle, puis tourner jusqu'à trouver un dégagement |
-| `teleoperation_clavier` | `robot_devastator` | `teleoperation_clavier` / `robot_devastator.teleoperation_clavier` | Expérimental | Téléopérer les moteurs au clavier dans un terminal SSH avec arrêt automatique en cas d'inactivité |
+| `teleop_clavier` | `robot_devastator` | `teleop_clavier` / `robot_devastator.teleop_clavier` | Actif | Conduire localement au clavier et basculer entre mode manuel et autonomie |
 | `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les annonces audio et demander leur lecture selon les événements du robot |
 | `voix_piper` | `robot_devastator` | `voix_piper` / `robot_devastator.voix_piper` | Actif | Générer et jouer les fichiers WAV persistants avec Piper |
 
@@ -100,6 +104,7 @@ Les assemblages ROS 2 sont centralisés dans `robot_devastator_bringup`. Utilise
 VSCode suivantes selon le besoin :
 
 - `Tasks: Run Task > ROS 2 - Lancer interface Pico`
+- `Tasks: Run Task > ROS 2 - Lancer Devastator`
 - `Tasks: Run Task > ROS 2 - Lancer autonomie simple`
 
 Les configurations de `.vscode/launch.json` servent seulement au debug direct d'un nœud Python
@@ -108,6 +113,12 @@ précis avec F5 :
 `Nœud Python ROS 2` demande le module Python à exécuter, par exemple
 `robot_devastator.evitement_obstacle`, `robot_devastator.annonces_audio` ou
 `interface_pico.interface_pico`.
+
+Le lancement principal `devastator.launch.yaml` démarre `interface_pico`, l'arbitre moteur,
+la téléopération clavier, l'autonomie simple et les annonces audio. Le mode initial est manuel :
+la téléopération clavier contrôle les moteurs. La touche `m` bascule entre `manuel` et
+`autonomie`. L'arbitre publie seul vers `/pico/commande_moteurs`, ce qui évite un conflit entre le
+clavier et `evitement_obstacle`.
 
 L'autonomie simple fait avancer lentement le robot lorsque la distance ultrason est suffisante.
 Devant un obstacle, elle arrête les moteurs, oriente la tourelle à gauche, au centre puis à droite,
@@ -138,6 +149,7 @@ source install/setup.bash
 ```
 
 ```bash
+ros2 launch robot_devastator_bringup devastator.launch.yaml
 ros2 launch robot_devastator_bringup interface_pico.launch.yaml
 ros2 launch robot_devastator_bringup autonomie_simple.launch.yaml
 ```
@@ -145,7 +157,6 @@ ros2 launch robot_devastator_bringup autonomie_simple.launch.yaml
 ```bash
 # Roues dans le vide : essai bref à faible vitesse, suivi d'un arrêt explicite attendu.
 ros2 run interface_pico essai_moteurs_borne
-ros2 run robot_devastator teleoperation_clavier
 ros2 service call /pico/ping std_srvs/srv/Trigger
 ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ```
@@ -154,7 +165,7 @@ Procédure courte sur Raspberry Pi 4 avec le firmware Pico récent :
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install --packages-select commun interface_pico robot_devastator_bringup
+colcon build --symlink-install --packages-select commun interface_pico robot_devastator robot_devastator_bringup
 source install/setup.bash
 ros2 launch robot_devastator_bringup interface_pico.launch.yaml
 ```
@@ -174,16 +185,29 @@ ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs \
 ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ```
 
-Téléopération clavier courte, adaptée à un terminal SSH :
+Téléopération clavier permanente, adaptée à un terminal local ou SSH :
 
 ```bash
-ros2 run robot_devastator teleoperation_clavier
+ros2 launch robot_devastator_bringup devastator.launch.yaml
+```
+
+Variante de diagnostic sans lancement principal :
+
+```bash
+# Terminal 1
+ros2 run robot_devastator arbitre_commande_moteurs
+```
+
+```bash
+# Terminal 2
+ros2 run robot_devastator teleop_clavier
 ```
 
 Touches QWERTY disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,
-`espace` arrête, `x` quitte. La vitesse par défaut est `250`, bornée à `500` au maximum. Garder
-les roues dans le vide au premier essai. Si aucune touche n'est reçue pendant le délai
-d'inactivité, à la sortie normale ou avec `Ctrl+C`, l'outil publie un arrêt moteur explicite.
+`espace` arrête, `=` augmente la vitesse, `-` diminue la vitesse, `m` bascule entre conduite
+manuelle et autonomie, `x` quitte. La vitesse par défaut est `200`, bornée de `100` à `500` par
+`config/teleop_clavier.yaml`. Garder les roues dans le vide au premier essai. À la sortie normale
+ou avec `Ctrl+C`, l'outil publie un arrêt moteur explicite.
 
 Les ticks doivent augmenter en marche avant et diminuer en marche arrière. Si un moteur tourne dans
 le mauvais sens, corriger le câblage au MDD3A plutôt que le logiciel.

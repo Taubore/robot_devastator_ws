@@ -25,8 +25,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'arbitre_commande_moteurs = robot_devastator.arbitre_commande_moteurs:main',
             'evitement_obstacle = robot_devastator.evitement_obstacle:main',
-            'teleoperation_clavier = robot_devastator.teleoperation_clavier:main',
+            'teleop_clavier = robot_devastator.teleop_clavier:main',
             'annonces_audio = robot_devastator.annonces_audio:main',
             'voix_piper = robot_devastator.voix_piper:main',
         ],

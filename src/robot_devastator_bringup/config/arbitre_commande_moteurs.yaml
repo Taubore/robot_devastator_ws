@@ -1,0 +1,8 @@
+arbitre_commande_moteurs:
+  ros__parameters:
+    # Source active au démarrage du lancement principal : le clavier garde la main.
+    mode_initial: manuel
+    # Intervalle de publication vers /pico/commande_moteurs.
+    periode_publication_s: 0.1
+    # Délai sans commande de la source active avant de forcer l'arrêt.
+    delai_expiration_source_s: 0.35

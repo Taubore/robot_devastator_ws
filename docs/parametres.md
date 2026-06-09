@@ -26,6 +26,22 @@ Le comportement d'autonomie simple est configuré dans
 - rotation de recherche : `500`
 - recul de récupération : `300`
 
+La téléopération clavier est configurée dans
+`src/robot_devastator_bringup/config/teleop_clavier.yaml` :
+
+- vitesse initiale : `300`
+- vitesse minimale : `300`
+- vitesse maximale : `1000`
+- pas d'incrément : `50`
+- période de lecture et publication : `0.1 s`
+
+L'arbitre de commandes moteur est configuré dans
+`src/robot_devastator_bringup/config/arbitre_commande_moteurs.yaml` :
+
+- mode initial du lancement principal : `manuel`
+- période de publication vers le Pico : `0.1 s`
+- délai sans commande de la source active avant arrêt : `0.35 s`
+
 Les angles configurés pour la tourelle sont :
 
 - centre : `95°`

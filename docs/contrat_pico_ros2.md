@@ -15,7 +15,7 @@ pas d'odométrie et ne corrige pas le sens des moteurs en logiciel.
 
 | Côté | Responsabilités |
 |---|---|
-| Raspberry Pi 4 | Exécuter ROS 2 Jazzy, lancer `interface_pico`, publier les consignes, appeler les services, maintenir temporairement la dernière consigne moteur, forcer l'arrêt après expiration d'une consigne ROS et rouvrir la liaison UART si possible. |
+| Raspberry Pi 4 | Exécuter ROS 2 Jazzy, lancer `interface_pico`, arbitrer la source moteur active, publier la consigne retenue, appeler les services, maintenir temporairement la dernière consigne moteur, forcer l'arrêt après expiration d'une consigne ROS et rouvrir la liaison UART si possible. |
 | Pico WH | Recevoir le protocole UART, piloter les moteurs via le MDD3A, orienter le servo de tourelle, mesurer le sonar, lire les encodeurs et appliquer son propre arrêt de sécurité si aucune commande UART valide n'arrive depuis plus de `500 ms`. |
 
 ## Topics ROS 2
@@ -65,6 +65,10 @@ topic, service ou timer.
 
 - Les consignes moteurs ROS 2 valides sont limitées à `-1000` à `1000`.
 - Une consigne `0, 0` représente l'arrêt.
+- Dans le lancement normal, `arbitre_commande_moteurs` est le seul producteur de
+  `/pico/commande_moteurs`.
+- La téléopération clavier publie sur `/robot/commande_moteurs/manuelle` et l'autonomie simple sur
+  `/robot/commande_moteurs/autonomie`.
 - `interface_pico` répète temporairement la dernière consigne moteur avec `periode_maintien_s`.
 - Si aucune nouvelle consigne moteur ROS 2 n'arrive avant
   `delai_expiration_consigne_moteurs_s`, le nœud mémorise et envoie un arrêt.
@@ -114,7 +118,8 @@ Validation Phase 3A, faite sur Raspberry Pi 4 via SSH, roues dans le vide :
 - `/pico/stop_moteurs` arrête les moteurs, mais un publisher actif qui continue à publier une
   consigne non nulle les fait repartir ;
 - conclusion opérationnelle : un arrêt fiable de téléopération doit aussi arrêter ou neutraliser
-  la source de commande active.
+  la source de commande active. Le nœud `arbitre_commande_moteurs` répond à ce besoin pour le
+  lancement normal.
 
 Préparer le terminal :
 
