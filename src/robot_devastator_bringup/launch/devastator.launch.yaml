@@ -34,11 +34,3 @@ launch:
     output: screen
     param:
     - from: $(find-pkg-share robot_devastator_bringup)/config/autonomie_simple.yaml
-- node:
-    pkg: robot_devastator
-    exec: teleop_clavier
-    name: teleop_clavier
-    output: screen
-    emulate_tty: true
-    param:
-    - from: $(find-pkg-share robot_devastator_bringup)/config/teleop_clavier.yaml

@@ -30,3 +30,5 @@ evitement_obstacle:
     duree_recul_s: 2.0
     # Écart latéral minimal requis pour changer le dernier côté de rotation choisi.
     marge_choix_direction_mm: 120
+    # Le lancement principal démarre en mode manuel ; l'autonomie attend la touche m.
+    actif_au_demarrage: false

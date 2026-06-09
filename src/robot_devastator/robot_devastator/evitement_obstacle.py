@@ -18,6 +18,9 @@ TOPIC_COMMANDE_MOTEURS: Final[str] = '/robot/commande_moteurs/autonomie'
 TOPIC_COMMANDE_TOURELLE: Final[str] = '/pico/commande_tourelle_deg'
 TOPIC_DISTANCE_ULTRASON: Final[str] = '/pico/distance_ultrason_mm'
 TOPIC_EVENEMENT_ROBOT: Final[str] = '/robot/evenement'
+TOPIC_MODE_CONDUITE: Final[str] = '/robot/mode_conduite'
+MODE_AUTONOMIE: Final[str] = 'autonomie'
+MODE_MANUEL: Final[str] = 'manuel'
 VALEUR_MOTEUR_MIN: Final[int] = -1000
 VALEUR_MOTEUR_MAX: Final[int] = 1000
 ANGLE_TOURELLE_MIN_DEG: Final[int] = 0
@@ -80,6 +83,7 @@ class EvitementObstacle(Node):
         self.declare_parameter('duree_rotation_recherche_max_s', 4.0)
         self.declare_parameter('duree_recul_s', 0.45)
         self.declare_parameter('marge_choix_direction_mm', 120)
+        self.declare_parameter('actif_au_demarrage', False)
 
         self.distance_arret_mm = int(self.get_parameter('distance_arret_mm').value)
         self.vitesse_avance = int(self.get_parameter('vitesse_avance').value)
@@ -117,6 +121,9 @@ class EvitementObstacle(Node):
         self.duree_recul_s = float(self.get_parameter('duree_recul_s').value)
         self.marge_choix_direction_mm = int(
             self.get_parameter('marge_choix_direction_mm').value
+        )
+        self.actif_au_demarrage = bool(
+            self.get_parameter('actif_au_demarrage').value
         )
 
         if self.distance_arret_mm <= 0:
@@ -172,14 +179,8 @@ class EvitementObstacle(Node):
         self.derniere_distance_mm: int | None = None
         self.numero_derniere_distance = 0
         self.numero_distance_avant_mesure = 0
-        self.distance_gauche_mm: int | None = None
-        self.distance_droite_mm: int | None = None
-        self.etat = EtatEvitement.AVANCE
-        self.fin_etape_s = 0.0
-        self.debut_validation_degagement_s = 0.0
-        self.consigne_rotation: tuple[int, int] = (0, 0)
-        self.dernier_cote_rotation = CoteRotation.GAUCHE
-        self.nombre_mesures_degagement = 0
+        self.autonomie_active = False
+        self._reinitialiser_etat()
 
         self.consigne_moteurs_pub = self.create_publisher(
             ConsigneMoteurs,
@@ -202,6 +203,12 @@ class EvitementObstacle(Node):
             self._recevoir_distance_callback,
             TAILLE_FILE_MESSAGES,
         )
+        self.abonnement_mode = self.create_subscription(
+            String,
+            TOPIC_MODE_CONDUITE,
+            self._recevoir_mode_callback,
+            TAILLE_FILE_MESSAGES,
+        )
         self.timer_publication = self.create_timer(
             self.periode_publication_s,
             self._publier_consigne_selon_distance_callback,
@@ -213,8 +220,12 @@ class EvitementObstacle(Node):
             f'vitesse_avance={self.vitesse_avance}.'
         )
         self.arreter_moteurs()
-        self.publier_consigne_tourelle(self.angle_tourelle_centre_deg)
-        self.publier_evenement('autonomie_demarre')
+        if self.actif_au_demarrage:
+            self._activer_autonomie()
+        else:
+            self.get_logger().info(
+                "Évitement en attente du mode 'autonomie'."
+            )
 
     def _borner_consigne_moteur(self, valeur: int) -> int:
         """Retourne une consigne limitée à la plage moteur autorisée."""
@@ -239,6 +250,9 @@ class EvitementObstacle(Node):
             return
 
         self.derniere_distance_mm = distance_mm
+        if not self.autonomie_active:
+            return
+
         if self.etat == EtatEvitement.ROTATION:
             if monotonic() < self.debut_validation_degagement_s:
                 self.nombre_mesures_degagement = 0
@@ -253,8 +267,22 @@ class EvitementObstacle(Node):
             else:
                 self.nombre_mesures_degagement = 0
 
+    def _recevoir_mode_callback(self, message: String) -> None:
+        """Active ou met en pause l'évitement selon le mode de conduite."""
+        mode = message.data.strip().lower()
+        if mode == MODE_AUTONOMIE:
+            self._activer_autonomie()
+        elif mode == MODE_MANUEL:
+            self._desactiver_autonomie()
+        else:
+            self.get_logger().warn(f'Mode de conduite ignoré : {message.data}.')
+
     def _publier_consigne_selon_distance_callback(self) -> None:
         """Fait progresser l'évitement et publie une consigne moteur sécuritaire."""
+        if not self.autonomie_active:
+            self.arreter_moteurs()
+            return
+
         if self.etat == EtatEvitement.AVANCE:
             self._gerer_avance()
         elif self.etat == EtatEvitement.STABILISATION_GAUCHE:
@@ -470,6 +498,40 @@ class EvitementObstacle(Node):
     def arreter_moteurs(self) -> None:
         """Publie une consigne d'arrêt explicite."""
         self.publier_consigne_moteurs(0, 0)
+
+    def _activer_autonomie(self) -> None:
+        """Démarre le comportement autonome depuis un état connu."""
+        if self.autonomie_active:
+            return
+
+        self.autonomie_active = True
+        self._reinitialiser_etat()
+        self.arreter_moteurs()
+        self.publier_consigne_tourelle(self.angle_tourelle_centre_deg)
+        self.publier_evenement('autonomie_demarre')
+        self.get_logger().info('Évitement activé par le mode autonomie.')
+
+    def _desactiver_autonomie(self) -> None:
+        """Met le comportement autonome au repos en conservant un arrêt moteur."""
+        if not self.autonomie_active:
+            return
+
+        self.autonomie_active = False
+        self._reinitialiser_etat()
+        self.arreter_moteurs()
+        self.get_logger().info('Évitement mis en pause par le mode manuel.')
+
+    def _reinitialiser_etat(self) -> None:
+        """Replace la machine d'états au début d'un cycle d'évitement."""
+        self.numero_distance_avant_mesure = self.numero_derniere_distance
+        self.distance_gauche_mm: int | None = None
+        self.distance_droite_mm: int | None = None
+        self.etat = EtatEvitement.AVANCE
+        self.fin_etape_s = 0.0
+        self.debut_validation_degagement_s = 0.0
+        self.consigne_rotation: tuple[int, int] = (0, 0)
+        self.dernier_cote_rotation = CoteRotation.GAUCHE
+        self.nombre_mesures_degagement = 0
 
 
 def main(args: list[str] | None = None) -> None:

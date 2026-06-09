@@ -59,9 +59,8 @@ Les fichiers de lancement documentés sont :
 
 | Lancement | Rôle |
 |---|---|
-| `devastator.launch.yaml` | Lance le robot avec interface Pico, arbitre, clavier, autonomie simple et audio |
+| `devastator.launch.yaml` | Lance le robot avec interface Pico, arbitre, autonomie simple en attente et audio |
 | `interface_pico.launch.yaml` | Lance seulement le pont ROS 2 vers le Pico |
-| `autonomie_simple.launch.yaml` | Alternative de test autonome sans clavier, avec arbitre en mode `autonomie` |
 
 ## Packages ROS 2 existants
 
@@ -273,3 +272,5 @@ GitHub `main` reste la source principale. Les fichiers joints, souvenirs de conv
 - 2026-06-09 - Phase 3A validée sur Raspberry Pi 4 via SSH, roues dans le vide : la sécurité moteur CLI arrête bien les moteurs par expiration de consigne, mais un arrêt fiable de téléopération doit aussi arrêter ou neutraliser la source de commande active.
 - 2026-06-09 - La téléopération clavier devient une capacité permanente `teleop_clavier`.
   Un arbitre moteur centralise les consignes manuelles et autonomes avant `/pico/commande_moteurs`.
+- 2026-06-09 - `teleop_clavier` reste lancé en avant-plan dans un terminal interactif séparé.
+  `ros2 launch` ne fournit pas d'entrée clavier fiable aux nœuds lancés.

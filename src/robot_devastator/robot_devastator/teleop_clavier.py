@@ -25,6 +25,7 @@ MODE_MANUEL: Final[str] = 'manuel'
 NOMBRE_PUBLICATIONS_ARRET: Final[int] = 4
 TOPIC_COMMANDE_MANUELLE: Final[str] = '/robot/commande_moteurs/manuelle'
 TOPIC_MODE_CONDUITE: Final[str] = '/robot/mode_conduite'
+CHEMIN_TERMINAL: Final[str] = '/dev/tty'
 
 
 def _interrompre_execution(
@@ -33,6 +34,20 @@ def _interrompre_execution(
 ) -> None:
     """Interrompt proprement l'exécution lors d'une demande d'arrêt système."""
     raise KeyboardInterrupt
+
+
+def _ouvrir_entree_clavier() -> tuple[TextIO, bool]:
+    """Retourne une entrée clavier interactive, même depuis `ros2 launch` si possible."""
+    if sys.stdin.isatty():
+        return sys.stdin, False
+
+    try:
+        return open(CHEMIN_TERMINAL, 'r', encoding='utf-8'), True
+    except OSError as erreur:
+        raise RuntimeError(
+            'La téléopération clavier demande un terminal interactif. '
+            "Lancer depuis un terminal local ou SSH."
+        ) from erreur
 
 
 class ModeClavierTerminal:
@@ -261,6 +276,7 @@ class TeleopClavier(Node):
             '\nTéléopération clavier Devastator\n'
             'Touches : w avancer, s reculer, a gauche, d droite, espace stop\n'
             'Vitesse : = augmenter, - diminuer | Mode : m manuel/autonomie | Quitter : x\n'
+            'En autonomie, seuls m, = et - restent actifs.\n'
             'Garder les roues dans le vide au premier essai.\n',
             flush=True,
         )
@@ -279,7 +295,8 @@ def main(args: list[str] | None = None) -> None:
     rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     signal.signal(signal.SIGINT, _interrompre_execution)
     signal.signal(signal.SIGTERM, _interrompre_execution)
-    noeud = TeleopClavier(entree=sys.stdin)
+    entree, fermer_entree = _ouvrir_entree_clavier()
+    noeud = TeleopClavier(entree=entree)
 
     try:
         noeud.attendre_arbitre()
@@ -293,6 +310,8 @@ def main(args: list[str] | None = None) -> None:
             try:
                 noeud.destroy_node()
             finally:
+                if fermer_entree:
+                    entree.close()
                 if rclpy.ok():
                     rclpy.shutdown()
 

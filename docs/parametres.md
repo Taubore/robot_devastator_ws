@@ -26,6 +26,9 @@ Le comportement d'autonomie simple est configuré dans
 - rotation de recherche : `500`
 - recul de récupération : `300`
 
+Dans le lancement principal, `actif_au_demarrage` vaut `false` : l'autonomie reste au repos tant
+que `teleop_clavier` ne demande pas le mode `autonomie`.
+
 La téléopération clavier est configurée dans
 `src/robot_devastator_bringup/config/teleop_clavier.yaml` :
 

@@ -105,7 +105,6 @@ VSCode suivantes selon le besoin :
 
 - `Tasks: Run Task > ROS 2 - Lancer interface Pico`
 - `Tasks: Run Task > ROS 2 - Lancer Devastator`
-- `Tasks: Run Task > ROS 2 - Lancer autonomie simple`
 
 Les configurations de `.vscode/launch.json` servent seulement au debug direct d'un nœud Python
 précis avec F5 :
@@ -115,10 +114,10 @@ précis avec F5 :
 `interface_pico.interface_pico`.
 
 Le lancement principal `devastator.launch.yaml` démarre `interface_pico`, l'arbitre moteur,
-la téléopération clavier, l'autonomie simple et les annonces audio. Le mode initial est manuel :
-la téléopération clavier contrôle les moteurs. La touche `m` bascule entre `manuel` et
-`autonomie`. L'arbitre publie seul vers `/pico/commande_moteurs`, ce qui évite un conflit entre le
-clavier et `evitement_obstacle`.
+l'autonomie simple en attente et les annonces audio. Le mode initial est manuel. Lancer ensuite
+`teleop_clavier` dans un terminal local ou SSH séparé pour conduire le robot. La touche `m` bascule
+entre `manuel` et `autonomie`. L'arbitre publie seul vers `/pico/commande_moteurs`, ce qui évite un
+conflit entre le clavier et `evitement_obstacle`.
 
 L'autonomie simple fait avancer lentement le robot lorsque la distance ultrason est suffisante.
 Devant un obstacle, elle arrête les moteurs, oriente la tourelle à gauche, au centre puis à droite,
@@ -151,7 +150,6 @@ source install/setup.bash
 ```bash
 ros2 launch robot_devastator_bringup devastator.launch.yaml
 ros2 launch robot_devastator_bringup interface_pico.launch.yaml
-ros2 launch robot_devastator_bringup autonomie_simple.launch.yaml
 ```
 
 ```bash
@@ -188,7 +186,13 @@ ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 Téléopération clavier permanente, adaptée à un terminal local ou SSH :
 
 ```bash
+# Terminal 1 : robot lancé, autonomie en attente du mode autonomie.
 ros2 launch robot_devastator_bringup devastator.launch.yaml
+```
+
+```bash
+# Terminal 2 : conduite clavier en avant-plan.
+ros2 run robot_devastator teleop_clavier
 ```
 
 Variante de diagnostic sans lancement principal :
@@ -196,9 +200,7 @@ Variante de diagnostic sans lancement principal :
 ```bash
 # Terminal 1
 ros2 run robot_devastator arbitre_commande_moteurs
-```
 
-```bash
 # Terminal 2
 ros2 run robot_devastator teleop_clavier
 ```
@@ -206,8 +208,10 @@ ros2 run robot_devastator teleop_clavier
 Touches QWERTY disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,
 `espace` arrête, `=` augmente la vitesse, `-` diminue la vitesse, `m` bascule entre conduite
 manuelle et autonomie, `x` quitte. La vitesse par défaut est `200`, bornée de `100` à `500` par
-`config/teleop_clavier.yaml`. Garder les roues dans le vide au premier essai. À la sortie normale
-ou avec `Ctrl+C`, l'outil publie un arrêt moteur explicite.
+`config/teleop_clavier.yaml`. En mode autonomie, les touches de mouvement sont ignorées, mais `m`,
+`=` et `-` restent actives pour revenir au manuel ou préparer la vitesse manuelle. Garder les roues
+dans le vide au premier essai. À la sortie normale ou avec `Ctrl+C`, l'outil publie un arrêt moteur
+explicite.
 
 Les ticks doivent augmenter en marche avant et diminuer en marche arrière. Si un moteur tourne dans
 le mauvais sens, corriger le câblage au MDD3A plutôt que le logiciel.
