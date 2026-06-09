@@ -9,10 +9,10 @@ Branche de référence :
 `main`
 
 Commit de référence consulté (`git rev-parse HEAD`):
-e94f3d4f128063f4d073e75d5cb23fe1083b8574
+bdffbc7ec6fa96528d8f50feda5ca1903a034342
 
 Date de vérification :
-2026-06-07
+2026-06-08
 
 Note :
 Ce commit identifie l’état du dépôt utilisé pour rédiger ou valider ce document. Il ne prétend pas être le commit contenant nécessairement cette version du document.
