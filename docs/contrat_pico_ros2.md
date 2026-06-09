@@ -105,6 +105,17 @@ Valeurs actives avec `robot_devastator_bringup/config/interface_pico.yaml` :
 
 ## Validation CLI courte sur Raspberry Pi 4
 
+Validation Phase 3A, faite sur Raspberry Pi 4 via SSH, roues dans le vide :
+
+- une publication unique sur `/pico/commande_moteurs` provoque un mouvement bref, puis l'arrêt
+  automatique par expiration de consigne ;
+- une publication continue à `10 Hz` maintient le mouvement ;
+- `Ctrl+C` du publisher provoque l'arrêt automatique après expiration ;
+- `/pico/stop_moteurs` arrête les moteurs, mais un publisher actif qui continue à publier une
+  consigne non nulle les fait repartir ;
+- conclusion opérationnelle : un arrêt fiable de téléopération doit aussi arrêter ou neutraliser
+  la source de commande active.
+
 Préparer le terminal :
 
 ```bash

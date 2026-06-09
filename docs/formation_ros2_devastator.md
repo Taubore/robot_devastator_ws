@@ -259,3 +259,4 @@ GitHub `main` reste la source principale. Les fichiers joints, souvenirs de conv
 - 2026-06-07 — Création de la fiche de formation ROS 2 Devastator à partir de `AGENTS.md`,
   `README.md`, des documents techniques et du README de `interface_pico`.
 - 2026-06-08 - la phase 1 a été validée : test CLI sur Raspberry Pi 4 via SSH fonctionnel, et observation du graphe ROS 2 depuis Legion-Linux avec rqt_graph sur le même réseau et le même ROS_DOMAIN_ID. Fichier `contrat_pico_ros2.md` a été créé, il documente clairement le rôle du node interface_pico.
+- 2026-06-09 - Phase 3A validée sur Raspberry Pi 4 via SSH, roues dans le vide : la sécurité moteur CLI arrête bien les moteurs par expiration de consigne, mais un arrêt fiable de téléopération doit aussi arrêter ou neutraliser la source de commande active.
