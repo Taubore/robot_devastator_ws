@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'evitement_obstacle = robot_devastator.evitement_obstacle:main',
+            'teleoperation_clavier = robot_devastator.teleoperation_clavier:main',
             'annonces_audio = robot_devastator.annonces_audio:main',
             'voix_piper = robot_devastator.voix_piper:main',
         ],

@@ -34,7 +34,7 @@ communes du projet.
 
 | Topic | Type | Producteur | Consommateur | Rôle |
 |---|---|---|---|---|
-| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle` | `interface_pico` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
+| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle`, `teleoperation_clavier` | `interface_pico` | Envoyer les consignes des moteurs gauche et droit vers le Pico |
 | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle` | `interface_pico` | Commander l'angle du servo de tourelle en degrés |
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico` | `evitement_obstacle` | Publier la distance ultrason mesurée en millimètres |
 | `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | Outil de diagnostic ou futur calcul d'odométrie | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
@@ -65,6 +65,7 @@ nom exact du nœud lancé.
 |---|---|---|---|---|
 | `interface_pico` | `interface_pico` | `interface_pico` / `interface_pico.interface_pico` | Actif | Exposer les topics et services Pico, puis traduire les commandes ROS 2 vers UART |
 | `evitement_obstacle` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, balayer avec la tourelle, puis tourner jusqu'à trouver un dégagement |
+| `teleoperation_clavier` | `robot_devastator` | `teleoperation_clavier` / `robot_devastator.teleoperation_clavier` | Expérimental | Téléopérer les moteurs au clavier dans un terminal SSH avec arrêt automatique en cas d'inactivité |
 | `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les annonces audio et demander leur lecture selon les événements du robot |
 | `voix_piper` | `robot_devastator` | `voix_piper` / `robot_devastator.voix_piper` | Actif | Générer et jouer les fichiers WAV persistants avec Piper |
 
@@ -144,6 +145,7 @@ ros2 launch robot_devastator_bringup autonomie_simple.launch.yaml
 ```bash
 # Roues dans le vide : essai bref à faible vitesse, suivi d'un arrêt explicite attendu.
 ros2 run interface_pico essai_moteurs_borne
+ros2 run robot_devastator teleoperation_clavier
 ros2 service call /pico/ping std_srvs/srv/Trigger
 ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ```
@@ -171,6 +173,17 @@ ros2 topic pub --once /pico/commande_moteurs commun/msg/ConsigneMoteurs \
   "{gauche: -200, droite: -200}"
 ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ```
+
+Téléopération clavier courte, adaptée à un terminal SSH :
+
+```bash
+ros2 run robot_devastator teleoperation_clavier
+```
+
+Touches QWERTY disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,
+`espace` arrête, `x` quitte. La vitesse par défaut est `250`, bornée à `500` au maximum. Garder
+les roues dans le vide au premier essai. Si aucune touche n'est reçue pendant le délai
+d'inactivité, à la sortie normale ou avec `Ctrl+C`, l'outil publie un arrêt moteur explicite.
 
 Les ticks doivent augmenter en marche avant et diminuer en marche arrière. Si un moteur tourne dans
 le mauvais sens, corriger le câblage au MDD3A plutôt que le logiciel.
