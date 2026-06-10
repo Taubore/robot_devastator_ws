@@ -9,10 +9,10 @@ Branche de référence :
 `main`
 
 Commit de référence consulté (`git rev-parse HEAD`):
-bdffbc7ec6fa96528d8f50feda5ca1903a034342
+bd7b733c72963049d15f17cfbcad876d17b152d9
 
 Date de vérification :
-2026-06-08
+2026-06-10
 
 Note :
 Ce commit identifie l’état du dépôt utilisé pour rédiger ou valider ce document. Il ne prétend pas être le commit contenant nécessairement cette version du document.
@@ -201,14 +201,11 @@ sans nouvelle architecture.
 1. Stabiliser la fiche de formation et la garder alignée avec le README principal.
 2. Valider de nouveau le lancement `interface_pico.launch.yaml` sur Raspberry Pi 4 avec roues dans
    le vide : ping, stop, sonar, tourelle et encodeurs.
-3. Consolider les essais de l'autonomie simple au sonar : obstacle, balayage gauche-centre-droite,
-   rotation, recul de récupération et reprise d'avance.
-4. Documenter les limites observées de l'évitement d'obstacle après tests réels.
-5. Exploiter les encodeurs d'abord en diagnostic simple avant de viser une odométrie.
-6. Valider la téléopération clavier permanente sur Raspberry Pi 4, puis décider si la manette PS2
+3. Valider la téléopération clavier permanente sur Raspberry Pi 4, puis décider si la manette PS2
    apporte encore un gain réel.
-7. Réactiver ensuite un seul sous-système gelé selon le besoin pédagogique le plus immédiat,
-   probablement la manette PS2 ou le RPLIDAR.
+4. Consolider l'architecture du robot en mode manuel (téléopération avec clavier) et en autonomie simple au sonar : obstacle, balayage gauche-centre-droite, rotation, recul de récupération, reprise d'avance et voix lors d'événements.
+5. Exploiter les encodeurs d'abord en diagnostic simple avant de viser une odométrie.
+6. Réactiver ou intégrer un sous-système selon le besoin pédagogique le plus immédiat comme le RPLIDAR ou l'écran LCD ou autre.
 
 ## Jalons pédagogiques globaux
 
@@ -272,4 +269,3 @@ GitHub `main` reste la source principale. Les fichiers joints, souvenirs de conv
 - 2026-06-09 - La téléopération clavier devient une capacité permanente `teleop_clavier`.
   Un arbitre moteur centralise les consignes manuelles et autonomes avant `/pico/commande_moteurs`.
 - 2026-06-09 - `teleop_clavier` reste lancé en avant-plan dans un terminal interactif séparé.
-  `ros2 launch` ne fournit pas d'entrée clavier fiable aux nœuds lancés.
