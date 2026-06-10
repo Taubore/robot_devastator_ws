@@ -1,7 +1,7 @@
 annonces_audio:
   ros__parameters:
     # Empêche une annonce identique de se répéter trop rapidement.
-    delai_min_repetition_s: 3.0
+    delai_min_repetition_s: 5.0
     # Prépare les WAV manquants avec Piper avant d'écouter /robot/evenement.
     preparer_audio_au_demarrage: true
     # Joue une annonce après la préparation initiale des fichiers WAV.
@@ -12,8 +12,20 @@ annonces_audio:
     piper_model: /opt/piper/voix/fr_FR-siwis-low.onnx
     # Configuration associée au modèle vocal Piper.
     piper_config: /opt/piper/voix/fr_FR-siwis-low.onnx.json
-    # Durée maximale accordée à Piper et à aplay avant de signaler un échec.
+    # Durée maximale accordée à Piper et au repli aplay ponctuel avant échec.
     command_timeout_s: 15.0
+    # Garde aplay ouvert en raw pour éviter un clac avant chaque annonce.
+    lecteur_audio_persistant_active: true
+    # Contrôle la broche SD du MAX98357 pour couper l'ampli à l'arrêt du nœud.
+    controle_ampli_active: true
+    gpio_sd_ampli: 23
+    # Format réel des WAV générés par Piper et transmis au lecteur raw persistant.
+    frequence_audio_hz: 16000
+    canaux_audio: 1
+    largeur_echantillon_octets: 2
+    # Silences envoyés pour stabiliser l'ouverture et séparer les annonces.
+    silence_initial_s: 1.0
+    silence_fin_annonce_s: 0.3
     # Format d'une variante parlée : nom_fichier|texte à générer avec Piper.
     # Une chaîne vide représente une variante silencieuse choisie aléatoirement.
     annonces.demarrage:

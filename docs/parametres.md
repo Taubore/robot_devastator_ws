@@ -1,5 +1,42 @@
 
-# Contrôle moteurs — Pico WH + MDD3A
+# Paramètres techniques — Devastator
+
+## Configuration ROS 2 des annonces audio
+
+Le nœud `annonces_audio` utilise `src/robot_devastator_bringup/config/annonces_audio.yaml`.
+L'audio reste une capacité décorative : une erreur de génération, de lecture ou de GPIO est
+journalisée sans arrêter les autres fonctions du robot.
+
+Paramètres principaux :
+
+- `delai_min_repetition_s` : délai minimal avant de rejouer une annonce du même événement,
+  actuellement `3.0 s`.
+- `preparer_audio_au_demarrage` : génère les WAV Piper manquants avant d'écouter
+  `/robot/evenement`, actuellement `true`.
+- `jouer_annonce_demarrage` : joue l'annonce `demarrage` après la préparation initiale,
+  actuellement `true`.
+- `piper_executable`, `piper_model`, `piper_config` : chemins utilisés pour générer les WAV
+  manquants avec Piper.
+- `command_timeout_s` : délai maximal accordé à Piper et au repli `aplay` ponctuel,
+  actuellement `15.0 s`.
+- `lecteur_audio_persistant_active` : garde un processus `aplay` raw ouvert entre les annonces
+  pour éviter un clac avant chaque lecture, actuellement `true`.
+- `controle_ampli_active` : active le contrôle logiciel de la broche SD du MAX98357,
+  actuellement `true`.
+- `gpio_sd_ampli` : GPIO Raspberry Pi utilisé pour SD, actuellement `23`.
+- `frequence_audio_hz` : fréquence attendue des WAV Piper et du flux raw, actuellement
+  `16000 Hz`.
+- `canaux_audio` : nombre de canaux attendu, actuellement `1`.
+- `largeur_echantillon_octets` : largeur d'un échantillon PCM, actuellement `2` octets
+  (`16 bits`).
+- `silence_initial_s` : silence brut écrit au démarrage du lecteur persistant, actuellement
+  `1.0 s`.
+- `silence_fin_annonce_s` : silence brut écrit après chaque annonce et à la fermeture,
+  actuellement `0.3 s`.
+
+Le lecteur persistant attend des WAV RIFF/WAVE PCM, mono, `16 bits`, `16000 Hz`. Un fichier au
+mauvais format est ignoré avec une erreur claire. Si le lecteur persistant ne peut pas démarrer ou
+si son flux se ferme, le nœud tente le repli historique `aplay fichier.wav`.
 
 ## Configuration ROS 2 de l'interface Pico
 
