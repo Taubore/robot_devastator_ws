@@ -52,6 +52,8 @@ moteurs, lit le sonar, oriente la tourelle et publie les mesures utiles vers ROS
   même temps vers le Pico ;
 - les encodeurs FIT0521 sont lus par le Pico et publiés dans ROS 2 ;
 - la voix française avec Piper, la chaîne audio I2S et le haut-parleur sont actifs et testés ;
+- la capacité `annonces_audio` prépare les WAV manquants au démarrage avec Piper, puis joue
+  les annonces d'événements sans service audio séparé ;
 - le mini clavier USB sans-fil Rii X8 sert à la capacité permanente `teleop_clavier` ;
 - les lancements principaux sont centralisés dans `robot_devastator_bringup`.
 
@@ -66,7 +68,7 @@ Les fichiers de lancement documentés sont :
 
 | Package | Type | Responsabilité |
 |---|---|---|
-| `commun` | `ament_cmake` | Définit les messages et services ROS 2 communs du projet |
+| `commun` | `ament_cmake` | Définit les messages ROS 2 communs du projet |
 | `interface_pico` | `ament_python` | Adapte ROS 2 vers le protocole UART texte du Pico WH |
 | `robot_devastator` | `ament_python` | Contient la logique applicative du robot : autonomie simple et annonces audio |
 | `robot_devastator_bringup` | `ament_cmake` | Regroupe les fichiers `launch` et les paramètres YAML d'assemblage |
@@ -79,8 +81,7 @@ Nœuds et exécutables connus :
 | `arbitre_commande_moteurs` | `robot_devastator` | `arbitre_commande_moteurs` | Actif | Sélectionne une seule source moteur active avant le topic Pico |
 | `teleop_clavier` | `robot_devastator` | `teleop_clavier` | Actif | Conduit le robot au clavier et bascule entre mode manuel et autonomie |
 | `evitement_obstacle` | `robot_devastator` | `evitement_obstacle` | Expérimental | Avance lentement, détecte un obstacle, balaie la tourelle et cherche un dégagement |
-| `annonces_audio` | `robot_devastator` | `annonces_audio` | Actif | Écoute les événements du robot et demande la lecture d'annonces configurées |
-| `voix_piper` | `robot_devastator` | `voix_piper` | Actif | Génère et joue des fichiers WAV avec Piper |
+| `annonces_audio` | `robot_devastator` | `annonces_audio` | Actif | Prépare les WAV manquants avec Piper, puis joue les annonces selon les événements du robot |
 | `essai_moteurs_borne` | `interface_pico` | `essai_moteurs_borne` | Outil de test | Publie une consigne moteur courte et bornée pour un essai roues dans le vide |
 
 ## Topics, services et messages connus
@@ -117,8 +118,6 @@ Nœuds et exécutables connus :
 | `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Diagnostic | Envoyer `PING` et attendre `OK PING` |
 | `/pico/stop_moteurs` | `std_srvs/srv/Trigger` | `interface_pico` | Diagnostic | Envoyer `STOP_MOT` et attendre `OK STOP_MOT` |
 | `/pico/reset_encodeurs` | `std_srvs/srv/Trigger` | `interface_pico` | Diagnostic | Envoyer `RESET_ENC` et attendre `OK RESET_ENC` |
-| `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `annonces_audio` | Générer un fichier WAV absent du cache |
-| `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `annonces_audio` | Jouer un fichier WAV existant |
 
 Aucune action ROS 2 n'est documentée ou implémentée actuellement.
 
@@ -128,8 +127,6 @@ Aucune action ROS 2 n'est documentée ou implémentée actuellement.
 |---|---|---|
 | `commun/msg/ConsigneMoteurs` | `int16 gauche`, `int16 droite` | Porter les consignes des moteurs gauche et droit |
 | `commun/msg/EtatEncodeurs` | `int32 gauche_ticks`, `int32 droite_ticks` | Porter les compteurs encodeurs gauche et droit |
-| `commun/srv/GenererAudio` | Requête : `texte`, `nom_fichier` ; réponse : `succes`, `message`, `chemin_fichier` | Demander la génération d'un fichier audio |
-| `commun/srv/JouerAudio` | Requête : `nom_fichier` ; réponse : `succes`, `message`, `chemin_fichier` | Demander la lecture d'un fichier audio |
 
 ### Protocole UART Pico connu
 
@@ -220,6 +217,16 @@ sans nouvelle architecture.
 9. Créer un banc logiciel ou simulateur minimal.
 10. Décider objectivement si RPLIDAR/Nav2 sont intégrés sur Devastator ou reportés à RobotPi.
 
+## Décision audio B2
+
+La séparation entre orchestration des annonces et synthèse vocale est retirée. `annonces_audio`
+devient la capacité audio unique : elle charge les annonces YAML, vérifie le cache persistant
+`~/.cache/robot_devastator/audio`, génère les WAV manquants de façon synchrone au démarrage, joue
+l'annonce de démarrage si configurée, puis écoute `/robot/evenement`. Les anciens services ROS 2
+audio ne font plus partie de l'architecture courante. Si Piper, le modèle vocal ou `aplay` sont
+absents sur le Raspberry Pi 4, l'erreur est seulement journalisée ;
+l'audio ne bloque pas les autres nœuds et ne participe pas à la sécurité moteur.
+
 ## Points ouverts
 
 - Seul `src/interface_pico` contient un README de package. Les responsabilités de `commun`,
@@ -230,7 +237,7 @@ sans nouvelle architecture.
 - La manette PS2 a un câblage retenu dans la documentation, mais elle est gelée tant que le clavier Rii X8 répond mieux au besoin courant.
 - Les encodeurs sont publiés par `interface_pico`, mais aucun nœud d'odométrie n'est documenté
   actuellement.
-- `arret_robot` est configuré dans les annonces audio, mais sa publication effective n'est pas
+- `arret_robot` reste configuré dans les annonces audio, mais sa publication effective n'est pas
   clairement établie par les documents de haut niveau.
 
 ## Règle de reprise
@@ -254,6 +261,8 @@ GitHub `main` reste la source principale. Les fichiers joints, souvenirs de conv
 - rqt_graph sera exécuté sur Lenovo-Linux, pas sur le Raspberry Pi 4.
 - Le Raspberry Pi 4 reste l’environnement d’exécution matérielle via SSH.
 - ROS_DOMAIN_ID reste non défini pour l’instant, car la découverte ROS 2 fonctionne correctement avec le domaine par défaut.
+- Option B2 audio validée : une seule capacité `annonces_audio`, sans nœud de synthèse séparé
+  ni services audio publics.
 
 ## Tests validés
 - rqt_graph sur Lenovo-Linux détecte les nœuds ROS 2 lancés sur le Raspberry Pi 4.
@@ -269,3 +278,6 @@ GitHub `main` reste la source principale. Les fichiers joints, souvenirs de conv
 - 2026-06-09 - La téléopération clavier devient une capacité permanente `teleop_clavier`.
   Un arbitre moteur centralise les consignes manuelles et autonomes avant `/pico/commande_moteurs`.
 - 2026-06-09 - `teleop_clavier` reste lancé en avant-plan dans un terminal interactif séparé.
+
+- 2026-06-10 - Option B2 appliquée : `annonces_audio` prépare et lit directement les WAV
+  avec Piper et `aplay`, sans services audio ROS 2.

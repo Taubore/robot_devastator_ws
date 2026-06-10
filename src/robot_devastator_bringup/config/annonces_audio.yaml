@@ -2,10 +2,18 @@ annonces_audio:
   ros__parameters:
     # Empêche une annonce identique de se répéter trop rapidement.
     delai_min_repetition_s: 3.0
-    # Demande à voix_piper de préparer les annonces configurées au démarrage.
+    # Prépare les WAV manquants avec Piper avant d'écouter /robot/evenement.
     preparer_audio_au_demarrage: true
     # Joue une annonce après la préparation initiale des fichiers WAV.
     jouer_annonce_demarrage: true
+    # Exécutable Piper installé sur le Raspberry Pi 4.
+    piper_executable: /usr/local/bin/piper
+    # Modèle vocal français installé sur le Raspberry Pi 4.
+    piper_model: /opt/piper/voix/fr_FR-siwis-low.onnx
+    # Configuration associée au modèle vocal Piper.
+    piper_config: /opt/piper/voix/fr_FR-siwis-low.onnx.json
+    # Durée maximale accordée à Piper et à aplay avant de signaler un échec.
+    command_timeout_s: 15.0
     # Format d'une variante parlée : nom_fichier|texte à générer avec Piper.
     # Une chaîne vide représente une variante silencieuse choisie aléatoirement.
     annonces.demarrage:

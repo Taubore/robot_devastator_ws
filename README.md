@@ -51,8 +51,6 @@ communes du projet.
 | `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Envoyer `PING` et réussir seulement si le Pico répond `OK PING` dans le délai |
 | `/pico/stop_moteurs` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander un arrêt explicite des moteurs au Pico avec `STOP_MOT` |
 | `/pico/reset_encodeurs` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Remettre à zéro les compteurs d'encodeurs avec `RESET_ENC` |
-| `/generer_audio` | `commun/srv/GenererAudio` | `voix_piper` | `annonces_audio` | Générer à l'avance un fichier WAV absent du cache persistant |
-| `/jouer_audio` | `commun/srv/JouerAudio` | `voix_piper` | `annonces_audio` | Jouer un fichier WAV déjà généré |
 
 ### Actions
 
@@ -70,8 +68,7 @@ nom exact du nœud lancé.
 | `arbitre_commande_moteurs` | `robot_devastator` | `arbitre_commande_moteurs` / `robot_devastator.arbitre_commande_moteurs` | Actif | Sélectionner une seule source moteur active avant `/pico/commande_moteurs` |
 | `evitement_obstacle` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, balayer avec la tourelle, puis tourner jusqu'à trouver un dégagement |
 | `teleop_clavier` | `robot_devastator` | `teleop_clavier` / `robot_devastator.teleop_clavier` | Actif | Conduire localement au clavier et basculer entre mode manuel et autonomie |
-| `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les annonces audio et demander leur lecture selon les événements du robot |
-| `voix_piper` | `robot_devastator` | `voix_piper` / `robot_devastator.voix_piper` | Actif | Générer et jouer les fichiers WAV persistants avec Piper |
+| `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les WAV manquants avec Piper, puis jouer les annonces selon les événements du robot |
 
 ## Interfaces personnalisées
 
@@ -79,8 +76,6 @@ nom exact du nœud lancé.
 |---|---|---|
 | `commun/msg/ConsigneMoteurs` | Message | Transporter les consignes moteur gauche et droite, sur une plage prévue de `-1000` à `1000` |
 | `commun/msg/EtatEncodeurs` | Message | Transporter les ticks des encodeurs gauche et droit publiés par `interface_pico` |
-| `commun/srv/GenererAudio` | Service | Demander la génération d'un fichier audio à partir d'un texte |
-| `commun/srv/JouerAudio` | Service | Demander la lecture d'un fichier audio existant |
 
 ## Utilisation avec VSCode (via Quick Access - F1)
 
@@ -131,11 +126,14 @@ Par sécurité, `interface_pico` maintient une consigne moteur seulement pendant
 Sans nouvelle consigne ROS pendant `0.5 s`, ou après une erreur UART, il transmet et mémorise un
 arrêt. Une reconnexion UART repart également à l'arrêt avant d'accepter une nouvelle commande.
 
-Au lancement de l'autonomie simple, `annonces_audio` demande à `voix_piper` de préparer les annonces
-configurées. `voix_piper` génère uniquement les fichiers WAV manquants, les conserve dans
-`~/.cache/robot_devastator/audio`, puis les réutilise aux lancements suivants afin de ne pas ralentir
-le comportement du robot sur Raspberry Pi 4. Les annonces peuvent proposer plusieurs variantes ;
-une chaîne vide dans `config/annonces_audio.yaml` représente une variante silencieuse.
+Au lancement principal, `annonces_audio` est la seule capacité audio active. Le nœud charge les
+annonces configurées dans `config/annonces_audio.yaml`, vérifie le cache persistant
+`~/.cache/robot_devastator/audio`, puis génère synchroniquement avec Piper les fichiers WAV
+manquants avant d'écouter `/robot/evenement`. Les WAV présents sont réutilisés aux lancements
+suivants afin de ne pas ralentir le comportement du robot sur Raspberry Pi 4. Les annonces peuvent
+proposer plusieurs variantes ; une chaîne vide représente une variante silencieuse. Si Piper, le
+modèle vocal ou `aplay` sont absents, l'erreur est journalisée et l'audio reste décoratif : les autres
+nœuds du robot ne dépendent pas de la génération ni de la lecture audio.
 
 ## Commandes CLI de secours
 

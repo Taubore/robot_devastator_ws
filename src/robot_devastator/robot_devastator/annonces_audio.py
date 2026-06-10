@@ -1,14 +1,14 @@
-"""Orchestrateur léger des annonces audio du robot."""
+"""Capacité audio unique du robot Devastator avec Piper et aplay."""
 
 from dataclasses import dataclass
 from pathlib import Path
 import random
 import signal
+import subprocess
 import time
 from types import FrameType
 from typing import Final
 
-from commun.srv import GenererAudio, JouerAudio
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
@@ -16,14 +16,15 @@ from rclpy.signals import SignalHandlerOptions
 from std_msgs.msg import String
 
 TOPIC_EVENEMENT_ROBOT: Final[str] = '/robot/evenement'
-SERVICE_GENERER_AUDIO: Final[str] = '/generer_audio'
-SERVICE_JOUER_AUDIO: Final[str] = '/jouer_audio'
 TAILLE_FILE_MESSAGES: Final[int] = 10
-DELAI_ATTENTE_SERVICES_AUDIO_S: Final[float] = 10.0
 SEPARATEUR_VARIANTE: Final[str] = '|'
+DEFAULT_PIPER_EXECUTABLE: Final[str] = '/usr/local/bin/piper'
+DEFAULT_PIPER_MODEL: Final[str] = '/opt/piper/voix/fr_FR-siwis-low.onnx'
+DEFAULT_PIPER_CONFIG: Final[str] = '/opt/piper/voix/fr_FR-siwis-low.onnx.json'
+DEFAULT_COMMAND_TIMEOUT_S: Final[float] = 15.0
 AUDIO_CACHE_DIR: Final[Path] = Path.home() / '.cache' / 'robot_devastator' / 'audio'
 
-# Cette liste fixe limite volontairement l'orchestrateur aux annonces utiles actuellement.
+# Cette liste fixe limite volontairement la capacité audio aux annonces utiles actuellement.
 EVENEMENTS_ANNONCES: Final[tuple[str, ...]] = (
     'demarrage',
     'autonomie_demarre',
@@ -61,28 +62,46 @@ class AnnoncesAudio(Node):
         self.declare_parameter('delai_min_repetition_s', 3.0)
         self.declare_parameter('preparer_audio_au_demarrage', True)
         self.declare_parameter('jouer_annonce_demarrage', True)
+        self.declare_parameter('piper_executable', DEFAULT_PIPER_EXECUTABLE)
+        self.declare_parameter('piper_model', DEFAULT_PIPER_MODEL)
+        self.declare_parameter('piper_config', DEFAULT_PIPER_CONFIG)
+        self.declare_parameter('command_timeout_s', DEFAULT_COMMAND_TIMEOUT_S)
         for evenement in EVENEMENTS_ANNONCES:
             self.declare_parameter(f'annonces.{evenement}', Parameter.Type.STRING_ARRAY)
 
         self.delai_min_repetition_s = float(
             self.get_parameter('delai_min_repetition_s').value
         )
-        if self.delai_min_repetition_s < 0.0:
-            raise ValueError(
-                "Le paramètre 'delai_min_repetition_s' ne peut pas être négatif."
-            )
         self.preparer_audio_au_demarrage = bool(
             self.get_parameter('preparer_audio_au_demarrage').value
         )
         self.jouer_annonce_demarrage = bool(
             self.get_parameter('jouer_annonce_demarrage').value
         )
+        self.piper_executable = str(self.get_parameter('piper_executable').value)
+        self.piper_model = str(self.get_parameter('piper_model').value)
+        self.piper_config = str(self.get_parameter('piper_config').value)
+        self.command_timeout_s = float(self.get_parameter('command_timeout_s').value)
         self.repertoire_audio = AUDIO_CACHE_DIR
         self.annonces = self._charger_annonces()
         self.derniere_lecture_s: dict[str, float] = {}
 
-        self.generer_audio_cli = self.create_client(GenererAudio, SERVICE_GENERER_AUDIO)
-        self.jouer_audio_cli = self.create_client(JouerAudio, SERVICE_JOUER_AUDIO)
+        self._valider_parametres()
+        self.repertoire_audio.mkdir(parents=True, exist_ok=True)
+        self.get_logger().info(f'Cache audio persistant utilisé : {self.repertoire_audio}.')
+
+        # La préparation est volontairement synchrone : le nœud ne commence à écouter
+        # /robot/evenement qu'après avoir préparé les fichiers ou journalisé les échecs.
+        if self.preparer_audio_au_demarrage:
+            self.preparer_annonces_audio()
+        else:
+            self.get_logger().warn(
+                "Préparation audio au démarrage désactivée par paramètre."
+            )
+
+        if self.jouer_annonce_demarrage:
+            self.jouer_annonce('demarrage')
+
         self.abonnement_evenement = self.create_subscription(
             String,
             TOPIC_EVENEMENT_ROBOT,
@@ -90,8 +109,50 @@ class AnnoncesAudio(Node):
             TAILLE_FILE_MESSAGES,
         )
         self.get_logger().info(
-            f'Fichiers WAV vérifiés dans : {self.repertoire_audio}.'
+            f"Capacité audio prête ; écoute des événements sur '{TOPIC_EVENEMENT_ROBOT}'."
         )
+
+    def preparer_annonces_audio(self) -> None:
+        """Prépare chaque fichier WAV configuré sans empêcher le robot de se lancer."""
+        self.get_logger().info('Préparation synchrone des annonces audio configurées.')
+        for variantes in self.annonces.values():
+            for variante in variantes:
+                if variante is None:
+                    continue
+                self._generer_audio_si_absent(variante)
+        self.get_logger().info('Préparation des annonces audio terminée.')
+
+    def jouer_annonce(self, evenement: str) -> None:
+        """Joue au plus une variante configurée pour l'événement reçu."""
+        variantes = self.annonces.get(evenement, [])
+        if not variantes:
+            return
+
+        maintenant_s = time.monotonic()
+        derniere_lecture_s = self.derniere_lecture_s.get(evenement)
+        if (
+            derniere_lecture_s is not None
+            and maintenant_s - derniere_lecture_s < self.delai_min_repetition_s
+        ):
+            self.get_logger().debug(f'Annonce ignorée car trop rapprochée : {evenement}.')
+            return
+
+        variante = random.choice(variantes)
+        # Une variante silencieuse participe au tirage aléatoire sans lancer de lecture.
+        if variante is None:
+            self.get_logger().debug(f'Variante silencieuse choisie : {evenement}.')
+            return
+
+        self.derniere_lecture_s[evenement] = maintenant_s
+        self._jouer_audio(variante.nom_fichier)
+
+    # --- Callbacks des subscriptions ---
+
+    def _recevoir_evenement_callback(self, message: String) -> None:
+        """Choisit une variante et joue localement son fichier WAV."""
+        self.jouer_annonce(message.data)
+
+    # --- Méthodes privées utilitaires ---
 
     def _charger_annonces(self) -> dict[str, list[VarianteAnnonce | None]]:
         """Charge les variantes configurées ; une chaîne vide représente le silence."""
@@ -118,118 +179,158 @@ class AnnoncesAudio(Node):
                     )
                 if nom_fichier in noms_fichiers:
                     raise ValueError(f"Nom de fichier audio dupliqué : '{nom_fichier}'.")
+                self._resoudre_chemin_audio(nom_fichier)
                 noms_fichiers.add(nom_fichier)
                 variantes.append(VarianteAnnonce(nom_fichier, texte))
             annonces[evenement] = variantes
         return annonces
 
-    def attendre_services_audio(self) -> bool:
-        """Attend les deux services audio pendant un délai borné."""
-        echeance = time.monotonic() + DELAI_ATTENTE_SERVICES_AUDIO_S
-        for client, nom_service in (
-            (self.generer_audio_cli, SERVICE_GENERER_AUDIO),
-            (self.jouer_audio_cli, SERVICE_JOUER_AUDIO),
-        ):
-            while not client.wait_for_service(timeout_sec=1.0):
-                if time.monotonic() >= echeance:
-                    self.get_logger().error(
-                        f"Service '{nom_service}' indisponible après "
-                        f'{DELAI_ATTENTE_SERVICES_AUDIO_S:.0f} s.'
-                    )
-                    return False
-                self.get_logger().warn(
-                    f"Service '{nom_service}' indisponible, nouvelle tentative..."
-                )
-        self.get_logger().info('Services audio disponibles.')
-        return True
-
-    def preparer_annonces_audio(self) -> None:
-        """Demande la préparation de chaque fichier WAV configuré."""
-        for variantes in self.annonces.values():
-            for variante in variantes:
-                if variante is None:
-                    continue
-                self._generer_audio(variante)
-
-    def _generer_audio(self, variante: VarianteAnnonce) -> None:
-        """Demande la préparation d'une variante et journalise le résultat du service."""
-        chemin_audio = self.repertoire_audio / f'{variante.nom_fichier}.wav'
-        if chemin_audio.is_file():
-            return
-
-        requete = GenererAudio.Request()
-        requete.nom_fichier = variante.nom_fichier
-        requete.texte = variante.texte
-        self.get_logger().info(f'Génération demandée : {variante.nom_fichier}.wav.')
-        future = self.generer_audio_cli.call_async(requete)
-        rclpy.spin_until_future_complete(self, future)
-        reponse = future.result()
-        if reponse is None or not reponse.succes:
-            message = reponse.message if reponse is not None else 'aucune réponse'
+    def _valider_parametres(self) -> None:
+        """Valide seulement les paramètres qui rendent la configuration incohérente."""
+        if self.delai_min_repetition_s < 0.0:
+            raise ValueError(
+                "Le paramètre 'delai_min_repetition_s' ne peut pas être négatif."
+            )
+        if self.command_timeout_s <= 0.0:
+            raise ValueError(
+                "Le paramètre 'command_timeout_s' doit être strictement positif."
+            )
+        if not self.piper_executable.strip():
             self.get_logger().error(
-                f'Génération échouée pour {variante.nom_fichier}.wav : {message}'
+                "Paramètre 'piper_executable' vide : les WAV manquants ne pourront pas "
+                'être générés.'
             )
-            return
-        self.get_logger().info(f'Génération réussie pour {variante.nom_fichier}.wav.')
-
-    def _recevoir_evenement_callback(self, message: String) -> None:
-        """Choisit une variante et demande sa lecture sans bloquer l'orchestrateur."""
-        self.jouer_annonce(message.data)
-
-    def jouer_annonce(self, evenement: str) -> None:
-        """Joue au plus une variante configurée pour l'événement reçu."""
-        variantes = self.annonces.get(evenement, [])
-        if not variantes:
-            return
-        maintenant_s = time.monotonic()
-        derniere_lecture_s = self.derniere_lecture_s.get(evenement)
-        if (
-            derniere_lecture_s is not None
-            and maintenant_s - derniere_lecture_s < self.delai_min_repetition_s
-        ):
-            self.get_logger().debug(f'Annonce ignorée car trop rapprochée : {evenement}.')
-            return
-
-        variante = random.choice(variantes)
-        # Une variante silencieuse participe au tirage aléatoire sans lancer de lecture.
-        if variante is None:
-            self.get_logger().debug(f'Variante silencieuse choisie : {evenement}.')
-            return
-
-        if not self.jouer_audio_cli.service_is_ready():
+        if not self.piper_model.strip():
+            self.get_logger().error(
+                "Paramètre 'piper_model' vide : les WAV manquants ne pourront pas "
+                'être générés.'
+            )
+        if not self.piper_config.strip():
             self.get_logger().warn(
-                f"Annonce ignorée car le service '{SERVICE_JOUER_AUDIO}' "
-                'est indisponible.'
+                "Paramètre 'piper_config' vide : Piper sera appelé sans fichier "
+                'de configuration séparé.'
+            )
+
+    def _resoudre_chemin_audio(self, nom_fichier: str) -> Path:
+        """Retourne le chemin audio cible à partir d'un nom simple."""
+        if '/' in nom_fichier or '\\' in nom_fichier:
+            raise ValueError('Le nom de fichier doit être un nom simple, sans chemin.')
+        return self.repertoire_audio / f'{nom_fichier}.wav'
+
+    def _generer_audio_si_absent(self, variante: VarianteAnnonce) -> None:
+        """Génère un WAV manquant avec Piper et journalise chaque résultat."""
+        chemin_audio = self._resoudre_chemin_audio(variante.nom_fichier)
+        if chemin_audio.is_file():
+            self.get_logger().info(f'Fichier audio déjà présent : {chemin_audio.name}.')
+            return
+
+        if not self.piper_executable.strip() or not self.piper_model.strip():
+            self.get_logger().error(
+                f'Génération impossible pour {chemin_audio.name} : configuration Piper '
+                'incomplète.'
             )
             return
 
-        requete = JouerAudio.Request()
-        requete.nom_fichier = variante.nom_fichier
-        self.derniere_lecture_s[evenement] = maintenant_s
-        future = self.jouer_audio_cli.call_async(requete)
-        future.add_done_callback(
-            lambda resultat, nom=variante.nom_fichier: self._journaliser_lecture(
-                nom,
-                resultat,
+        if not Path(self.piper_model).is_file():
+            self.get_logger().error(
+                f'Génération impossible pour {chemin_audio.name} : modèle Piper '
+                f'introuvable ({self.piper_model}).'
             )
-        )
+            return
 
-    def _journaliser_lecture(self, nom_fichier: str, future) -> None:
-        """Journalise la réponse asynchrone du service de lecture audio."""
+        commande = [
+            self.piper_executable,
+            '--model', self.piper_model,
+            '--output_file', str(chemin_audio),
+        ]
+        if self.piper_config.strip():
+            if not Path(self.piper_config).is_file():
+                self.get_logger().error(
+                    f'Génération impossible pour {chemin_audio.name} : configuration '
+                    f'Piper introuvable ({self.piper_config}).'
+                )
+                return
+            commande.extend(['--config', self.piper_config])
+
         try:
-            reponse = future.result()
+            self.get_logger().info(f'Génération Piper demandée : {chemin_audio.name}.')
+            subprocess.run(
+                commande,
+                input=variante.texte,
+                text=True,
+                check=True,
+                timeout=self.command_timeout_s,
+            )
+            if not chemin_audio.is_file():
+                self.get_logger().error(
+                    f'Génération échouée pour {chemin_audio.name} : fichier non créé.'
+                )
+                return
+            self.get_logger().info(f'Fichier audio généré : {chemin_audio.name}.')
+        except subprocess.TimeoutExpired:
+            self.get_logger().error(
+                f"Génération échouée pour {chemin_audio.name} : Piper a dépassé "
+                "le délai d'exécution."
+            )
+        except subprocess.CalledProcessError as erreur:
+            self.get_logger().error(
+                f"Génération échouée pour {chemin_audio.name} : erreur Piper "
+                f'{erreur.returncode}.'
+            )
+        except FileNotFoundError:
+            self.get_logger().error(
+                f'Génération échouée pour {chemin_audio.name} : exécutable Piper '
+                f'introuvable ({self.piper_executable}).'
+            )
         except Exception as erreur:
             self.get_logger().error(
-                f'Lecture audio échouée pour {nom_fichier}.wav : {erreur}'
+                f'Génération échouée pour {chemin_audio.name} : {erreur}'
             )
-            return
-        if reponse is None or not reponse.succes:
-            message = reponse.message if reponse is not None else 'aucune réponse'
+
+    def _jouer_audio(self, nom_fichier: str) -> None:
+        """Joue un WAV du cache avec aplay et journalise les échecs sans lever."""
+        try:
+            chemin_audio = self._resoudre_chemin_audio(nom_fichier)
+        except ValueError as erreur:
             self.get_logger().error(
-                f'Lecture audio échouée pour {nom_fichier}.wav : {message}'
+                f"Lecture audio impossible pour '{nom_fichier}' : {erreur}"
             )
             return
-        self.get_logger().info(f'Lecture audio réussie : {nom_fichier}.wav.')
+
+        if not chemin_audio.is_file():
+            self.get_logger().error(
+                f"Impossible de jouer le fichier audio '{chemin_audio.name}' : "
+                f'fichier absent du cache ({chemin_audio}).'
+            )
+            return
+
+        try:
+            subprocess.run(
+                ['aplay', str(chemin_audio)],
+                check=True,
+                timeout=self.command_timeout_s,
+            )
+            self.get_logger().info(f'Lecture audio réussie : {chemin_audio.name}.')
+        except subprocess.TimeoutExpired:
+            self.get_logger().error(
+                f"Lecture audio échouée pour {chemin_audio.name} : aplay a dépassé "
+                "le délai d'exécution."
+            )
+        except subprocess.CalledProcessError as erreur:
+            self.get_logger().error(
+                f'Lecture audio échouée pour {chemin_audio.name} : erreur aplay '
+                f'{erreur.returncode}.'
+            )
+        except FileNotFoundError:
+            self.get_logger().error(
+                f'Lecture audio échouée pour {chemin_audio.name} : aplay introuvable.'
+            )
+        except Exception as erreur:
+            self.get_logger().error(
+                f'Lecture audio échouée pour {chemin_audio.name} : {erreur}'
+            )
+
+    # --- Cycle de vie du nœud ---
 
 
 def main(args: list[str] | None = None) -> None:
@@ -240,11 +341,6 @@ def main(args: list[str] | None = None) -> None:
 
     node = AnnoncesAudio()
     try:
-        services_disponibles = node.attendre_services_audio()
-        if services_disponibles and node.preparer_audio_au_demarrage:
-            node.preparer_annonces_audio()
-        if services_disponibles and node.jouer_annonce_demarrage:
-            node.jouer_annonce('demarrage')
         rclpy.spin(node)
     except KeyboardInterrupt:
         node.get_logger().info("Arrêt demandé par l'utilisateur.")

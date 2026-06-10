@@ -15,13 +15,6 @@ launch:
     - from: $(find-pkg-share robot_devastator_bringup)/config/arbitre_commande_moteurs.yaml
 - node:
     pkg: robot_devastator
-    exec: voix_piper
-    name: voix_piper
-    output: screen
-    param:
-    - from: $(find-pkg-share robot_devastator_bringup)/config/voix_piper.yaml
-- node:
-    pkg: robot_devastator
     exec: annonces_audio
     name: annonces_audio
     output: screen
