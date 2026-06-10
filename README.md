@@ -207,11 +207,12 @@ ros2 run robot_devastator teleop_clavier
 
 Touches QWERTY disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,
 `espace` arrête, `=` augmente la vitesse, `-` diminue la vitesse, `m` bascule entre conduite
-manuelle et autonomie, `x` quitte. La vitesse par défaut est `200`, bornée de `100` à `500` par
-`config/teleop_clavier.yaml`. En mode autonomie, les touches de mouvement sont ignorées, mais `m`,
-`=` et `-` restent actives pour revenir au manuel ou préparer la vitesse manuelle. Garder les roues
-dans le vide au premier essai. À la sortie normale ou avec `Ctrl+C`, l'outil publie un arrêt moteur
-explicite.
+manuelle et autonomie, `x` quitte. La vitesse par défaut est `300`, bornée de `300` à `1000` par
+`config/teleop_clavier.yaml`. En mode manuel, `=` et `-` appliquent immédiatement la nouvelle
+vitesse à la consigne de mouvement active. En mode autonomie, les touches de mouvement sont
+ignorées, mais `m`, `=` et `-` restent actives pour revenir au manuel ou préparer la vitesse
+manuelle. Garder les roues dans le vide au premier essai. À la sortie normale ou avec `Ctrl+C`,
+l'outil publie un arrêt moteur explicite.
 
 Les ticks doivent augmenter en marche avant et diminuer en marche arrière. Si un moteur tourne dans
 le mauvais sens, corriger le câblage au MDD3A plutôt que le logiciel.

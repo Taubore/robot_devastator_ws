@@ -46,7 +46,7 @@ def _ouvrir_entree_clavier() -> tuple[TextIO, bool]:
     except OSError as erreur:
         raise RuntimeError(
             'La téléopération clavier demande un terminal interactif. '
-            "Lancer depuis un terminal local ou SSH."
+            'Lancer depuis un terminal local ou SSH.'
         ) from erreur
 
 
@@ -246,6 +246,17 @@ class TeleopClavier(Node):
     def _changer_vitesse(self, variation: int) -> None:
         """Change la vitesse manuelle en respectant les bornes configurées."""
         self.vitesse = self._borner_vitesse(self.vitesse + variation)
+        if self.mode == MODE_MANUEL:
+            if self.consigne_gauche > 0:
+                self.consigne_gauche = self.vitesse
+            elif self.consigne_gauche < 0:
+                self.consigne_gauche = -self.vitesse
+
+            if self.consigne_droite > 0:
+                self.consigne_droite = self.vitesse
+            elif self.consigne_droite < 0:
+                self.consigne_droite = -self.vitesse
+
         self._afficher_etat()
 
     def _borner_vitesse(self, vitesse: int) -> int:

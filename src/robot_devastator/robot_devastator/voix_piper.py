@@ -1,12 +1,15 @@
 """Services ROS 2 pour générer et jouer des fichiers audio via Piper."""
 
 from pathlib import Path
+import signal
 import subprocess
+from types import FrameType
 
 from commun.srv import GenererAudio
 from commun.srv import JouerAudio
 import rclpy
 from rclpy.node import Node
+from rclpy.signals import SignalHandlerOptions
 
 DEFAULT_PIPER_EXECUTABLE = '/usr/local/bin/piper'
 
@@ -20,10 +23,16 @@ DEFAULT_AUDIO_OUTPUT = AUDIO_CACHE_DIR / 'derniere_sortie.wav'
 DEFAULT_COMMAND_TIMEOUT_S = 15.0
 
 
+def _interrompre_execution(
+    _numero_signal: int,
+    _frame: FrameType | None,
+) -> None:
+    """Interrompt proprement l'exécution lors d'une demande d'arrêt système."""
+    raise KeyboardInterrupt
+
+
 class VoixPiper(Node):
-    """
-    Génère et joue les fichiers WAV avec Piper
-    """
+    """Génère et joue les fichiers WAV avec Piper."""
 
     def __init__(self):
         super().__init__('voix_piper')
@@ -196,16 +205,23 @@ class VoixPiper(Node):
         return response
 
 
-def main(args=None):
+def main(args: list[str] | None = None) -> None:
     """Initialise ROS 2 puis démarre le service audio Piper."""
-    rclpy.init(args=args)
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
+    signal.signal(signal.SIGINT, _interrompre_execution)
+    signal.signal(signal.SIGTERM, _interrompre_execution)
 
     node = VoixPiper()
     try:
         rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info("Arrêt demandé par l'utilisateur.")
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        try:
+            node.destroy_node()
+        finally:
+            if rclpy.ok():
+                rclpy.shutdown()
 
 
 if __name__ == '__main__':

@@ -1,14 +1,18 @@
 """Orchestrateur léger des annonces audio du robot."""
 
 from dataclasses import dataclass
+from pathlib import Path
 import random
+import signal
 import time
+from types import FrameType
 from typing import Final
 
 from commun.srv import GenererAudio, JouerAudio
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
+from rclpy.signals import SignalHandlerOptions
 from std_msgs.msg import String
 
 TOPIC_EVENEMENT_ROBOT: Final[str] = '/robot/evenement'
@@ -17,6 +21,7 @@ SERVICE_JOUER_AUDIO: Final[str] = '/jouer_audio'
 TAILLE_FILE_MESSAGES: Final[int] = 10
 DELAI_ATTENTE_SERVICES_AUDIO_S: Final[float] = 10.0
 SEPARATEUR_VARIANTE: Final[str] = '|'
+AUDIO_CACHE_DIR: Final[Path] = Path.home() / '.cache' / 'robot_devastator' / 'audio'
 
 # Cette liste fixe limite volontairement l'orchestrateur aux annonces utiles actuellement.
 EVENEMENTS_ANNONCES: Final[tuple[str, ...]] = (
@@ -32,6 +37,14 @@ EVENEMENTS_ANNONCES: Final[tuple[str, ...]] = (
 )
 
 
+def _interrompre_execution(
+    _numero_signal: int,
+    _frame: FrameType | None,
+) -> None:
+    """Interrompt proprement l'exécution lors d'une demande d'arrêt système."""
+    raise KeyboardInterrupt
+
+
 @dataclass(frozen=True)
 class VarianteAnnonce:
     """Associe un fichier WAV persistant au texte utilisé pour le préparer."""
@@ -41,9 +54,7 @@ class VarianteAnnonce:
 
 
 class AnnoncesAudio(Node):
-    """
-    Prépare les annonces audio et les joue selon les événements du robot.
-    """
+    """Prépare les annonces audio et les joue selon les événements du robot."""
 
     def __init__(self) -> None:
         super().__init__('annonces_audio')
@@ -66,6 +77,7 @@ class AnnoncesAudio(Node):
         self.jouer_annonce_demarrage = bool(
             self.get_parameter('jouer_annonce_demarrage').value
         )
+        self.repertoire_audio = AUDIO_CACHE_DIR
         self.annonces = self._charger_annonces()
         self.derniere_lecture_s: dict[str, float] = {}
 
@@ -76,6 +88,9 @@ class AnnoncesAudio(Node):
             TOPIC_EVENEMENT_ROBOT,
             self._recevoir_evenement_callback,
             TAILLE_FILE_MESSAGES,
+        )
+        self.get_logger().info(
+            f'Fichiers WAV vérifiés dans : {self.repertoire_audio}.'
         )
 
     def _charger_annonces(self) -> dict[str, list[VarianteAnnonce | None]]:
@@ -138,6 +153,10 @@ class AnnoncesAudio(Node):
 
     def _generer_audio(self, variante: VarianteAnnonce) -> None:
         """Demande la préparation d'une variante et journalise le résultat du service."""
+        chemin_audio = self.repertoire_audio / f'{variante.nom_fichier}.wav'
+        if chemin_audio.is_file():
+            return
+
         requete = GenererAudio.Request()
         requete.nom_fichier = variante.nom_fichier
         requete.texte = variante.texte
@@ -151,10 +170,7 @@ class AnnoncesAudio(Node):
                 f'Génération échouée pour {variante.nom_fichier}.wav : {message}'
             )
             return
-        self.get_logger().info(
-            f'Génération réussie pour {variante.nom_fichier}.wav : '
-            f'{reponse.chemin_fichier}'
-        )
+        self.get_logger().info(f'Génération réussie pour {variante.nom_fichier}.wav.')
 
     def _recevoir_evenement_callback(self, message: String) -> None:
         """Choisit une variante et demande sa lecture sans bloquer l'orchestrateur."""
@@ -218,7 +234,10 @@ class AnnoncesAudio(Node):
 
 def main(args: list[str] | None = None) -> None:
     """Initialise ROS 2, prépare les fichiers WAV, puis écoute les événements."""
-    rclpy.init(args=args)
+    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
+    signal.signal(signal.SIGINT, _interrompre_execution)
+    signal.signal(signal.SIGTERM, _interrompre_execution)
+
     node = AnnoncesAudio()
     try:
         services_disponibles = node.attendre_services_audio()
@@ -230,8 +249,11 @@ def main(args: list[str] | None = None) -> None:
     except KeyboardInterrupt:
         node.get_logger().info("Arrêt demandé par l'utilisateur.")
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        try:
+            node.destroy_node()
+        finally:
+            if rclpy.ok():
+                rclpy.shutdown()
 
 
 if __name__ == '__main__':

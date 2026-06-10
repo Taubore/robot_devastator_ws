@@ -230,8 +230,7 @@ sans nouvelle architecture.
   manifestes et des fichiers présents.
 - Le clavier Rii X8 est actif comme périphérique USB/HID standard géré par Ubuntu sur Raspberry Pi 4.
   La capacité ROS 2 `teleop_clavier` l'utilise via le terminal, localement ou par SSH.
-- La manette PS2 a un câblage retenu dans la documentation, mais elle est gelée tant que le clavier
-  Rii X8 répond mieux au besoin courant.
+- La manette PS2 a un câblage retenu dans la documentation, mais elle est gelée tant que le clavier Rii X8 répond mieux au besoin courant.
 - Les encodeurs sont publiés par `interface_pico`, mais aucun nœud d'odométrie n'est documenté
   actuellement.
 - `arret_robot` est configuré dans les annonces audio, mais sa publication effective n'est pas

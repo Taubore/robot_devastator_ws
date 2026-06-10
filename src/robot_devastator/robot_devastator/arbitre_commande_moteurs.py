@@ -33,9 +33,7 @@ def _interrompre_execution(
 
 
 class ArbitreCommandeMoteurs(Node):
-    """
-    Publie une seule commande moteur vers le Pico selon le mode de conduite actif.
-    """
+    """Publie une seule commande moteur vers le Pico selon le mode de conduite actif."""
 
     def __init__(self) -> None:
         super().__init__('arbitre_commande_moteurs')
