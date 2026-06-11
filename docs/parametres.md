@@ -38,6 +38,10 @@ La téléopération clavier est configurée dans
 - pas d'incrément : `50`
 - période de lecture et publication : `0.1 s`
 
+Comme `teleop_clavier` est lancé dans un terminal interactif séparé, ce fichier doit être passé
+explicitement avec `--ros-args --params-file`. Les mêmes valeurs servent aussi de repli dans le
+nœud si le fichier n'est pas chargé.
+
 L'arbitre de commandes moteur est configuré dans
 `src/robot_devastator_bringup/config/arbitre_commande_moteurs.yaml` :
 

@@ -86,9 +86,9 @@ class TeleopClavier(Node):
     def __init__(self, entree: TextIO) -> None:
         super().__init__('teleop_clavier')
 
-        self.declare_parameter('vitesse_initiale', 200)
-        self.declare_parameter('vitesse_min', 100)
-        self.declare_parameter('vitesse_max', 500)
+        self.declare_parameter('vitesse_initiale', 300)
+        self.declare_parameter('vitesse_min', 300)
+        self.declare_parameter('vitesse_max', 1000)
         self.declare_parameter('pas_vitesse', 50)
         self.declare_parameter('periode_publication_s', 0.1)
 

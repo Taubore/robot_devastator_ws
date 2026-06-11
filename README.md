@@ -135,6 +135,28 @@ proposer plusieurs variantes ; une chaîne vide représente une variante silenci
 modèle vocal ou `aplay` sont absents, l'erreur est journalisée et l'audio reste décoratif : les autres
 nœuds du robot ne dépendent pas de la génération ni de la lecture audio.
 
+Diagnostic audio I2S validé : la sortie fonctionne avec `dtparam=i2s=on` et
+`dtoverlay=hifiberry-dac`, et le HiFiBerry DAC est détecté comme carte ALSA. Le test fonctionnel
+Devastator est :
+
+```bash
+aplay -D default ~/.cache/robot_devastator/audio/demarrage_01.wav
+```
+
+Limitation connue : l’ampli I2S produit un clac au début de chaque lecture audio.
+Tests déjà effectués :
+- audremap non retenu, I2S fonctionnel avec hifiberry-dac ;
+- carte ALSA détectée ;
+- lecture Devastator fonctionnelle avec aplay -D default ;
+- clac présent à chaque lecture ;
+- tentative via SD/shutdown non concluante ;
+- tentative de lecture en stream non concluante ;
+- changements annulés dans Git.
+
+Décision :
+- ne pas poursuivre ce chantier maintenant ;
+- conserver l’audio comme capacité décorative.
+
 ## Commandes CLI de secours
 
 Ces commandes restent utiles pour un diagnostic rapide hors VSCode.
@@ -190,7 +212,8 @@ ros2 launch robot_devastator_bringup devastator.launch.yaml
 
 ```bash
 # Terminal 2 : conduite clavier en avant-plan.
-ros2 run robot_devastator teleop_clavier
+PARAMS_TELEOP="$(ros2 pkg prefix robot_devastator_bringup)/share/robot_devastator_bringup/config/teleop_clavier.yaml"
+ros2 run robot_devastator teleop_clavier --ros-args --params-file "$PARAMS_TELEOP"
 ```
 
 Variante de diagnostic sans lancement principal :
@@ -200,7 +223,8 @@ Variante de diagnostic sans lancement principal :
 ros2 run robot_devastator arbitre_commande_moteurs
 
 # Terminal 2
-ros2 run robot_devastator teleop_clavier
+PARAMS_TELEOP="$(ros2 pkg prefix robot_devastator_bringup)/share/robot_devastator_bringup/config/teleop_clavier.yaml"
+ros2 run robot_devastator teleop_clavier --ros-args --params-file "$PARAMS_TELEOP"
 ```
 
 Touches QWERTY disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,

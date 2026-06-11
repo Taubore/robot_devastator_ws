@@ -22,12 +22,12 @@ annonces_audio:
       - 'autonomie_demarre_01|Mode autonomie activé.'
     annonces.obstacle_detecte:
       - 'obstacle_detecte_01|Obstacle détecté.'
-      - 'obstacle_detecte_03|Oupss, il y a quelque chose.'
+      - 'obstacle_detecte_03|Oh, Oh, il y a quelque chose.'
       - 'obstacle_detecte_04|Quelque chose à contourner.'
-      - 'obstacle_detecte_05|Obstacle droit devant, je dois contourner.'
-      - 'analyse_obstacle_01|Recherche d’un passage.'
-      - 'analyse_obstacle_02|Il y a un obstacle, je cherche une solution.'
-      - ''
+      - 'obstacle_detecte_05|Obstacle droit devant, je dois le contourner.'
+      - 'obstacle_detecte_06|Recherche d’un passage.'
+      - 'obstacle_detecte_07|Il y a un obstacle, je cherche une solution.'
+      - 'obstacle_detecte_08|Je dois trouver un moyen de contourner cet obstacle.'
       - ''
       - ''
       - ''
@@ -37,15 +37,18 @@ annonces_audio:
       - 'rotation_gauche_01|À gauche ça semble mieux.'
       - ''
       - ''
-      - ''
     annonces.rotation_droite:
       - 'rotation_droite_01|À droite ça semble mieux.'
-      - ''
       - ''
       - ''
     annonces.recul_recuperation:
       - "recul_recuperation_01|Il faut que je sorte d'ici."
     annonces.reprise_avance:
+      - 'reprise_avance_01|En avant, c’est reparti.'
+      - ''
+      - ''
+      - ''
+      - ''
       - ''
     annonces.arret_robot:
       - "arret_robot_01|C'est terminé."

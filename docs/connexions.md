@@ -18,6 +18,20 @@
 | 3,3V      | PS2 | VCC     | Rouge   | Alimentation logique PS2 en 3,3 V ; fil rouge du faisceau PS2                                                                  |
 | GND       | PS2 | GND     | Noir    | Masse commune ; fil noir du faisceau PS2                                                                                       |
 
+## Audio I2S
+
+La sortie audio I2S est fonctionnelle avec `dtparam=i2s=on` et
+`dtoverlay=hifiberry-dac`. Le HiFiBerry DAC est détecté comme carte ALSA, et le test fonctionnel
+Devastator est :
+
+```bash
+aplay -D default ~/.cache/robot_devastator/audio/demarrage_01.wav
+```
+
+Le clac observé à chaque lecture séparée vient probablement de l'ouverture et fermeture du flux
+audio par `aplay` avec l'ampli I2S. Ce diagnostic ne pointe pas vers le routage GPIO ni vers
+`dtparam=audremap`. Les pistes futures sont un pré-silence ou un fade-in dans les WAV, un lecteur
+audio persistant, ou une solution matérielle anti-pop si le besoin reste présent.
 
 ## Pico
 
@@ -60,5 +74,4 @@
 | Noir | Alimentation | Temporaire - penser à reconnecter si on désire l'utiliser  |
 | Gris  | Vibration motor power | Non utilisé  |
 | Blanc | Broche 8 inconnue     | Non utilisé  |
-
 
