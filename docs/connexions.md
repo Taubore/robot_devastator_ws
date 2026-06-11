@@ -10,8 +10,6 @@
 | 18        | AUDIO_I2S    | BCLK    | Blanc   |                                                                                                                                |
 | 19        | AUDIO_I2S    | LRC     | Bleu    |                                                                                                                                |
 | 21        | AUDIO_I2S    | DIN     | Jaune   |                                                                                                                                |
-| 23        | AUDIO_I2S    | SD      |         | Signal d'activation du MAX98357 via résistance série 1 kΩ                                                                      |
-| GND       | AUDIO_I2S    | SD      |         | Résistance de tirage 10 kΩ vers GND pour maintenir l'ampli coupé au repos                                                      |
 | 24        | PS2 | ATT     | Jaune   | Attention via résistance série 1 kΩ ; fil jaune du faisceau PS2                                                                |
 | 9 (MISO)  | PS2 | DATA    | Brun    | Données manette -> Pi4 via résistance série 1 kΩ + résistance de tirage 4,7 kΩ vers 3,3 V ; fil brun du faisceau PS2           |
 | 10 (MOSI) | PS2 | COMMAND | Orange  | Commande Pi4 -> manette via résistance série 1 kΩ ; fil orange du faisceau PS2                                                 |

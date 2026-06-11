@@ -6,7 +6,6 @@ import random
 import signal
 import subprocess
 import time
-import wave
 from types import FrameType
 from typing import Final
 
@@ -24,12 +23,6 @@ DEFAULT_PIPER_MODEL: Final[str] = '/opt/piper/voix/fr_FR-siwis-low.onnx'
 DEFAULT_PIPER_CONFIG: Final[str] = '/opt/piper/voix/fr_FR-siwis-low.onnx.json'
 DEFAULT_COMMAND_TIMEOUT_S: Final[float] = 15.0
 AUDIO_CACHE_DIR: Final[Path] = Path.home() / '.cache' / 'robot_devastator' / 'audio'
-DEFAULT_GPIO_SD_AMPLI: Final[int] = 23
-DEFAULT_FREQUENCE_AUDIO_HZ: Final[int] = 16000
-DEFAULT_CANAUX_AUDIO: Final[int] = 1
-DEFAULT_LARGEUR_ECHANTILLON_OCTETS: Final[int] = 2
-DEFAULT_SILENCE_INITIAL_S: Final[float] = 1.0
-DEFAULT_SILENCE_FIN_ANNONCE_S: Final[float] = 0.3
 
 # Cette liste fixe limite volontairement la capacité audio aux annonces utiles actuellement.
 EVENEMENTS_ANNONCES: Final[tuple[str, ...]] = (
@@ -73,17 +66,6 @@ class AnnoncesAudio(Node):
         self.declare_parameter('piper_model', DEFAULT_PIPER_MODEL)
         self.declare_parameter('piper_config', DEFAULT_PIPER_CONFIG)
         self.declare_parameter('command_timeout_s', DEFAULT_COMMAND_TIMEOUT_S)
-        self.declare_parameter('lecteur_audio_persistant_active', True)
-        self.declare_parameter('controle_ampli_active', True)
-        self.declare_parameter('gpio_sd_ampli', DEFAULT_GPIO_SD_AMPLI)
-        self.declare_parameter('frequence_audio_hz', DEFAULT_FREQUENCE_AUDIO_HZ)
-        self.declare_parameter('canaux_audio', DEFAULT_CANAUX_AUDIO)
-        self.declare_parameter(
-            'largeur_echantillon_octets',
-            DEFAULT_LARGEUR_ECHANTILLON_OCTETS,
-        )
-        self.declare_parameter('silence_initial_s', DEFAULT_SILENCE_INITIAL_S)
-        self.declare_parameter('silence_fin_annonce_s', DEFAULT_SILENCE_FIN_ANNONCE_S)
         for evenement in EVENEMENTS_ANNONCES:
             self.declare_parameter(f'annonces.{evenement}', Parameter.Type.STRING_ARRAY)
 
@@ -100,30 +82,11 @@ class AnnoncesAudio(Node):
         self.piper_model = str(self.get_parameter('piper_model').value)
         self.piper_config = str(self.get_parameter('piper_config').value)
         self.command_timeout_s = float(self.get_parameter('command_timeout_s').value)
-        self.lecteur_audio_persistant_active = bool(
-            self.get_parameter('lecteur_audio_persistant_active').value
-        )
-        self.controle_ampli_active = bool(
-            self.get_parameter('controle_ampli_active').value
-        )
-        self.gpio_sd_ampli = int(self.get_parameter('gpio_sd_ampli').value)
-        self.frequence_audio_hz = int(self.get_parameter('frequence_audio_hz').value)
-        self.canaux_audio = int(self.get_parameter('canaux_audio').value)
-        self.largeur_echantillon_octets = int(
-            self.get_parameter('largeur_echantillon_octets').value
-        )
-        self.silence_initial_s = float(self.get_parameter('silence_initial_s').value)
-        self.silence_fin_annonce_s = float(
-            self.get_parameter('silence_fin_annonce_s').value
-        )
         self.repertoire_audio = AUDIO_CACHE_DIR
         self.annonces = self._charger_annonces()
         self.derniere_lecture_s: dict[str, float] = {}
-        self.processus_aplay_persistant: subprocess.Popen[bytes] | None = None
-        self.chemin_gpio_sd: Path | None = None
 
         self._valider_parametres()
-        self._initialiser_controle_ampli()
         self.repertoire_audio.mkdir(parents=True, exist_ok=True)
         self.get_logger().info(f'Cache audio persistant utilisé : {self.repertoire_audio}.')
 
@@ -150,7 +113,7 @@ class AnnoncesAudio(Node):
         )
 
     def preparer_annonces_audio(self) -> None:
-        """Prépare chaque fichier WAV configuré."""
+        """Prépare chaque fichier WAV configuré sans empêcher le robot de se lancer."""
         self.get_logger().info('Préparation synchrone des annonces audio configurées.')
         for variantes in self.annonces.values():
             for variante in variantes:
@@ -231,30 +194,6 @@ class AnnoncesAudio(Node):
         if self.command_timeout_s <= 0.0:
             raise ValueError(
                 "Le paramètre 'command_timeout_s' doit être strictement positif."
-            )
-        if self.gpio_sd_ampli < 0:
-            raise ValueError(
-                "Le paramètre 'gpio_sd_ampli' ne peut pas être négatif."
-            )
-        if self.frequence_audio_hz <= 0:
-            raise ValueError(
-                "Le paramètre 'frequence_audio_hz' doit être strictement positif."
-            )
-        if self.canaux_audio <= 0:
-            raise ValueError(
-                "Le paramètre 'canaux_audio' doit être strictement positif."
-            )
-        if self.largeur_echantillon_octets <= 0:
-            raise ValueError(
-                "Le paramètre 'largeur_echantillon_octets' doit être strictement positif."
-            )
-        if self.silence_initial_s < 0.0:
-            raise ValueError(
-                "Le paramètre 'silence_initial_s' ne peut pas être négatif."
-            )
-        if self.silence_fin_annonce_s < 0.0:
-            raise ValueError(
-                "Le paramètre 'silence_fin_annonce_s' ne peut pas être négatif."
             )
         if not self.piper_executable.strip():
             self.get_logger().error(
@@ -349,7 +288,7 @@ class AnnoncesAudio(Node):
             )
 
     def _jouer_audio(self, nom_fichier: str) -> None:
-        """Joue un WAV du cache avec le lecteur persistant ou le repli ponctuel."""
+        """Joue un WAV du cache avec aplay et journalise les échecs sans lever."""
         try:
             chemin_audio = self._resoudre_chemin_audio(nom_fichier)
         except ValueError as erreur:
@@ -365,145 +304,13 @@ class AnnoncesAudio(Node):
             )
             return
 
-        donnees_pcm = self._lire_frames_pcm_valides(chemin_audio)
-        if donnees_pcm is None:
-            return
-
-        if self.lecteur_audio_persistant_active:
-            if self._jouer_audio_persistant(chemin_audio, donnees_pcm):
-                return
-            self.get_logger().warn(
-                f'Repli vers la lecture ponctuelle aplay pour {chemin_audio.name}.'
-            )
-
-        self._jouer_audio_ponctuel(chemin_audio)
-
-    def _lire_frames_pcm_valides(self, chemin_audio: Path) -> bytes | None:
-        """Lit les frames PCM seulement si le WAV correspond au format attendu."""
-        try:
-            with wave.open(str(chemin_audio), 'rb') as fichier_wav:
-                compression = fichier_wav.getcomptype()
-                canaux = fichier_wav.getnchannels()
-                frequence = fichier_wav.getframerate()
-                largeur = fichier_wav.getsampwidth()
-                frames = fichier_wav.getnframes()
-
-                if (
-                    compression != 'NONE'
-                    or canaux != self.canaux_audio
-                    or frequence != self.frequence_audio_hz
-                    or largeur != self.largeur_echantillon_octets
-                ):
-                    self.get_logger().error(
-                        f'Annonce ignorée pour {chemin_audio.name} : format WAV '
-                        f'inattendu ({compression=}, {canaux=}, {frequence=}, '
-                        f'{largeur=}). Format attendu : PCM, '
-                        f'{self.canaux_audio} canal(aux), '
-                        f'{self.frequence_audio_hz} Hz, '
-                        f'{self.largeur_echantillon_octets * 8} bits.'
-                    )
-                    return None
-
-                return fichier_wav.readframes(frames)
-        except wave.Error as erreur:
-            self.get_logger().error(
-                f'Annonce ignorée pour {chemin_audio.name} : WAV illisible ({erreur}).'
-            )
-        except OSError as erreur:
-            self.get_logger().error(
-                f'Annonce ignorée pour {chemin_audio.name} : lecture impossible ({erreur}).'
-            )
-        return None
-
-    def _jouer_audio_persistant(self, chemin_audio: Path, donnees_pcm: bytes) -> bool:
-        """Écrit les données PCM dans le flux aplay raw gardé ouvert."""
-        if not self._assurer_lecteur_persistant():
-            return False
-
-        processus = self.processus_aplay_persistant
-        if processus is None or processus.stdin is None:
-            return False
-
-        if processus.poll() is not None:
-            self.get_logger().error(
-                f'Lecteur audio persistant arrêté avant {chemin_audio.name} '
-                f'(code {processus.returncode}).'
-            )
-            self.processus_aplay_persistant = None
-            return False
-
-        try:
-            processus.stdin.write(donnees_pcm)
-            processus.stdin.write(self._creer_silence_pcm(self.silence_fin_annonce_s))
-            processus.stdin.flush()
-            self.get_logger().info(f'Lecture audio persistante réussie : {chemin_audio.name}.')
-            return True
-        except BrokenPipeError:
-            self.get_logger().error(
-                f'Lecture audio persistante échouée pour {chemin_audio.name} : '
-                'flux aplay fermé.'
-            )
-        except OSError as erreur:
-            self.get_logger().error(
-                f'Lecture audio persistante échouée pour {chemin_audio.name} : {erreur}'
-            )
-
-        self._fermer_lecteur_persistant(remettre_sd_bas=False)
-        return False
-
-    def _assurer_lecteur_persistant(self) -> bool:
-        """Démarre aplay raw une seule fois et conserve son stdin ouvert."""
-        if self.processus_aplay_persistant is not None:
-            if self.processus_aplay_persistant.poll() is None:
-                return True
-            self.get_logger().error(
-                'Lecteur audio persistant arrêté avec le code '
-                f'{self.processus_aplay_persistant.returncode}.'
-            )
-            self.processus_aplay_persistant = None
-
-        commande = [
-            'aplay',
-            '-q',
-            '-f', 'S16_LE',
-            '-c', str(self.canaux_audio),
-            '-r', str(self.frequence_audio_hz),
-            '-t', 'raw',
-        ]
-
-        try:
-            self._definir_sd_ampli(True)
-            self.processus_aplay_persistant = subprocess.Popen(
-                commande,
-                stdin=subprocess.PIPE,
-            )
-            if self.processus_aplay_persistant.stdin is None:
-                raise RuntimeError('stdin du lecteur persistant indisponible')
-            self.processus_aplay_persistant.stdin.write(
-                self._creer_silence_pcm(self.silence_initial_s)
-            )
-            self.processus_aplay_persistant.stdin.flush()
-            self.get_logger().info('Lecteur audio persistant démarré en mode raw.')
-            return True
-        except FileNotFoundError:
-            self.get_logger().error('Lecteur audio persistant indisponible : aplay introuvable.')
-        except Exception as erreur:
-            self.get_logger().error(
-                f'Lecteur audio persistant indisponible : {erreur}'
-            )
-
-        self._fermer_lecteur_persistant(remettre_sd_bas=False)
-        return False
-
-    def _jouer_audio_ponctuel(self, chemin_audio: Path) -> None:
-        """Joue un WAV avec l'ancien mode aplay fichier, utilisé comme repli."""
         try:
             subprocess.run(
                 ['aplay', str(chemin_audio)],
                 check=True,
                 timeout=self.command_timeout_s,
             )
-            self.get_logger().info(f'Lecture audio ponctuelle réussie : {chemin_audio.name}.')
+            self.get_logger().info(f'Lecture audio réussie : {chemin_audio.name}.')
         except subprocess.TimeoutExpired:
             self.get_logger().error(
                 f"Lecture audio échouée pour {chemin_audio.name} : aplay a dépassé "
@@ -523,86 +330,7 @@ class AnnoncesAudio(Node):
                 f'Lecture audio échouée pour {chemin_audio.name} : {erreur}'
             )
 
-    def _creer_silence_pcm(self, duree_s: float) -> bytes:
-        """Crée un bloc de silence PCM brut adapté au format audio configuré."""
-        nombre_frames = max(0, int(self.frequence_audio_hz * duree_s))
-        octets_par_frame = self.canaux_audio * self.largeur_echantillon_octets
-        return b'\x00' * nombre_frames * octets_par_frame
-
-    def _initialiser_controle_ampli(self) -> None:
-        """Prépare le GPIO SD de l'ampli et le force au niveau bas au démarrage."""
-        if not self.controle_ampli_active:
-            self.get_logger().info('Contrôle SD de l’ampli audio désactivé par paramètre.')
-            return
-
-        chemin_gpio = Path('/sys/class/gpio') / f'gpio{self.gpio_sd_ampli}'
-        try:
-            if not chemin_gpio.exists():
-                Path('/sys/class/gpio/export').write_text(str(self.gpio_sd_ampli))
-            direction = chemin_gpio / 'direction'
-            valeur = chemin_gpio / 'value'
-            limite_s = time.monotonic() + 1.0
-            while not direction.exists() and time.monotonic() < limite_s:
-                time.sleep(0.01)
-            direction.write_text('out')
-            valeur.write_text('0')
-            self.chemin_gpio_sd = chemin_gpio
-            self.get_logger().info(
-                f'GPIO{self.gpio_sd_ampli} configuré pour SD ampli audio, niveau bas.'
-            )
-        except OSError as erreur:
-            self.chemin_gpio_sd = None
-            self.get_logger().error(
-                f'Contrôle SD ampli indisponible sur GPIO{self.gpio_sd_ampli} : {erreur}'
-            )
-
-    def _definir_sd_ampli(self, actif: bool) -> None:
-        """Place SD au niveau demandé sans interrompre le nœud en cas d'échec."""
-        if not self.controle_ampli_active:
-            return
-        if self.chemin_gpio_sd is None:
-            return
-
-        try:
-            (self.chemin_gpio_sd / 'value').write_text('1' if actif else '0')
-        except OSError as erreur:
-            self.get_logger().error(
-                f'Impossible de définir SD ampli sur GPIO{self.gpio_sd_ampli} : {erreur}'
-            )
-
-    def _fermer_lecteur_persistant(self, remettre_sd_bas: bool = True) -> None:
-        """Ferme le flux audio persistant sans faire échouer l'arrêt du nœud."""
-        processus = self.processus_aplay_persistant
-        self.processus_aplay_persistant = None
-
-        if processus is not None:
-            try:
-                if processus.stdin is not None and processus.poll() is None:
-                    processus.stdin.write(self._creer_silence_pcm(self.silence_fin_annonce_s))
-                    processus.stdin.flush()
-                    processus.stdin.close()
-                processus.wait(timeout=2.0)
-            except subprocess.TimeoutExpired:
-                self.get_logger().warn('Arrêt du lecteur audio persistant forcé.')
-                processus.terminate()
-                try:
-                    processus.wait(timeout=1.0)
-                except subprocess.TimeoutExpired:
-                    processus.kill()
-            except (BrokenPipeError, OSError) as erreur:
-                self.get_logger().warn(
-                    f'Fermeture du lecteur audio persistant incomplète : {erreur}'
-                )
-
-        if remettre_sd_bas:
-            self._definir_sd_ampli(False)
-
     # --- Cycle de vie du nœud ---
-
-    def destroy_node(self) -> bool:
-        """Arrête le lecteur audio et coupe SD avant de détruire le nœud."""
-        self._fermer_lecteur_persistant(remettre_sd_bas=True)
-        return super().destroy_node()
 
 
 def main(args: list[str] | None = None) -> None:

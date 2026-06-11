@@ -131,12 +131,9 @@ annonces configurées dans `config/annonces_audio.yaml`, vérifie le cache persi
 `~/.cache/robot_devastator/audio`, puis génère synchroniquement avec Piper les fichiers WAV
 manquants avant d'écouter `/robot/evenement`. Les WAV présents sont réutilisés aux lancements
 suivants afin de ne pas ralentir le comportement du robot sur Raspberry Pi 4. Les annonces peuvent
-proposer plusieurs variantes ; une chaîne vide représente une variante silencieuse. La lecture utilise
-normalement un flux `aplay` raw persistant pour éviter un clac avant chaque annonce, avec validation
-du format PCM mono 16 bits 16000 Hz et repli vers l'ancien `aplay fichier.wav` si le flux persistant
-échoue. Si Piper, le modèle vocal, `aplay` ou le GPIO SD de l'ampli sont indisponibles, l'erreur est
-journalisée et l'audio reste décoratif : les autres nœuds du robot ne dépendent pas de la génération
-ni de la lecture audio.
+proposer plusieurs variantes ; une chaîne vide représente une variante silencieuse. Si Piper, le
+modèle vocal ou `aplay` sont absents, l'erreur est journalisée et l'audio reste décoratif : les autres
+nœuds du robot ne dépendent pas de la génération ni de la lecture audio.
 
 ## Commandes CLI de secours
 
