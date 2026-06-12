@@ -231,8 +231,8 @@ class AnnoncesAudio(Node):
     def _generer_audio_si_absent(self, variante: VarianteAnnonce) -> None:
         """Génère un WAV manquant avec Piper et journalise chaque résultat."""
         chemin_audio = self._resoudre_chemin_audio(variante.nom_fichier)
+        # Fichier existe déjà, on s'arrête ici et on ne journalise rien.
         if chemin_audio.is_file():
-            self.get_logger().info(f'Fichier audio déjà présent : {chemin_audio.name}.')
             return
 
         if not self.piper_executable.strip() or not self.piper_model.strip():
