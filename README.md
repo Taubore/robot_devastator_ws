@@ -157,9 +157,9 @@ Décision :
 - ne pas poursuivre ce chantier maintenant ;
 - conserver l’audio comme capacité décorative.
 
-## Commandes CLI de secours
+## Commandes CLI utiles hors VSCode
 
-Ces commandes restent utiles pour un diagnostic rapide hors VSCode.
+Ces commandes restent utiles pour un diagnostic rapide hors VSCode, surtout pour l'exécution sur le Raspberry Pi.
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -212,8 +212,7 @@ ros2 launch robot_devastator_bringup devastator.launch.yaml
 
 ```bash
 # Terminal 2 : conduite clavier en avant-plan.
-PARAMS_TELEOP="$(ros2 pkg prefix robot_devastator_bringup)/share/robot_devastator_bringup/config/teleop_clavier.yaml"
-ros2 run robot_devastator teleop_clavier --ros-args --params-file "$PARAMS_TELEOP"
+ros2 run robot_devastator teleop_clavier --ros-args --params-file src/robot_devastator_bringup/config/teleop_clavier.yaml
 ```
 
 Variante de diagnostic sans lancement principal :
@@ -223,8 +222,7 @@ Variante de diagnostic sans lancement principal :
 ros2 run robot_devastator arbitre_commande_moteurs
 
 # Terminal 2
-PARAMS_TELEOP="$(ros2 pkg prefix robot_devastator_bringup)/share/robot_devastator_bringup/config/teleop_clavier.yaml"
-ros2 run robot_devastator teleop_clavier --ros-args --params-file "$PARAMS_TELEOP"
+ros2 run robot_devastator teleop_clavier --ros-args --params-file src/robot_devastator_bringup/config/teleop_clavier.yaml
 ```
 
 Touches QWERTY disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,

@@ -1,6 +1,8 @@
 """Capacité audio unique du robot Devastator avec Piper et aplay."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+import os
 from pathlib import Path
 import random
 import signal
@@ -22,6 +24,7 @@ DEFAULT_PIPER_EXECUTABLE: Final[str] = '/usr/local/bin/piper'
 DEFAULT_PIPER_MODEL: Final[str] = '/opt/piper/voix/fr_FR-siwis-low.onnx'
 DEFAULT_PIPER_CONFIG: Final[str] = '/opt/piper/voix/fr_FR-siwis-low.onnx.json'
 DEFAULT_COMMAND_TIMEOUT_S: Final[float] = 15.0
+DELAI_REVEIL_EXECUTEUR_S: Final[float] = 0.2
 AUDIO_CACHE_DIR: Final[Path] = Path.home() / '.cache' / 'robot_devastator' / 'audio'
 
 # Cette liste fixe limite volontairement la capacité audio aux annonces utiles actuellement.
@@ -85,6 +88,7 @@ class AnnoncesAudio(Node):
         self.repertoire_audio = AUDIO_CACHE_DIR
         self.annonces = self._charger_annonces()
         self.derniere_lecture_s: dict[str, float] = {}
+        self.processus_externe_actif: subprocess.Popen[str] | None = None
 
         self._valider_parametres()
         self.repertoire_audio.mkdir(parents=True, exist_ok=True)
@@ -96,7 +100,7 @@ class AnnoncesAudio(Node):
             self.preparer_annonces_audio()
         else:
             self.get_logger().warn(
-                "Préparation audio au démarrage désactivée par paramètre."
+                'Préparation audio au démarrage désactivée par paramètre.'
             )
 
         if self.jouer_annonce_demarrage:
@@ -146,6 +150,13 @@ class AnnoncesAudio(Node):
         self.derniere_lecture_s[evenement] = maintenant_s
         self._jouer_audio(variante.nom_fichier)
 
+    def arreter_processus_externe_actif(self) -> None:
+        """Arrête la commande audio en cours, si le nœud est en lecture ou synthèse."""
+        if self.processus_externe_actif is None:
+            return
+
+        self._terminer_processus_externe(self.processus_externe_actif)
+
     # --- Callbacks des subscriptions ---
 
     def _recevoir_evenement_callback(self, message: String) -> None:
@@ -186,7 +197,7 @@ class AnnoncesAudio(Node):
         return annonces
 
     def _valider_parametres(self) -> None:
-        """Valide seulement les paramètres qui rendent la configuration incohérente."""
+        """Vérifie seulement les paramètres qui rendent la configuration incohérente."""
         if self.delai_min_repetition_s < 0.0:
             raise ValueError(
                 "Le paramètre 'delai_min_repetition_s' ne peut pas être négatif."
@@ -253,13 +264,10 @@ class AnnoncesAudio(Node):
             commande.extend(['--config', self.piper_config])
 
         try:
-            self.get_logger().info(f'Génération Piper demandée : {chemin_audio.name}.')
-            subprocess.run(
+            self.get_logger().info(f'Génération Piper demandée...')
+            self._executer_commande_externe(
                 commande,
-                input=variante.texte,
-                text=True,
-                check=True,
-                timeout=self.command_timeout_s,
+                entree=variante.texte,
             )
             if not chemin_audio.is_file():
                 self.get_logger().error(
@@ -269,12 +277,12 @@ class AnnoncesAudio(Node):
             self.get_logger().info(f'Fichier audio généré : {chemin_audio.name}.')
         except subprocess.TimeoutExpired:
             self.get_logger().error(
-                f"Génération échouée pour {chemin_audio.name} : Piper a dépassé "
-                "le délai d'exécution."
+                f'Génération échouée pour {chemin_audio.name} : Piper a dépassé '
+                'le délai maximal.'
             )
         except subprocess.CalledProcessError as erreur:
             self.get_logger().error(
-                f"Génération échouée pour {chemin_audio.name} : erreur Piper "
+                f'Génération échouée pour {chemin_audio.name} : erreur Piper '
                 f'{erreur.returncode}.'
             )
         except FileNotFoundError:
@@ -305,16 +313,12 @@ class AnnoncesAudio(Node):
             return
 
         try:
-            subprocess.run(
-                ['aplay', str(chemin_audio)],
-                check=True,
-                timeout=self.command_timeout_s,
-            )
+            self._executer_commande_externe(['aplay', str(chemin_audio)])
             self.get_logger().info(f'Lecture audio réussie : {chemin_audio.name}.')
         except subprocess.TimeoutExpired:
             self.get_logger().error(
-                f"Lecture audio échouée pour {chemin_audio.name} : aplay a dépassé "
-                "le délai d'exécution."
+                f'Lecture audio échouée pour {chemin_audio.name} : aplay a dépassé '
+                'le délai maximal.'
             )
         except subprocess.CalledProcessError as erreur:
             self.get_logger().error(
@@ -330,6 +334,70 @@ class AnnoncesAudio(Node):
                 f'Lecture audio échouée pour {chemin_audio.name} : {erreur}'
             )
 
+    def _executer_commande_externe(
+        self,
+        commande: Sequence[str],
+        *,
+        entree: str | None = None,
+    ) -> None:
+        """Exécute une commande bloquante en gardant la fermeture interruptible."""
+        processus = subprocess.Popen(
+            commande,
+            stdin=subprocess.PIPE if entree is not None else None,
+            text=True,
+            start_new_session=True,
+        )
+        self.processus_externe_actif = processus
+
+        try:
+            processus.communicate(input=entree, timeout=self.command_timeout_s)
+            if processus.returncode:
+                raise subprocess.CalledProcessError(processus.returncode, commande)
+        except subprocess.TimeoutExpired:
+            self._terminer_processus_externe(processus)
+            raise
+        except KeyboardInterrupt:
+            self._terminer_processus_externe(processus)
+            raise
+        finally:
+            if self.processus_externe_actif is processus:
+                self.processus_externe_actif = None
+
+    def _terminer_processus_externe(
+        self,
+        processus: subprocess.Popen[str],
+    ) -> None:
+        """Termine la commande externe active avant de laisser le nœud quitter."""
+        if processus.poll() is not None:
+            return
+
+        try:
+            os.killpg(processus.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        except Exception:
+            processus.terminate()
+
+        try:
+            processus.wait(timeout=2.0)
+            return
+        except subprocess.TimeoutExpired:
+            pass
+
+        try:
+            os.killpg(processus.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            return
+        except Exception:
+            processus.kill()
+
+        try:
+            processus.wait(timeout=2.0)
+        except subprocess.TimeoutExpired:
+            self.get_logger().error(
+                'La commande audio externe ne répond pas même après SIGKILL.'
+            )
+
     # --- Cycle de vie du nœud ---
 
 
@@ -339,14 +407,19 @@ def main(args: list[str] | None = None) -> None:
     signal.signal(signal.SIGINT, _interrompre_execution)
     signal.signal(signal.SIGTERM, _interrompre_execution)
 
-    node = AnnoncesAudio()
+    node: AnnoncesAudio | None = None
     try:
-        rclpy.spin(node)
+        node = AnnoncesAudio()
+        while rclpy.ok():
+            rclpy.spin_once(node, timeout_sec=DELAI_REVEIL_EXECUTEUR_S)
     except KeyboardInterrupt:
-        node.get_logger().info("Arrêt demandé par l'utilisateur.")
+        if node is not None:
+            node.get_logger().info("Arrêt demandé par l'utilisateur.")
     finally:
         try:
-            node.destroy_node()
+            if node is not None:
+                node.arreter_processus_externe_actif()
+                node.destroy_node()
         finally:
             if rclpy.ok():
                 rclpy.shutdown()
