@@ -22,11 +22,11 @@ annonces_audio:
       - 'autonomie_demarre_01|Mode autonomie activé.'
     annonces.obstacle_detecte:
       - 'obstacle_detecte_01|Obstacle détecté.'
-      - 'obstacle_detecte_03|Oh, Oh, il y a quelque chose.'
+      - 'obstacle_detecte_03|Il y a quelque chose.'
       - 'obstacle_detecte_04|Quelque chose à contourner.'
       - 'obstacle_detecte_05|Obstacle droit devant, je dois le contourner.'
       - 'obstacle_detecte_06|Recherche d’un passage.'
-      - 'obstacle_detecte_07|Il y a un obstacle, je cherche une solution.'
+      - 'obstacle_detecte_07|Un obstacle, je cherche une solution.'
       - 'obstacle_detecte_08|Je dois trouver un moyen de contourner cet obstacle.'
       - ''
       - ''
