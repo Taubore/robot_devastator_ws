@@ -261,6 +261,57 @@ est hors cible Devastator.
 
 ---
 
+## Socle conceptuel (à lire avant la phase indiquée)
+
+### Avant Phase 4 — TF : l'arbre généalogique du robot
+À lire en séance avec Claude. Durée : 20 minutes.
+Objectif : comprendre ce qu'est un frame, une transform et un arbre TF
+avant de toucher un seul fichier URDF.
+
+### Avant Phase 6 — Sin/cos comme décomposition de direction
+À lire en séance avec Claude. Durée : 15 minutes.
+Objectif : comprendre intuitivement comment une direction s'exprime
+en composantes X et Y, sans mémoriser une formule.
+
+### En continu — Topics vs services vs actions : le bon outil au bon moment
+À revisiter à chaque nouvelle interface dans le projet.
+Objectif : que le choix devienne un réflexe ancré dans Devastator,
+pas une règle abstraite mémorisée.
+
+---
+
+## Trajectoire de progression
+
+### Devastator (en cours)
+Chenilles, 2 moteurs 6V, diff-drive, Pi 4.
+Objectif : comprendre la recette complète d'un robot mobile ROS 2.
+Certaines parties resteront imparfaites — c'est voulu.
+
+### RobotPi (suivant)
+4 roues mecanum, 4 moteurs 12V, Pi 5.
+Cinématique holonomique, ros2_control, alimentation Pi 5 à résoudre.
+Pièces déjà acquises pour la plupart. Concevoir en tirant les leçons de Devastator.
+
+### Pupper V3 (après RobotPi)
+Quadrupède Stanford. Cinématique inverse, génération de démarche.
+Prérequis : maîtrise TF, URDF et Nav2 acquise sur Devastator + RobotPi.
+
+### LeRobot Hugging Face (parallèle)
+Apprentissage des concepts IA en parallèle de Devastator et RobotPi. 
+
+---
+
+## Leçons pour RobotPi
+
+Ce que Devastator m'a appris que je ferais différemment dès la conception.
+À compléter au fil du projet — une ligne par décision significative.
+
+- Chenilles : entraxe effectif non mesurable précisément → préférer roues pour odométrie fiable.
+- Pico WH : contrat UART maison efficace mais à remplacer par ros2_control sur plateforme plus mature.
+- Alimentation Pi 5 : résoudre avant conception, pas pendant.
+
+---
+
 ## Décisions et contexte
 
 Format : `YYYY-MM-DD — décision ou observation clé (une ligne)`
