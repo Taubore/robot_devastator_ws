@@ -1,4 +1,4 @@
-# AGENTS.md — Consignes pour Codex
+# AGENTS.md — Consignes pour Codex / Claude Code
 
 ## Mission du projet
 
@@ -24,7 +24,7 @@ Avant toute modification non triviale, consulter selon le besoin :
 6. `docs/inventaire_composantes.md` si la tâche touche au choix ou au statut des composants.
 
 Le code réel et les fichiers de configuration présents dans le dépôt priment sur une documentation
-possiblement désuète. Si une divergence est trouvée, Codex doit la signaler avant de modifier.
+possiblement désuète. Si une divergence est trouvée, Codex / Claude Code doit la signaler avant de modifier.
 
 ## Cible fonctionnelle finale
 
@@ -88,7 +88,7 @@ sécurité, actionneurs, mesures, contrôle, perception, décision, puis comport
 Un sous-système déjà validé est considéré acquis jusqu’à symptôme contraire. Ne pas répéter ses
 tests de base si le changement ne le touche pas.
 
-Codex doit privilégier les changements courts, testables et réversibles. L’architecture doit évoluer
+Codex / Claude Code doit privilégier les changements courts, testables et réversibles. L’architecture doit évoluer
 à partir des besoins validés, pas à partir d’une cible idéale abstraite.
 
 ## Architecture directrice
@@ -156,7 +156,7 @@ Les packages existants doivent être utilisés selon leur rôle actuel :
 - `robot_devastator_bringup` : assemblage des nœuds, paramètres et fichiers `launch`, lorsque
   disponible ou requis.
 
-Codex peut proposer une évolution de structure si elle simplifie le projet durablement. Dans ce cas,
+Codex / Claude Code peut proposer une évolution de structure si elle simplifie le projet durablement. Dans ce cas,
 il doit expliquer :
 
 1. le problème de structure observé ;
@@ -177,7 +177,7 @@ Environnement principal de développement.
 - ROS 2 Jazzy
 - VSCode
 - Profil VSCode : `ROS2`
-- Rôle : édition, refactorisation, documentation, Codex, Git, tests sans matériel
+- Rôle : édition, refactorisation, documentation, Codex / Claude Code, Git, tests sans matériel
 
 ### Raspberry Pi 4
 
@@ -328,7 +328,7 @@ Respecter le style et le cadre déjà documentés.
 - Ne jamais faire de `reset`, `merge`, suppression ou déplacement massif sans accord
 - Ne pas modifier l’historique Git sans demande explicite
 
-## Interaction avec Codex
+## Interaction avec Codex / Claude Code
 
 Avant une modification non triviale :
 
