@@ -1,0 +1,20 @@
+# Paramètres mécaniques du robot Devastator
+#
+# Mesurés empiriquement en Phase 3 (2026-06-24) sur sol dur.
+# Méthode : déplacement en ligne droite sur 1 m, comptage des ticks encodeurs.
+# Ces valeurs sont utilisées par le nœud odometrie (Phase 6).
+# Les valeurs théoriques intermédiaires (diamètre primitif, ticks/m calculés)
+# sont documentées dans docs/parametres.md à titre de référence.
+
+odometrie:
+  ros__parameters:
+    # Nombre de ticks encodeur par tour de roue (mesuré empiriquement)
+    ticks_par_tour: 1447
+
+    # Ticks par mètre parcouru (mesurés empiriquement sur 1 m, sol dur)
+    ticks_par_metre_gauche: 10492
+    ticks_par_metre_droite: 10373
+    ticks_par_metre_moyen: 10432
+
+    # Entraxe effectif entre les deux chenilles, en mètres
+    entraxe_m: 0.200

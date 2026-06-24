@@ -63,12 +63,11 @@ Il ne mesure pas une vitesse — il mesure un déplacement discret en ticks. La 
 se déduit en observant combien de ticks changent par unité de temps. C'est la donnée
 la plus brute du robot ; tout le reste se construit dessus.
 
-- [ ] Ticks bruts confirmés sur `/pico/encodeurs` en faisant rouler le robot
-- [ ] Cohérence des signes validée : avance → deux côtés positifs ;
+- [x] Ticks bruts confirmés sur `/pico/encodeurs` en faisant rouler le robot
+- [x] Cohérence des signes validée : avance → deux côtés positifs ;
       recul → deux côtés négatifs ; rotation droite → signes opposés
-- [ ] Nœud `diagnostic_encodeurs` : affiche ticks cumulés, delta par cycle,
-      vitesse estimée en ticks/s
-- [ ] Service `/pico/reset_encodeurs` testé : les ticks reviennent à zéro
+- [x] Nœud `diagnostic_encodeurs` (réf. `scripts/test_encodeurs.py`): affiche ticks cumulés, delta par cycle, vitesse estimée en ticks/s
+- [x] Service `/pico/reset_encodeurs` testé : les ticks reviennent à zéro
 
 **Validation minimale :** pousser le robot d'environ 1 m à la main, lire les ticks,
 remettre à zéro. Résultat répétable et cohérent en signe.
@@ -84,11 +83,11 @@ deux roues) et la résolution d'encodeur (ticks par tour). Une erreur ici se pro
 dans toute l'odométrie. C'est l'étape la plus souvent négligée et la première cause
 d'odométrie fausse chez les makers.
 
-- [ ] Diamètre de roue mesuré au pied à coulisse, ticks/m calculé
-- [ ] Entraxe mesuré (distance entre points de contact au sol)
-- [ ] Résolution encodeur confirmée (ticks par tour complet de roue)
-- [ ] Paramètres consignés dans `docs/parametres.md` et un YAML dédié
-- [ ] Validation croisée : robot avancé d'exactement 1 m au ruban →
+- [x] Diamètre de roue mesuré au pied à coulisse, ticks/m calculé
+- [x] Entraxe mesuré (distance entre points de contact au sol)
+- [x] Résolution encodeur confirmée (ticks par tour complet de roue)
+- [x] Paramètres consignés dans `docs/parametres.md` et un YAML dédié
+- [x] Validation croisée : robot avancé d'exactement 1 m au ruban →
       ticks réels ≈ ticks théoriques (tolérance ±5 %)
 
 **Validation minimale :** test sur surface plane, distance mesurée physiquement.

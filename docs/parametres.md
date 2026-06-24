@@ -215,6 +215,36 @@ configuré par `delai_attente_reponse_service_s`.
 - Les résistances série UART 1 kΩ font partie du montage courant
 - La ligne Raspberry Pi TX → Pico RX doit être considérée comme ligne sensible au démarrage du Pico
 
+## Paramètres mécaniques
+
+Mesures réalisées en Phase 3 sur le robot réel.
+
+| Paramètre            | Valeur    | Unité      | Note                                    |
+|----------------------|-----------|------------|-----------------------------------------|
+| Nombre de dents      | 13        | —          | Pignon d'entraînement                   |
+| Pas chenille         | 9,5       | mm         | Centre à centre d'un maillon            |
+| Diamètre primitif    | 39,32     | mm         | Calculé : N × p / π                    |
+| Ticks par tour       | 1 447     | ticks/tour | Mesuré empiriquement                    |
+| Ticks/m théorique    | 11 715    | ticks/m    | Calculé à partir du diamètre primitif   |
+| Ticks/m gauche       | 10 492    | ticks/m    | Mesuré empiriquement sur 1 m            |
+| Ticks/m droite       | 10 373    | ticks/m    | Mesuré empiriquement sur 1 m            |
+| Ticks/m moyen        | 10 432    | ticks/m    | Moyenne gauche/droite                   |
+| Entraxe effectif     | 200       | mm         | Centre chenille gauche à centre droite  |
+
+### Notes
+
+- **Écart théorie/empirique (~11 %)** : l'écart entre la valeur théorique (11 715 ticks/m) et la
+  valeur empirique moyenne (10 432 ticks/m) est attribuable au glissement des chenilles plastique
+  sur sol dur. Ce glissement est inhérent au type de terrain et ne représente pas une erreur de
+  mesure.
+
+- **Primauté des valeurs empiriques** : les valeurs mesurées sur le robot réel priment sur les
+  valeurs théoriques pour tout calcul d'odométrie. Les valeurs théoriques sont conservées ici à
+  titre de référence uniquement.
+
+- **Usage prévu** : ces valeurs seront chargées par le nœud `odometrie` lors de la Phase 6 via
+  le fichier `robot_devastator_bringup/config/mecanique.yaml`.
+
 # Interface manette Lynxmotion PS2 ↔ Raspberry Pi 4 
 
 Cette interface est gelé puisque l'usage du clavier USB sans-fil Rii X8 est beaucoup plus simple d'usage et permet beaucoup plus de latitude pour téléopérer le robot et interagir avec lui. La manette pourra être implémentée si un besoin de contrôle plus ergonomique et précis est requis. En effet, il est plus commode de contrôler finement les mouvement du robot manuellement à l'aide de la manette PS2 que via des petits boutons sur un clavier USB sans-fil.
