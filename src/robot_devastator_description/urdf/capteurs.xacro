@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Position des capteurs (en mètres, relatifs à base_link) -->
+  <!-- sonar_z = 14.8 cm - 8.2 cm = 6.6 cm -->
+  <xacro:property name="sonar_x"      value="0.100"/>
+  <xacro:property name="sonar_z"      value="0.066"/>
+  <!-- tourelle_z = 12.0 cm - 8.2 cm = 3.8 cm -->
+  <xacro:property name="tourelle_x"   value="0.000"/>
+  <xacro:property name="tourelle_z"   value="0.038"/>
+
+  <!-- Sonar HC-SR04 : petite boîte bleue à l'avant -->
+  <link name="sonar_link">
+    <visual>
+      <geometry>
+        <box size="0.040 0.020 0.020"/>
+      </geometry>
+      <material name="bleu">
+        <color rgba="0.0 0.0 1.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="sonar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="sonar_link"/>
+    <origin xyz="${sonar_x} 0 ${sonar_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Tourelle servo : petite boîte rouge au centre -->
+  <link name="tourelle_link">
+    <visual>
+      <geometry>
+        <box size="0.050 0.050 0.030"/>
+      </geometry>
+      <material name="rouge">
+        <color rgba="1.0 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="tourelle_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="tourelle_link"/>
+    <origin xyz="${tourelle_x} 0 ${tourelle_z}" rpy="0 0 0"/>
+  </joint>
+
+</robot>

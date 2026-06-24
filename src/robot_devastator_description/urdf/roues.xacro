@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Dimensions des roues (en mètres) -->
+  <xacro:property name="rayon_roue"   value="0.01966"/>
+  <xacro:property name="largeur_roue" value="0.040"/>
+  <!-- Demi-entraxe : chaque roue est à ±0.100 m de base_link -->
+  <xacro:property name="y_roue"       value="0.100"/>
+
+  <!-- Macro réutilisable pour une roue -->
+  <!-- La rotation de π/2 autour de X oriente le cylindre sur l'axe Y -->
+  <xacro:macro name="roue" params="nom y_signe">
+    <link name="${nom}_wheel">
+      <visual>
+        <geometry>
+          <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
+        </geometry>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <material name="noir">
+          <color rgba="0.1 0.1 0.1 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
+        </geometry>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+      </collision>
+      <inertial>
+        <mass value="0.1"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+    </link>
+
+    <joint name="${nom}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child  link="${nom}_wheel"/>
+      <origin xyz="0 ${y_signe * y_roue} 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:roue nom="left"  y_signe=" 1"/>
+  <xacro:roue nom="right" y_signe="-1"/>
+
+</robot>

@@ -24,6 +24,7 @@ communes du projet.
 | `src/interface_pico` | Pont ROS 2 ↔ UART ↔ Pico WH |
 | `src/robot_devastator` | Logique principale du robot |
 | `src/robot_devastator_bringup` | Assemblage des nœuds et paramètres de lancement |
+| `src/robot_devastator_description` | Description URDF/Xacro du robot et visualisation RViz |
 | `docs` | Documentation du projet |
 | `.vscode/tasks.json` | Tâches de build, de nettoyage et de lancement |
 | `.vscode/launch.json` | Debug direct de nœuds Python précis |
@@ -156,6 +157,20 @@ Tests déjà effectués :
 Décision :
 - ne pas poursuivre ce chantier maintenant ;
 - conserver l’audio comme capacité décorative.
+
+## Visualisation URDF dans RViz (Legion-Linux)
+
+Le package `robot_devastator_description` contient la description URDF/Xacro du robot et un
+lancement RViz pour la visualiser sans matériel.
+
+```bash
+colcon build --packages-select robot_devastator_description
+source install/setup.bash
+ros2 launch robot_devastator_description affichage.launch.py
+```
+
+Dans RViz : ajouter un affichage **RobotModel**, fixer le **Fixed Frame** à `base_footprint`.
+`joint_state_publisher_gui` ouvre une fenêtre pour faire tourner les roues manuellement.
 
 ## Commandes CLI utiles hors VSCode
 

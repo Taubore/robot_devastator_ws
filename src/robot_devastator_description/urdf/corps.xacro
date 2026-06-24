@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Dimensions du châssis (en mètres) -->
+  <xacro:property name="chassis_longueur"       value="0.230"/>
+  <xacro:property name="chassis_largeur"        value="0.230"/>
+  <xacro:property name="chassis_hauteur"        value="0.120"/>
+  <xacro:property name="base_link_hauteur_sol"  value="0.082"/>
+
+  <!-- Repère sol — aucune géométrie visuelle -->
+  <link name="base_footprint"/>
+
+  <!-- Joint fixe entre le sol et l'axe central du robot -->
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child  link="base_link"/>
+    <origin xyz="0 0 ${base_link_hauteur_sol}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Corps principal : boîte centrée sur base_link -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="${chassis_longueur} ${chassis_largeur} ${chassis_hauteur}"/>
+      </geometry>
+      <material name="gris">
+        <color rgba="1.0 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${chassis_longueur} ${chassis_largeur} ${chassis_hauteur}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+
+</robot>
