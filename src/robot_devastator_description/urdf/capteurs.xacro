@@ -2,18 +2,20 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- Position des capteurs (en mètres, relatifs à base_link) -->
-  <!-- sonar_z = 14.8 cm - 8.2 cm = 6.6 cm -->
+  <!-- Empilement : sommet châssis (12,0 cm) → tourelle → sonar -->
+  <!-- sonar_z = sommet tourelle (14,0 cm) + moitié hauteur sonar (1,5 cm) - base_link_hauteur_sol -->
   <xacro:property name="sonar_x"      value="0.100"/>
-  <xacro:property name="sonar_z"      value="0.066"/>
-  <!-- tourelle_z = 12.0 cm - 8.2 cm = 3.8 cm -->
-  <xacro:property name="tourelle_x"   value="0.000"/>
-  <xacro:property name="tourelle_z"   value="0.038"/>
+  <xacro:property name="sonar_z"      value="0.073"/>
+  <!-- tourelle_z = sommet châssis (12,0 cm) + moitié hauteur tourelle (1,0 cm) - base_link_hauteur_sol -->
+  <xacro:property name="tourelle_x"   value="0.0845"/>
+  <xacro:property name="tourelle_z"   value="0.048"/>
 
   <!-- Sonar HC-SR04 : petite boîte bleue à l'avant -->
+  <!-- Dimensions : 40 mm x 56 mm x 30 mm (p x l x h) -->
   <link name="sonar_link">
     <visual>
       <geometry>
-        <box size="0.040 0.020 0.020"/>
+        <box size="0.040 0.056 0.030"/>
       </geometry>
       <material name="bleu">
         <color rgba="0.0 0.0 1.0 1.0"/>
@@ -28,13 +30,14 @@
   </joint>
 
   <!-- Tourelle servo : petite boîte rouge au centre -->
+  <!-- Dimensions : 53 mm x 20 mm x 20 mm (p x l x h) -->
   <link name="tourelle_link">
     <visual>
       <geometry>
-        <box size="0.050 0.050 0.030"/>
+        <box size="0.053 0.020 0.020"/>
       </geometry>
-      <material name="rouge">
-        <color rgba="1.0 0.0 0.0 1.0"/>
+      <material name="bleu-pale">
+        <color rgba="0.0 0.5 1.0 1.0"/>
       </material>
     </visual>
   </link>

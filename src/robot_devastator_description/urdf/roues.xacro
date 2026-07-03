@@ -7,8 +7,31 @@
   <!-- Demi-entraxe : chaque roue est à ±0.100 m de base_link -->
   <xacro:property name="y_roue"       value="0.100"/>
 
+  <!-- Empattement d'une chenille : distances horizontales depuis le moyeu moteur -->
+  <xacro:property name="empattement_arriere" value="0.080"/>
+  <xacro:property name="empattement_avant"   value="0.128"/>
+
+  <!-- Roues folles : même rayon que la roue menante (39,32 mm de diamètre) -->
+  <!-- Centre à 20 mm du sol → décalage local = 0,020 - base_link_hauteur_sol (0,082) = -0,062 m -->
+  <xacro:property name="z_folle" value="-0.062"/>
+
+  <!-- Matériaux des roues : définis une seule fois, référencés par nom ensuite -->
+  <material name="argent">
+    <color rgba="0.6 0.6 0.6 1.0"/>
+  </material>
+
+  <material name="orange">
+    <color rgba="1.0 0.5 0.0 1.0"/>
+  </material>
+
+  <material name="noir">
+    <color rgba="0.1 0.1 0.1 1.0"/>
+  </material>
+
   <!-- Macro réutilisable pour une roue -->
-  <!-- La rotation de π/2 autour de X oriente le cylindre sur l'axe Y -->
+  <!-- La rotation de π/2 autour de X oriente les cylindres sur l'axe Y -->
+  <!-- La géométrie visuelle forme une chenille triangulaire : roue menante + 2 roues -->
+  <!-- folles, reliées par 3 boîtes formant le contour (dont le brin horizontal au sol) -->
   <xacro:macro name="roue" params="nom y_signe">
     <link name="${nom}_wheel">
       <visual>
@@ -16,15 +39,48 @@
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
         <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
-        <material name="noir">
-          <color rgba="0.1 0.1 0.1 1.0"/>
-        </material>
+        <material name="noir"/>
       </visual>
-      <collision>
+      <visual>
         <geometry>
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
-        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <origin xyz="-${empattement_arriere} 0 ${z_folle}" rpy="${pi/2} 0 0"/>
+        <material name="argent"/>
+      </visual>
+      <visual>
+        <geometry>
+          <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
+        </geometry>
+        <origin xyz="${empattement_avant} 0 ${z_folle}" rpy="${pi/2} 0 0"/>
+        <material name="argent"/>
+      </visual>
+      <visual>
+        <geometry>
+          <box size="0.1012 ${largeur_roue} ${2*rayon_roue}"/>
+        </geometry>
+        <origin xyz="-0.040 0 ${z_folle/2}" rpy="0 2.4826 0"/>
+        <material name="orange"/>
+      </visual>
+      <visual>
+        <geometry>
+          <box size="0.1422 ${largeur_roue} ${2*rayon_roue}"/>
+        </geometry>
+        <origin xyz="0.064 0 ${z_folle/2}" rpy="0 0.4512 0"/>
+        <material name="noir"/>
+      </visual>
+      <visual>
+        <geometry>
+          <box size="0.208 ${largeur_roue} ${2*rayon_roue}"/>
+        </geometry>
+        <origin xyz="0.024 0 ${z_folle}" rpy="0 0 0"/>
+        <material name="noir"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${empattement_arriere+empattement_avant+2*rayon_roue} ${largeur_roue} ${2*rayon_roue}"/>
+        </geometry>
+        <origin xyz="${(empattement_avant-empattement_arriere)/2} 0 ${z_folle}" rpy="0 0 0"/>
       </collision>
       <inertial>
         <mass value="0.1"/>

@@ -4,8 +4,9 @@
   <!-- Dimensions du châssis (en mètres) -->
   <xacro:property name="chassis_longueur"       value="0.230"/>
   <xacro:property name="chassis_largeur"        value="0.230"/>
-  <xacro:property name="chassis_hauteur"        value="0.120"/>
+  <xacro:property name="chassis_hauteur"        value="0.098"/>
   <xacro:property name="base_link_hauteur_sol"  value="0.082"/>
+  <xacro:property name="chassis_z_offset"       value="-0.011"/>
 
   <!-- Repère sol — aucune géométrie visuelle -->
   <link name="base_footprint"/>
@@ -23,14 +24,16 @@
       <geometry>
         <box size="${chassis_longueur} ${chassis_largeur} ${chassis_hauteur}"/>
       </geometry>
+      <origin xyz="0 0 ${chassis_z_offset}" rpy="0 0 0"/>
       <material name="gris">
-        <color rgba="1.0 0.0 0.0 1.0"/>
+        <color rgba="0.8 0.8 0.8 1.0"/>
       </material>
     </visual>
     <collision>
       <geometry>
         <box size="${chassis_longueur} ${chassis_largeur} ${chassis_hauteur}"/>
       </geometry>
+      <origin xyz="0 0 ${chassis_z_offset}" rpy="0 0 0"/>
     </collision>
     <inertial>
       <mass value="1.0"/>

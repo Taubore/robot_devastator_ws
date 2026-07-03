@@ -103,11 +103,11 @@ de construire cet arbre, et Xacro la rend paramétrable. RViz dessine le robot �
 de ces données. À ce stade, les roues sont bougées « à la main » via
 `joint_state_publisher_gui` — pas encore de physique.
 
-- [ ] URDF/Xacro minimal : `base_footprint`, `base_link`, deux roues, tourelle
-- [ ] `robot_state_publisher` lancé, `/robot_description` publié
-- [ ] Arbre TF cohérent vérifié (`ros2 run tf2_tools view_frames`)
-- [ ] RViz : modèle visible, proportions et orientation correctes
-- [ ] RViz : `joint_state_publisher_gui` fait tourner les roues à l'écran
+- [x] URDF/Xacro minimal : `base_footprint`, `base_link`, deux roues, tourelle
+- [x] `robot_state_publisher` lancé, `/robot_description` publié
+- [X] Arbre TF cohérent vérifié (`ros2 run tf2_tools view_frames`)
+- [x] RViz : modèle visible, proportions et orientation correctes
+- [x] RViz : `joint_state_publisher_gui` fait tourner les roues à l'écran
 
 **Validation minimale :** le robot apparaît dans RViz, les roues bougent avec les
 curseurs. Aucun matériel requis — entièrement sur Legion-Linux.
@@ -308,13 +308,14 @@ Ce que Devastator m'a appris que je ferais différemment dès la conception.
 - Chenilles : entraxe effectif non mesurable précisément → préférer roues pour odométrie fiable.
 - Pico WH : contrat UART maison efficace mais à remplacer par ros2_control sur plateforme plus mature.
 - Alimentation Pi 5 : résoudre avant conception, pas pendant.
-
+- Configuration RViz (.rviz) : Description Topic et Marker Scale ne sont pas repris automatiquement d'un lancement à l'autre sans fichier -d explicite dans le launch file — à vérifier dès le premier lancement sur RobotPi. J'ai beaucoup erré avant de pouvoir voir mon modèle de robot avant cela.
 ---
 
 ## Décisions et contexte
 
 Format : `YYYY-MM-DD — décision ou observation clé (une ligne)`
 
+- 2026-07-03 — Phase 4 close. Chenilles modélisées en triangle (roue menante + 2 roues folles) plutôt qu'un cylindre simple, via décomposition trigonométrique (atan2) des 3 boîtes de liaison.
 - 2026-06-22 — Plan enrichi : ordre validé (URDF → Gazebo → odométrie réelle),
   simulation placée en étalon visuel, `ros2_control` écarté (RobotPi).
 - 2026-06-22 — PLAN.md adopté comme source unique de progression.
