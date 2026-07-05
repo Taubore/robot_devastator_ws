@@ -324,7 +324,11 @@ Respecter le style et le cadre déjà documentés.
 
 - Branches simples et ciblées
 - Commits petits, fréquents et cohérents
-- Messages de commit en français
+- Messages de commit, titres et descriptions de pull request, issues et étiquettes
+  (labels) en français
+- Toute interaction visible sur GitHub (PR, issues, commentaires, étiquettes,
+  noms de branches lisibles) doit être en français, sauf termes techniques
+  sans équivalent courant (ex. noms de packages, API, mots-clés ROS 2)
 - Ne jamais faire de `reset`, `merge`, suppression ou déplacement massif sans accord
 - Ne pas modifier l’historique Git sans demande explicite
 
