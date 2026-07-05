@@ -38,49 +38,49 @@
         <geometry>
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
-        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <origin xyz="0 0 ${-z_folle}" rpy="${pi/2} 0 0"/>
         <material name="noir"/>
       </visual>
       <visual>
         <geometry>
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
-        <origin xyz="-${empattement_arriere} 0 ${z_folle}" rpy="${pi/2} 0 0"/>
+        <origin xyz="-${empattement_arriere} 0 0" rpy="${pi/2} 0 0"/>
         <material name="argent"/>
       </visual>
       <visual>
         <geometry>
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
-        <origin xyz="${empattement_avant} 0 ${z_folle}" rpy="${pi/2} 0 0"/>
+        <origin xyz="${empattement_avant} 0 0" rpy="${pi/2} 0 0"/>
         <material name="argent"/>
       </visual>
       <visual>
         <geometry>
           <box size="0.1012 ${largeur_roue} ${2*rayon_roue}"/>
         </geometry>
-        <origin xyz="-0.040 0 ${z_folle/2}" rpy="0 2.4826 0"/>
+        <origin xyz="-0.040 0 ${-z_folle/2}" rpy="0 2.4826 0"/>
         <material name="orange"/>
       </visual>
       <visual>
         <geometry>
           <box size="0.1422 ${largeur_roue} ${2*rayon_roue}"/>
         </geometry>
-        <origin xyz="0.064 0 ${z_folle/2}" rpy="0 0.4512 0"/>
+        <origin xyz="0.064 0 ${-z_folle/2}" rpy="0 0.4512 0"/>
         <material name="noir"/>
       </visual>
       <visual>
         <geometry>
           <box size="0.208 ${largeur_roue} ${2*rayon_roue}"/>
         </geometry>
-        <origin xyz="0.024 0 ${z_folle}" rpy="0 0 0"/>
+        <origin xyz="0.024 0 0" rpy="0 0 0"/>
         <material name="noir"/>
       </visual>
       <collision>
         <geometry>
-          <box size="${empattement_arriere+empattement_avant+2*rayon_roue} ${largeur_roue} ${2*rayon_roue}"/>
+          <sphere radius="${rayon_roue}"/>
         </geometry>
-        <origin xyz="${(empattement_avant-empattement_arriere)/2} 0 ${z_folle}" rpy="0 0 0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
       </collision>
       <inertial>
         <mass value="0.1"/>
@@ -91,7 +91,7 @@
     <joint name="${nom}_wheel_joint" type="continuous">
       <parent link="base_link"/>
       <child  link="${nom}_wheel"/>
-      <origin xyz="0 ${y_signe * y_roue} 0" rpy="0 0 0"/>
+      <origin xyz="0 ${y_signe * y_roue} ${z_folle}" rpy="0 0 0"/>
       <axis xyz="0 1 0"/>
     </joint>
   </xacro:macro>
