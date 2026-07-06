@@ -28,54 +28,67 @@
     <color rgba="0.1 0.1 0.1 1.0"/>
   </material>
 
-  <!-- Macro réutilisable pour une roue -->
+  <!-- Macro du visuel statique d'une chenille (fixed, ne bouge jamais) -->
   <!-- La rotation de π/2 autour de X oriente les cylindres sur l'axe Y -->
   <!-- La géométrie visuelle forme une chenille triangulaire : roue menante + 2 roues -->
   <!-- folles, reliées par 3 boîtes formant le contour (dont le brin horizontal au sol) -->
-  <xacro:macro name="roue" params="nom y_signe">
-    <link name="${nom}_wheel">
+  <xacro:macro name="chenille" params="nom y_signe">
+    <link name="${nom}_chenille">
       <visual>
         <geometry>
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
-        <origin xyz="0 0 ${-z_folle}" rpy="${pi/2} 0 0"/>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
         <material name="noir"/>
       </visual>
       <visual>
         <geometry>
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
-        <origin xyz="-${empattement_arriere} 0 0" rpy="${pi/2} 0 0"/>
+        <origin xyz="-${empattement_arriere} 0 ${z_folle}" rpy="${pi/2} 0 0"/>
         <material name="argent"/>
       </visual>
       <visual>
         <geometry>
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
-        <origin xyz="${empattement_avant} 0 0" rpy="${pi/2} 0 0"/>
+        <origin xyz="${empattement_avant} 0 ${z_folle}" rpy="${pi/2} 0 0"/>
         <material name="argent"/>
       </visual>
       <visual>
         <geometry>
           <box size="0.1012 ${largeur_roue} ${2*rayon_roue}"/>
         </geometry>
-        <origin xyz="-0.040 0 ${-z_folle/2}" rpy="0 2.4826 0"/>
+        <origin xyz="-0.040 0 ${z_folle/2}" rpy="0 2.4826 0"/>
         <material name="orange"/>
       </visual>
       <visual>
         <geometry>
           <box size="0.1422 ${largeur_roue} ${2*rayon_roue}"/>
         </geometry>
-        <origin xyz="0.064 0 ${-z_folle/2}" rpy="0 0.4512 0"/>
+        <origin xyz="0.064 0 ${z_folle/2}" rpy="0 0.4512 0"/>
         <material name="noir"/>
       </visual>
       <visual>
         <geometry>
           <box size="0.208 ${largeur_roue} ${2*rayon_roue}"/>
         </geometry>
-        <origin xyz="0.024 0 0" rpy="0 0 0"/>
+        <origin xyz="0.024 0 ${z_folle}" rpy="0 0 0"/>
         <material name="noir"/>
       </visual>
+    </link>
+
+    <joint name="${nom}_chenille_joint" type="fixed">
+      <parent link="base_link"/>
+      <child  link="${nom}_chenille"/>
+      <origin xyz="0 ${y_signe * y_roue} 0" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Macro de la roue fonctionnelle : invisible, tourne réellement autour de -->
+  <!-- l'axe Y, contact au sol via une collision sphérique ponctuelle -->
+  <xacro:macro name="roue" params="nom y_signe">
+    <link name="${nom}_wheel">
       <collision>
         <geometry>
           <sphere radius="${rayon_roue}"/>
@@ -96,7 +109,9 @@
     </joint>
   </xacro:macro>
 
-  <xacro:roue nom="left"  y_signe=" 1"/>
-  <xacro:roue nom="right" y_signe="-1"/>
+  <xacro:chenille nom="left"  y_signe=" 1"/>
+  <xacro:roue     nom="left"  y_signe=" 1"/>
+  <xacro:chenille nom="right" y_signe="-1"/>
+  <xacro:roue     nom="right" y_signe="-1"/>
 
 </robot>

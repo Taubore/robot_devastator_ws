@@ -315,7 +315,7 @@ Ce que Devastator m'a appris que je ferais différemment dès la conception.
 
 Format : `YYYY-MM-DD — décision ou observation clé (une ligne)`
 
-- 2026-07-04 — Avant Phase 5 : axe de rotation des roues recentré au niveau du sol (hauteur roues folles), collision simplifiée en sphère (contact ponctuel, évite la friction de virage parasite en simulation). Réalisme du glissement de chenille volontairement non simulé — reporté à l'observation sur robot réel en Phase 6. Simulation physique complète de chenilles (maillons articulés) écartée : complexité disproportionnée pour l'objectif pédagogique.
+- 2026-07-04 — Avant Phase 5 : séparation de la chenille (visuel statique, fixed) et de la roue fonctionnelle (invisible, continuous, collision en sphère au niveau du sol). Nécessaire pour éviter que le triangle entier tourne comme un objet rigide unique — incompatible avec une simulation physique.
 - 2026-07-03 — Phase 4 close. Chenilles modélisées en triangle (roue menante + 2 roues folles) plutôt qu'un cylindre simple, via décomposition trigonométrique (atan2) des 3 boîtes de liaison.
 - 2026-06-22 — Plan enrichi : ordre validé (URDF → Gazebo → odométrie réelle),
   simulation placée en étalon visuel, `ros2_control` écarté (RobotPi).

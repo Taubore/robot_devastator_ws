@@ -164,7 +164,7 @@ Le package `robot_devastator_description` contient la description URDF/Xacro du 
 lancement RViz pour la visualiser sans matériel.
 
 ```bash
-colcon build --packages-select robot_devastator_description
+colcon build --symlink-install --packages-select robot_devastator_description
 source install/setup.bash
 ros2 launch robot_devastator_description affichage.launch.py
 ```
