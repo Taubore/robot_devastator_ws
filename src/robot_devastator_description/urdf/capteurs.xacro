@@ -23,10 +23,12 @@
     </visual>
   </link>
 
-  <joint name="sonar_joint" type="fixed">
+  <joint name="sonar_joint" type="revolute">
     <parent link="base_link"/>
     <child  link="sonar_link"/>
     <origin xyz="${sonar_x} 0 ${sonar_z}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="100" velocity="100" lower="-0.78539" upper="0.78539"/>
   </joint>
 
   <!-- Tourelle servo : petite boîte rouge au centre -->

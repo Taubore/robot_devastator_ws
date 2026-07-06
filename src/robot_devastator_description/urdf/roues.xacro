@@ -11,11 +11,13 @@
   <xacro:property name="empattement_arriere" value="0.080"/>
   <xacro:property name="empattement_avant"   value="0.128"/>
 
+  <xacro:property name="masse_roue" value="0.1"/>
+
   <!-- Roues folles : même rayon que la roue menante (39,32 mm de diamètre) -->
   <!-- Centre à 20 mm du sol → décalage local = 0,020 - base_link_hauteur_sol (0,082) = -0,062 m -->
   <xacro:property name="z_folle" value="-0.062"/>
 
-  <!-- Matériaux des roues : définis une seule fois, référencés par nom ensuite -->
+  <!-- Matériaux : définis une seule fois, référencés par nom ensuite -->
   <material name="argent">
     <color rgba="0.6 0.6 0.6 1.0"/>
   </material>
@@ -96,8 +98,12 @@
         <origin xyz="0 0 0" rpy="0 0 0"/>
       </collision>
       <inertial>
-        <mass value="0.1"/>
-        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+        <mass value="${masse_roue}"/>
+        <inertia
+          ixx="${masse_roue*(3*rayon_roue*rayon_roue+largeur_roue*largeur_roue)/12}"
+          iyy="${masse_roue*rayon_roue*rayon_roue/2}"
+          izz="${masse_roue*(3*rayon_roue*rayon_roue+largeur_roue*largeur_roue)/12}"
+          ixy="0" ixz="0" iyz="0"/>
       </inertial>
     </link>
 
