@@ -108,6 +108,7 @@ de ces données. À ce stade, les roues sont bougées « à la main » via
 - [X] Arbre TF cohérent vérifié (`ros2 run tf2_tools view_frames`)
 - [x] RViz : modèle visible, proportions et orientation correctes
 - [x] RViz : `joint_state_publisher_gui` fait tourner les roues à l'écran
+- [x] Lecture : chapitres 10, 11 et 12 du livre _ROS 2 from Scratch_
 
 **Validation minimale :** le robot apparaît dans RViz, les roues bougent avec les
 curseurs. Aucun matériel requis — entièrement sur Legion-Linux.
@@ -132,6 +133,7 @@ tu sauras exactement à quoi le résultat doit ressembler.
 - [ ] Plugin DiffDrive configuré : le robot roule via `/cmd_vel`
 - [ ] Pilotage en simulation depuis Legion-Linux (clavier ou `teleop`)
 - [ ] Trajectoire `/odom` visible dans RViz pendant le déplacement simulé
+- [ ] Lecture : chapitre 13 du livre _ROS 2 from Scratch_
 
 **Validation minimale :** conduire le robot simulé en cercle, voir la trajectoire
 se tracer dans RViz. Entièrement sur Legion-Linux, aucun risque matériel.
