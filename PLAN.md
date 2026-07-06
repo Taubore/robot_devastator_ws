@@ -112,7 +112,9 @@ de ces données. À ce stade, les roues sont bougées « à la main » via
 
 **Validation minimale :** le robot apparaît dans RViz, les roues bougent avec les
 curseurs. Aucun matériel requis — entièrement sur Legion-Linux.
-**Livre :** _Mastering ROS 2 4e_ — chapitres URDF, Xacro, TF.
+**Livres :** _ROS 2 from Scratch_ — chapitres 10 (TF/RViz), 11 (création
+URDF), 12 (publication TF, packaging). _Mastering ROS 2 4e_ — chapitre 4
+(modélisation 3D, en complément).
 
 ---
 
@@ -137,7 +139,10 @@ tu sauras exactement à quoi le résultat doit ressembler.
 
 **Validation minimale :** conduire le robot simulé en cercle, voir la trajectoire
 se tracer dans RViz. Entièrement sur Legion-Linux, aucun risque matériel.
-**Livre :** _Mastering ROS 2 4e_ — chapitres simulation et Gazebo.
+**Livres :** _ROS 2 from Scratch_ — chapitre 13 (Simulating a Robot in
+Gazebo), à lire après la validation Gazebo. _Mastering ROS 2 4e_ —
+chapitre 5 (Simulating Robots in a Realistic Environment), référence
+avancée en complément.
 
 ---
 
@@ -154,11 +159,17 @@ maintenant sur Devastator réel ce que Gazebo t'a montré en Phase 5.
 - [ ] Validation avance : ~1 m réel → X entre 0,95 et 1,05 m dans `/odom`
 - [ ] Validation rotation : ~90° sur place → yaw entre 1,47 et 1,67 rad
 - [ ] Dérive documentée : carré de 2 m de côté, écart de retour mesuré
+- [ ] Lecture : chapitres 11 et 12 de _Learn Robotics Programming 3e_
+      et chapitres 1-2 de _Régulation PID par la pratique_
 
 **Validation minimale :** trajectoire en carré visible dans RViz (Legion-Linux
 connecté au Pi via SSH). La dérive est attendue et documentée, pas corrigée.
-**Livre :** _Learn Robotics Programming 3e_ + _Régulation PID par la pratique_
-(notion de mesure et d'erreur, pas encore de réglage PID).
+**Livres :** _Learn Robotics Programming 3e_ — chapitre 11 (Programming
+Encoders with Python, jusqu'à la conversion ticks→distance, PAS la
+section PID de fin de chapitre) et chapitre 12 (Encoder-Based
+Localisation with Python — pose, dérive, débogage). _Régulation PID par
+la pratique_ — chapitres 1-2 (asservissement, capteurs — PAS le
+chapitre 5, réglage PID prématuré à ce stade).
 
 ---
 
@@ -172,9 +183,14 @@ le bus I2C. Sous-système simple, immédiatement utile, bon exercice d'intégrat
 - [ ] Nœud `surveillance_alimentation` publiant tension et courant
 - [ ] Seuil d'alerte bas testé (annonce audio ou log)
 - [ ] Lecture cohérente avec le voltmètre physique existant
+- [ ] Lecture : chapitre 13, section "Connecting an IMU to a Raspberry
+      Pi robot" de _Learn Robotics Programming 3e_
 
 **Validation minimale :** tension publiée ≈ tension lue au voltmètre.
-**Livre :** _Learn Robotics Programming 3e_ — interfaces I2C.
+**Livre :** _Learn Robotics Programming 3e_ — chapitre 13, section
+"Connecting an IMU to a Raspberry Pi robot" (patron de câblage/détection
+I2C transférable ; référence précise pour l'INA260 : documentation
+Adafruit/datasheet).
 
 ---
 
@@ -188,9 +204,13 @@ et l'affiche. Bon exercice de nœud abonné (subscriber) avec sortie matérielle
 - [ ] Nœud `affichage_lcd` abonné au mode et à l'état du robot
 - [ ] Pages minimales : mode actif, tension, état moteurs
 - [ ] Transition entre pages documentée
+- [ ] Lecture : documentation Waveshare du ST7789V (aucun chapitre de
+      livre dédié)
 
 **Validation minimale :** basculer manuel/autonomie → l'affichage change.
-**Livre :** _Learn Robotics Programming 3e_ — affichages embarqués.
+**Livre :** aucun chapitre dédié dans les livres disponibles — utiliser
+la documentation Waveshare du ST7789V et une bibliothèque Python
+existante (luma.lcd ou pilote officiel).
 
 ---
 
@@ -206,10 +226,14 @@ dans l'arbre TF — pas encore la navigation.
 - [ ] Transform `base_link → laser` ajoutée à l'URDF
 - [ ] Scan visible et stable dans RViz (le mur en face est reconnaissable)
 - [ ] Qualité documentée : portée effective, zones mortes
+- [ ] Lecture : chapitre 8, section "Robot prerequisites for Nav2"
+      (~p. 292) de _Mastering ROS 2 4e_
 
 **Validation minimale :** faire tourner le robot ; les objets fixes restent stables
 dans RViz pendant que le scan tourne.
-**Livre :** _Mastering ROS 2 4e_ — capteurs et LaserScan.
+**Livre :** _Mastering ROS 2 4e_ — chapitre 8, section "Robot
+prerequisites for Nav2" (~p. 292), seule couverture disponible des
+capteurs lidar.
 
 ---
 
@@ -228,10 +252,12 @@ On le teste d'abord en simulation (sûr), puis sur le robot réel.
 - [ ] Portage et test sur le robot réel dans une pièce connue
 - [ ] Comportement de récupération documenté (robot bloqué ?)
 - [ ] Paramètres clés documentés (vitesse max, rayon d'inflation)
+- [ ] Lecture : chapitre 8 complet de _Mastering ROS 2 4e_
 
 **Validation minimale :** aller-retour autonome entre deux points connus d'une pièce
 connue, sans intervention humaine.
-**Livre :** _Mastering ROS 2 4e_ — Nav2 et SLAM.
+**Livre :** _Mastering ROS 2 4e_ — chapitre 8 complet (ROS 2 Navigation
+Stack: Nav2 — architecture, Slam Toolbox, démo TurtleBot3).
 
 ---
 
@@ -244,8 +270,10 @@ est hors cible Devastator.
 - [ ] Pilote RealSense ROS 2 installé, flux publié
 - [ ] Nuage de points visible dans RViz
 - [ ] Cas d'usage minimal documenté (détection d'obstacle vertical)
+- [ ] Lecture : chapitre 10 de _Mastering ROS 2 4e_
 
-**Livre :** _Mastering ROS 2 4e_ — caméras et PointCloud.
+**Livre :** _Mastering ROS 2 4e_ — chapitre 10 (Working with ROS 2 and
+Perception Stack — caméra, capteurs de profondeur, calibration).
 
 ---
 
@@ -257,8 +285,16 @@ est hors cible Devastator.
 - [ ] ReSpeaker Mic Array v3.0 initialisé, audio capté
 - [ ] Détection de mot déclencheur (wake word)
 - [ ] Commande vocale simple liée à un événement ROS 2
+- [ ] Lecture : chapitre 16 de _Learn Robotics Programming 3e_, et
+      chapitres 17 et 12 de _Programming Voice-Controlled IoT
+      Applications_
 
-**Livre :** _Programming Voice-Controlled IoT Applications_ — Alexa sur Raspberry Pi.
+**Livres :** _Learn Robotics Programming 3e_ — chapitre 16 (Voice
+Control AI on a Robot with Python — Vosk, mot déclencheur, référence
+pratique principale). _Programming Voice-Controlled IoT Applications_
+— chapitre 17 (Raspberry Pi as a Stand-alone Alexa Device, AVS SDK) et
+chapitre 12 (Creating a Raspberry Pi IoT Thing — contrôle du robot
+depuis une skill).
 
 ---
 
