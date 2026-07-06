@@ -48,21 +48,21 @@
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
         <origin xyz="-${empattement_arriere} 0 ${z_folle}" rpy="${pi/2} 0 0"/>
-        <material name="argent"/>
+        <material name="noir"/>
       </visual>
       <visual>
         <geometry>
           <cylinder radius="${rayon_roue}" length="${largeur_roue}"/>
         </geometry>
         <origin xyz="${empattement_avant} 0 ${z_folle}" rpy="${pi/2} 0 0"/>
-        <material name="argent"/>
+        <material name="noir"/>
       </visual>
       <visual>
         <geometry>
           <box size="0.1012 ${largeur_roue} ${2*rayon_roue}"/>
         </geometry>
         <origin xyz="-0.040 0 ${z_folle/2}" rpy="0 2.4826 0"/>
-        <material name="orange"/>
+        <material name="noir"/>
       </visual>
       <visual>
         <geometry>
@@ -78,6 +78,18 @@
         <origin xyz="0.024 0 ${z_folle}" rpy="0 0 0"/>
         <material name="noir"/>
       </visual>
+      <collision>
+        <geometry>
+          <sphere radius="${rayon_roue}"/>
+        </geometry>
+        <origin xyz="-${empattement_arriere} 0 ${z_folle}" rpy="0 0 0"/>
+      </collision>
+      <collision>
+        <geometry>
+          <sphere radius="${rayon_roue}"/>
+        </geometry>
+        <origin xyz="${empattement_avant} 0 ${z_folle}" rpy="0 0 0"/>
+      </collision>      
     </link>
 
     <joint name="${nom}_chenille_joint" type="fixed">
