@@ -10,6 +10,17 @@
   <xacro:property name="tourelle_x"   value="0.0845"/>
   <xacro:property name="tourelle_z"   value="0.048"/>
 
+  <xacro:property name="masse_sonar"  value="0.010"/>
+
+  <!-- Matériaux : définis une seule fois, référencés par nom ensuite -->
+  <material name="bleu">
+    <color rgba="0.0 0.0 1.0 1.0"/>
+  </material>
+
+  <material name="bleu_pale">
+    <color rgba="0.0 0.5 1.0 1.0"/>
+  </material>
+
   <!-- Sonar HC-SR04 : petite boîte bleue à l'avant -->
   <!-- Dimensions : 40 mm x 56 mm x 30 mm (p x l x h) -->
   <link name="sonar_link">
@@ -17,10 +28,21 @@
       <geometry>
         <box size="0.040 0.056 0.030"/>
       </geometry>
-      <material name="bleu">
-        <color rgba="0.0 0.0 1.0 1.0"/>
-      </material>
+      <material name="bleu"/>
     </visual>
+    <collision>
+      <geometry>
+        <box size="0.040 0.056 0.030"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="${masse_sonar}"/>
+      <inertia
+        ixx="${masse_sonar*(0.056*0.056+0.030*0.030)/12}"
+        iyy="${masse_sonar*(0.040*0.040+0.030*0.030)/12}"
+        izz="${masse_sonar*(0.040*0.040+0.056*0.056)/12}"
+        ixy="0" ixz="0" iyz="0"/>
+    </inertial>    
   </link>
 
   <joint name="sonar_joint" type="revolute">
@@ -38,9 +60,7 @@
       <geometry>
         <box size="0.053 0.020 0.020"/>
       </geometry>
-      <material name="bleu-pale">
-        <color rgba="0.0 0.5 1.0 1.0"/>
-      </material>
+      <material name="bleu_pale"/>
     </visual>
   </link>
 
