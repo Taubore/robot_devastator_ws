@@ -130,11 +130,11 @@ tu sauras exactement à quoi le résultat doit ressembler.
 > Utiliser le plugin **DiffDrive simple** de Gazebo, PAS `ros2_control`
 > (déroutant pour débuter et hors cible Devastator).
 
-- [ ] Balises `<inertial>` et `<collision>` ajoutées à l'URDF (formes simples)
-- [ ] Robot apparaît (`spawn`) dans un monde Gazebo vide
-- [ ] Plugin DiffDrive configuré : le robot roule via `/cmd_vel`
-- [ ] Pilotage en simulation depuis Legion-Linux (clavier ou `teleop`)
-- [ ] Trajectoire `/odom` visible dans RViz pendant le déplacement simulé
+- [x] Balises `<inertial>` et `<collision>` ajoutées à l'URDF (formes simples)
+- [x] Robot apparaît (`spawn`) dans un monde Gazebo vide
+- [x] Plugin DiffDrive configuré : le robot roule via `/cmd_vel`
+- [x] Pilotage en simulation depuis Legion-Linux (clavier ou `teleop`)
+- [x] Trajectoire `/odom` visible dans RViz pendant le déplacement simulé
 - [ ] Lecture : chapitre 13 du livre _ROS 2 from Scratch_
 
 **Validation minimale :** conduire le robot simulé en cercle, voir la trajectoire
@@ -347,6 +347,13 @@ Ce que Devastator m'a appris que je ferais différemment dès la conception.
 - Pico WH : contrat UART maison efficace mais à remplacer par ros2_control sur plateforme plus mature.
 - Alimentation Pi 5 : résoudre avant conception, pas pendant.
 - Configuration RViz (.rviz) : Description Topic et Marker Scale ne sont pas repris automatiquement d'un lancement à l'autre sans fichier -d explicite dans le launch file — à vérifier dès le premier lancement sur RobotPi. J'ai beaucoup erré avant de pouvoir voir mon modèle de robot avant cela.
+- Base de sustentation : tout robot simulé a besoin d'au moins 3 points de contact non alignés pour être stable en tangage — RobotPi (4 roues mecanum aux coins) n'aura naturellement pas ce problème, mais le réflexe de vérification reste systématique.
+- Règle inertial/fixed : un lien à joint mobile exige <inertial> ; un lien à joint fixed est fusionné dans son parent et n'en a pas besoin.
+- Modèle spawné = copie figée : toute modification Xacro exige un respawn complet, jamais juste un rechargement de /robot_description.
+- Une seule source de vérité par topic : deux publishers sur /joint_states (GUI + simulation) cassent la cohérence temporelle des transforms, même si chacun fonctionne isolément.
+- Friction différenciée : les points de contact passifs (skids, roulette folle) ont besoin d'une friction réduite ; les points moteurs gardent la friction par défaut pour la traction.
+- ros2_control sera pertinent pour RobotPi (cinématique mecanum) — contrairement à Devastator, qui reste en diff-drive simplifié.
+
 ---
 
 ## Décisions et contexte

@@ -1,0 +1,23 @@
+launch:
+- include:
+    file: $(find-pkg-share robot_devastator_description)/launch/simulation.launch.py
+
+- include:
+    file: $(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py
+    arg:
+    - name: gz_args
+      value: "empty.sdf -r"
+
+- node:
+    pkg: ros_gz_sim
+    exec: create
+    name: spawn_devastator
+    args: "-topic robot_description"
+
+- node:
+    pkg: ros_gz_bridge
+    exec: parameter_bridge
+    name: pont_gazebo
+    param:
+    - name: config_file
+      value: $(find-pkg-share robot_devastator_bringup)/config/gazebo_bridge.yaml
