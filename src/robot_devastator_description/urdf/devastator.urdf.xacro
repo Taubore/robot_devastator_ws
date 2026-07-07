@@ -4,5 +4,6 @@
   <xacro:include filename="$(find robot_devastator_description)/urdf/corps.xacro"/>
   <xacro:include filename="$(find robot_devastator_description)/urdf/roues.xacro"/>
   <xacro:include filename="$(find robot_devastator_description)/urdf/capteurs.xacro"/>
+  <xacro:include filename="$(find robot_devastator_description)/urdf/devastator_gazebo.xacro"/>
 
 </robot>
