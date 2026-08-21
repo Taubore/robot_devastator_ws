@@ -166,7 +166,7 @@ tu sauras exactement à quoi le résultat doit ressembler.
 - [x] Plugin DiffDrive configuré : le robot roule via `/cmd_vel`
 - [x] Pilotage en simulation depuis Legion-Linux (clavier ou `teleop`)
 - [x] Trajectoire `/odom` visible dans RViz pendant le déplacement simulé
-- [ ] Lecture : chapitre 13 du livre _ROS 2 from Scratch_
+- [x] Lecture : chapitre 13 du livre _ROS 2 from Scratch_
 
 **Validation minimale :** conduire le robot simulé en cercle, voir la trajectoire
 se tracer dans RViz. Entièrement sur Legion-Linux, aucun risque matériel.
