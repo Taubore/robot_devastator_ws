@@ -12,6 +12,7 @@
   <exec_depend>interface_pico</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>odometrie</exec_depend>
   <exec_depend>robot_devastator</exec_depend>
 
   <exec_depend>robot_devastator_description</exec_depend>

@@ -10,12 +10,14 @@ points d'entrée concurrents dans les packages applicatifs.
 |---|---|---|
 | `devastator.launch.yaml` | `interface_pico`, `arbitre_commande_moteurs`, `annonces_audio`, `evitement_obstacle` | Lancement complet du robot en mode manuel, autonomie en attente |
 | `interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
+| `odometrie.launch.yaml` | `odometrie` | Diagnostic isolé de l'odométrie (Phase 6), à lancer en plus d'`interface_pico.launch.yaml` |
 
 ## Fichiers de configuration
 
 | Fichier | Nœud cible | Paramètres clés |
 |---|---|---|
 | `interface_pico.yaml` | `interface_pico` | Port UART, débit, délai d'expiration consigne moteur, périodes sonar et encodeurs |
+| `mecanique.yaml` | `odometrie` | Ticks par tour, ticks par mètre gauche/droite/moyen, entraxe — mesurés en Phase 3 |
 | `arbitre_commande_moteurs.yaml` | `arbitre_commande_moteurs` | Mode initial (`manuel`), période de publication, délai d'expiration source |
 | `annonces_audio.yaml` | `annonces_audio` | Exécutable Piper, modèle vocal, délai de répétition, liste des annonces par événement |
 | `autonomie_simple.yaml` | `evitement_obstacle` | Distance d'arrêt, vitesses, angles de tourelle, durées de rotation et de recul |
@@ -27,7 +29,7 @@ Build initial ou après modification :
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install --packages-select commun interface_pico robot_devastator robot_devastator_bringup
+colcon build --symlink-install --packages-select commun interface_pico odometrie robot_devastator robot_devastator_bringup
 source install/setup.bash
 ```
 
@@ -41,6 +43,12 @@ Lancement isolé de la couche Pico (diagnostic) :
 
 ```bash
 ros2 launch robot_devastator_bringup interface_pico.launch.yaml
+```
+
+Lancement isolé de l'odométrie (Phase 6), en plus de la couche Pico ci-dessus :
+
+```bash
+ros2 launch robot_devastator_bringup odometrie.launch.yaml
 ```
 
 ## Téléopération clavier
@@ -65,5 +73,6 @@ Depuis VSCode avec le profil `ROS2`, les tâches suivantes sont disponibles via
 |---|---|
 | `ROS 2 - Lancer Devastator` | `ros2 launch robot_devastator_bringup devastator.launch.yaml` |
 | `ROS 2 - Lancer interface Pico` | `ros2 launch robot_devastator_bringup interface_pico.launch.yaml` |
+| `ROS 2 - Lancer odométrie` | `ros2 launch robot_devastator_bringup odometrie.launch.yaml` |
 | `ROS 2 - Build Devastator` | `colcon build --symlink-install --packages-select ...` |
 | `ROS 2 - Nettoyer packages Devastator` | Nettoyage ciblé de `build/` et `install/` |

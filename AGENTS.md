@@ -10,6 +10,23 @@ Dépôt officiel : https://github.com/Taubore/robot_devastator_ws
 Ce dépôt est le workspace ROS 2 officiel du projet. Il doit évoluer progressivement à partir
 du code existant. Ne pas créer d’architecture parallèle et ne pas repartir de zéro.
 
+## Langue d'interaction
+
+Toute réponse affichée à l'utilisateur par Codex / Claude Code (texte de conversation,
+explications, plans proposés, résumés de fin de tâche, mises à jour en cours de tâche) doit être
+rédigée en français, en tout temps, sans exception — même si la demande de l'utilisateur, un
+fichier lu ou une partie du contexte est en anglais.
+
+L'anglais reste acceptable seulement pour :
+
+- les identifiants, mots-clés et éléments techniques sans équivalent courant (noms de packages
+  ROS 2, types de messages, noms de fichiers, commandes CLI, noms de fonctions) ;
+- le contenu cité tel quel depuis une source externe (sortie d'une commande, message d'erreur
+  d'un outil, extrait de documentation, log).
+
+Cette règle s'ajoute à celle déjà en vigueur pour Git (messages de commit, titres et descriptions
+de pull request, issues et étiquettes en français, voir section Git plus bas).
+
 ## Sources à consulter avant modification
 
 Avant toute modification non triviale, consulter selon le besoin :

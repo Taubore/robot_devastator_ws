@@ -22,6 +22,7 @@ communes du projet.
 |---|---|
 | `src/commun` | Interfaces ROS 2 communes |
 | `src/interface_pico` | Pont ROS 2 ↔ UART ↔ Pico WH |
+| `src/odometrie` | Calcul de l'odométrie à partir des ticks encodeurs (Phase 6) |
 | `src/robot_devastator` | Logique principale du robot |
 | `src/robot_devastator_bringup` | Assemblage des nœuds et paramètres de lancement |
 | `src/robot_devastator_description` | Description URDF/Xacro du robot et visualisation RViz |
@@ -41,9 +42,10 @@ communes du projet.
 | `/robot/mode_conduite` | `std_msgs/msg/String` | `teleop_clavier` | `arbitre_commande_moteurs` | Choisir `manuel` ou `autonomie` comme source moteur active |
 | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle` | `interface_pico` | Commander l'angle du servo de tourelle en degrés |
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico` | `evitement_obstacle` | Publier la distance ultrason mesurée en millimètres |
-| `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | Outil de diagnostic ou futur calcul d'odométrie | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
+| `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | `odometrie`, outil de diagnostic | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
 | `/pico/etat` | `std_msgs/msg/String` | `interface_pico` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
 | `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle` | `annonces_audio` | Signaler uniquement les transitions significatives du comportement autonome |
+| `/odom` | `nav_msgs/msg/Odometry` | `odometrie` | RViz, outil de diagnostic | Publier la pose et la vitesse estimées à partir des encodeurs |
 
 ### Services
 
@@ -52,6 +54,7 @@ communes du projet.
 | `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Envoyer `PING` et réussir seulement si le Pico répond `OK PING` dans le délai |
 | `/pico/stop_moteurs` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander un arrêt explicite des moteurs au Pico avec `STOP_MOT` |
 | `/pico/reset_encodeurs` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Remettre à zéro les compteurs d'encodeurs avec `RESET_ENC` |
+| `/odometrie/reset` | `std_srvs/srv/Trigger` | `odometrie` | Outil de diagnostic | Remettre x, y, theta à zéro sans toucher aux ticks du Pico |
 
 ### Actions
 
@@ -70,6 +73,7 @@ nom exact du nœud lancé.
 | `evitement_obstacle` | `robot_devastator` | `evitement_obstacle` / `robot_devastator.evitement_obstacle` | Expérimental | Avancer lentement, balayer avec la tourelle, puis tourner jusqu'à trouver un dégagement |
 | `teleop_clavier` | `robot_devastator` | `teleop_clavier` / `robot_devastator.teleop_clavier` | Actif | Conduire localement au clavier et basculer entre mode manuel et autonomie |
 | `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les WAV manquants avec Piper, puis jouer les annonces selon les événements du robot |
+| `odometrie` | `odometrie` | `odometrie` / `odometrie.odometrie` | Actif (Phase 6) | Calculer x, y, theta depuis `/pico/encodeurs` et publier `/odom` et la TF `odom → base_footprint` |
 
 ## Interfaces personnalisées
 
@@ -100,6 +104,7 @@ Les assemblages ROS 2 sont centralisés dans `robot_devastator_bringup`. Utilise
 VSCode suivantes selon le besoin :
 
 - `Tasks: Run Task > ROS 2 - Lancer interface Pico`
+- `Tasks: Run Task > ROS 2 - Lancer odométrie`
 - `Tasks: Run Task > ROS 2 - Lancer Devastator`
 
 Les configurations de `.vscode/launch.json` servent seulement au debug direct d'un nœud Python
@@ -178,13 +183,14 @@ Ces commandes restent utiles pour un diagnostic rapide hors VSCode, surtout pour
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install --packages-select commun interface_pico robot_devastator robot_devastator_bringup
+colcon build --symlink-install --packages-select commun interface_pico odometrie robot_devastator robot_devastator_bringup
 source install/setup.bash
 ```
 
 ```bash
 ros2 launch robot_devastator_bringup devastator.launch.yaml
 ros2 launch robot_devastator_bringup interface_pico.launch.yaml
+ros2 launch robot_devastator_bringup odometrie.launch.yaml
 ```
 
 ```bash
@@ -198,7 +204,7 @@ Procédure courte sur Raspberry Pi 4 avec le firmware Pico récent :
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install --packages-select commun interface_pico robot_devastator robot_devastator_bringup
+colcon build --symlink-install --packages-select commun interface_pico odometrie robot_devastator robot_devastator_bringup
 source install/setup.bash
 ros2 launch robot_devastator_bringup interface_pico.launch.yaml
 ```
