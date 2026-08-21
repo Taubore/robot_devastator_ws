@@ -6,6 +6,25 @@ Construire Devastator par étapes pédagogiques pour adopter une posture d'ingé
 robotique : comprendre l'architecture, les interfaces, les flux de données, les diagnostics
 et les critères de validation — pas seulement écrire du code ROS 2.
 
+## Situer ce plan
+
+Ce document détaille la **phase 1 du parcours de formation** (Devastator).
+Le parcours global (5 phases, J1.1→J5.5) et les modules préparatoires
+(P0→P7) vivent dans le projet Claude, pas ici.
+
+| Phase Devastator | Jalon parcours | Fondations mobilisées |
+|---|---|---|
+| 0–1 Fondation, doc | J1.1 Architecture ROS 2 | — |
+| 2–3 Encodeurs, mécanique | prépare J1.3 | P1 algèbre |
+| 4 URDF/TF/RViz | J1.2 Modélisation | bloc A, P2 géométrie |
+| 5 Gazebo | (hors jalon — étalon) | — |
+| 6 Odométrie réelle | **J1.3 Odométrie** | P3 trigo, bloc D′ |
+| 7–8 INA260, LCD | (hors parcours) | — |
+| 9 RPLIDAR | J1.4 Capteurs | — |
+| 10 SLAM + Nav2 | J1.5, **J1.6 sortie de phase** | bloc C, P5 probas |
+| 11 RealSense | J1.4b Perception | bloc H |
+| 12 ReSpeaker | (hors parcours) | — |
+
 ## Règles
 
 - Une case se coche uniquement après test observable (robot réel ou simulation)
@@ -28,6 +47,8 @@ et les critères de validation — pas seulement écrire du code ROS 2.
 
 ## Phase 0 — Fondation (infrastructure et sécurité) ✓
 
+>Jalon J1.1 - Architecture ROS 2 maîtrisée
+
 **Concept :** un robot est une chaîne de responsabilités séparées. Chaque maillon
 (microcontrôleur, ROS 2, actionneurs) a un rôle précis et une frontière d'interface
 documentée.
@@ -47,6 +68,8 @@ documentée.
 
 ## Phase 1 — Consolidation documentaire ✓
 
+>Jalon J1.1 - Architecture ROS 2 maîtrisée
+
 **Concept :** un projet non documenté n'est pas transmissible. La documentation
 courte et précise est une compétence d'ingénieur, pas une corvée.
 
@@ -57,6 +80,8 @@ courte et précise est une compétence d'ingénieur, pas une corvée.
 ---
 
 ## Phase 2 — Encodeurs et diagnostic
+
+>Prépare au jalon J1.3 - Téléopération et odométrie
 
 **Concept :** un encodeur en quadrature est un compteur de pas qui connaît son sens.
 Il ne mesure pas une vitesse — il mesure un déplacement discret en ticks. La vitesse
@@ -77,6 +102,8 @@ remettre à zéro. Résultat répétable et cohérent en signe.
 
 ## Phase 3 — Paramètres mécaniques et étalonnage
 
+>Prépare au jalon J1.3 - Téléopération et odométrie
+
 **Concept :** avant de calculer une distance, il faut connaître le robot. Trois nombres
 transforment des ticks en mètres : le diamètre de roue, l'entraxe (distance entre les
 deux roues) et la résolution d'encodeur (ticks par tour). Une erreur ici se propage
@@ -96,6 +123,8 @@ d'odométrie fausse chez les makers.
 ---
 
 ## Phase 4 — Description du robot et visualisation (URDF/Xacro + TF + RViz)
+
+>Jalon J1.2 - Modélisation : URDF et TF2
 
 **Concept :** le TF est l'arbre généalogique du robot : chaque pièce connaît sa position
 par rapport à sa pièce parente. L'URDF est la description physique qui permet à ROS 2
@@ -119,6 +148,8 @@ URDF), 12 (publication TF, packaging). _Mastering ROS 2 4e_ — chapitre 4
 ---
 
 ## Phase 5 — Simulation Gazebo (étalon visuel)
+
+>Hors parcours de formation
 
 **Concept :** la simulation transforme la description en robot physique : gravité,
 collisions, moteurs simulés. Point clé pour l'apprentissage : le plugin DiffDrive de
@@ -148,6 +179,8 @@ avancée en complément.
 
 ## Phase 6 — Odométrie sur le robot réel
 
+>Jalon J1.3 - Téléopération et odométrie
+
 **Concept :** l'odométrie est le « comptage de pas » du robot. En combinant les ticks
 gauche et droite avec les paramètres mécaniques de la Phase 3, on estime où le robot
 est allé depuis son départ — sans GPS ni caméra. Cette estimation dérive avec le temps
@@ -175,6 +208,8 @@ chapitre 5, réglage PID prématuré à ce stade).
 
 ## Phase 7 — Surveillance de l'alimentation (INA260)
 
+>Hors parcours de formation
+
 **Concept :** un robot sans surveillance de sa tension peut endommager ses batteries
 ou tomber en panne sans avertir. L'INA260 mesure tension et courant en temps réel via
 le bus I2C. Sous-système simple, immédiatement utile, bon exercice d'intégration capteur.
@@ -196,6 +231,8 @@ Adafruit/datasheet).
 
 ## Phase 8 — Affichage local (LCD Waveshare 2" ST7789V)
 
+>Hors parcours de formation
+
 **Concept :** un robot qui affiche son état localement se diagnostique sur le terrain
 sans SSH. L'écran LCD est un sous-système de sortie simple : il reçoit un état ROS 2
 et l'affiche. Bon exercice de nœud abonné (subscriber) avec sortie matérielle.
@@ -215,6 +252,8 @@ existante (luma.lcd ou pilote officiel).
 ---
 
 ## Phase 9 — Perception lidar (RPLIDAR A1M8)
+
+>Jalon J1.4 - Intégration des capteurs  
 
 **Concept :** le lidar balaye l'environnement à 360° et publie des distances sous forme
 de nuage de points 2D (`LaserScan`). C'est le capteur principal de la cartographie et
@@ -238,6 +277,8 @@ capteurs lidar.
 ---
 
 ## Phase 10 — Navigation autonome (Nav2)
+
+>Jalon J1.5 - SLAM et Navigation autonome (critère de sortie de phase)
 
 **Concept :** Nav2 est le « GPS intérieur » du robot. Il combine une carte, une position
 estimée (odométrie) et un capteur (lidar) pour planifier un chemin et guider le robot
@@ -263,6 +304,8 @@ Stack: Nav2 — architecture, Slam Toolbox, démo TurtleBot3).
 
 ## Phase 11 — Perception 3D (RealSense D435IF) — exploratoire
 
+>J1.4b - Perception : la donnée devient une décision
+
 **Concept :** la caméra de profondeur voit les obstacles en hauteur (bords de table,
 jambes) que le lidar 2D manque. Phase exploratoire ; l'intégration complète dans Nav2
 est hors cible Devastator.
@@ -278,6 +321,8 @@ Perception Stack — caméra, capteurs de profondeur, calibration).
 ---
 
 ## Phase 12 — Réception vocale (ReSpeaker + Alexa) — exploratoire
+
+>Hors parcours de formation
 
 **Concept :** le ReSpeaker capte la voix avec annulation d'écho et formation de faisceau
 (plusieurs micros qui collaborent). Complément à la synthèse Piper déjà active.
