@@ -78,14 +78,31 @@ zéro sans toucher aux ticks du Pico :
 ros2 service call /odometrie/reset std_srvs/srv/Trigger
 ```
 
-Validation du Phase 6 du `PLAN.md` (à faire sur le robot réel, roues au sol) :
+## Validation Phase 6 (2026-08-23, sol dur, chenilles plastique)
 
-- avancer d'environ 1 m en ligne droite → `pose.pose.position.x` (ou la norme `x`/`y` selon le cap
-  de départ) entre `0.95` et `1.05` m ;
-- tourner d'environ 90° sur place → le lacet extrait de `pose.pose.orientation` entre `1.47` et
-  `1.67` rad ;
-- effectuer un carré de 2 m de côté et mesurer l'écart entre la position finale estimée et le
-  point de départ réel, pour documenter la dérive dans `PLAN.md`.
+Mesures effectuées sur le robot réel, roues au sol, ruban à mesurer.
+
+| Essai | Résultat | Critère | Verdict |
+|---|---|---|---|
+| Avance 1 m, 3 passes | sous-estimation de 1,0 à 1,6 % | 0,95–1,05 m | atteint |
+| Rotation 90°, 3 passes | 1,568 / 1,490 / 1,574 rad | 1,47–1,67 rad | atteint |
+| Tour complet, lent | 6,36 rad (attendu 6,28) | — | écart 1 % |
+| Tour complet, rapide | 6,28 rad | — | écart nul |
+| Carré 1,5 m, avant correction | `/odom` 1,16 m, réel 0,04 m | documenter | dérive 1,12 m |
+| Carré 1,5 m, après correction | `/odom` 0,94 m, réel 0,09 m | documenter | dérive 0,85 m |
+
+### Correction de calibration appliquée
+
+Les facteurs `ticks_par_metre_gauche` (10 492) et `ticks_par_metre_droite` (10 373) mesurés en
+Phase 3 différaient de 1,14 %. Cet écart ne corrigeait pas une asymétrie réelle des chenilles : il
+en introduisait une. Le nœud déduisant le cap de la différence entre les deux côtés, une ligne
+droite de 1,5 m produisait un cap fantôme de 0,10 rad (5,7°) alors que le robot ne tournait pas.
+
+Après égalisation des deux facteurs à 10 432, la même ligne droite donne 0,016 rad (0,9°).
+
+Leçon retenue : une calibration établie sur un nombre insuffisant de passes fige du bruit de
+mesure en erreur systématique. Vérifier qu'une correction repose sur un signal reproductible
+avant de l'inscrire dans la configuration.
 
 ## Limites connues
 
@@ -93,6 +110,14 @@ Validation du Phase 6 du `PLAN.md` (à faire sur le robot réel, roues au sol) :
   correction visuelle.
 - La dérive angulaire et linéaire n'est pas corrigée ; elle s'accumule avec la distance parcourue
   et les glissements des chenilles.
+- **Cause résiduelle non identifiée.** Après correction de la calibration, il subsiste 0,85 m de
+  dérive sur un carré de 1,5 m. Signature relevée : la composante `y` finale est restée identique
+  au millimètre près entre les deux essais (−0,361 m avant et après), alors que la composante `x`
+  a diminué. Deux mécanismes indépendants sont donc en cause ; seul celui agissant sur l'axe de
+  départ a été corrigé. L'`entraxe_m` de 0,200 m, mesuré au ruban et jamais validé
+  expérimentalement, est le suspect principal — l'entraxe effectif d'un chenillé dépasse
+  généralement l'écartement géométrique. Hypothèse non confirmée : le test du tour complet ne
+  révèle aucune erreur de rotation.
 - Le nœud ne détecte pas un appel à `/pico/reset_encodeurs` pendant son fonctionnement : les
   compteurs de ticks repartent de zéro côté Pico, mais `odometrie` continue de calculer un delta
   par rapport aux anciens ticks mémorisés, ce qui produit un saut de pose au message suivant.

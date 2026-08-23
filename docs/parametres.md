@@ -226,8 +226,8 @@ Mesures réalisées en Phase 3 sur le robot réel.
 | Diamètre primitif    | 39,32     | mm         | Calculé : N × p / π                    |
 | Ticks par tour       | 1 447     | ticks/tour | Mesuré empiriquement                    |
 | Ticks/m théorique    | 11 715    | ticks/m    | Calculé à partir du diamètre primitif   |
-| Ticks/m gauche       | 10 492    | ticks/m    | Mesuré empiriquement sur 1 m            |
-| Ticks/m droite       | 10 373    | ticks/m    | Mesuré empiriquement sur 1 m            |
+| Ticks/m gauche       | 10 492    | ticks/m    | Mesuré empiriquement sur 1 m, mais remplacé par 10 432 le 2026-08-23 car l'étalonnage ne semble pas adéquat |
+| Ticks/m droite       | 10 373    | ticks/m    | Mesuré empiriquement sur 1 m, mais remplacé par 10 432 le 2026-08-23 car l'étalonnage ne semble pas adéquat |
 | Ticks/m moyen        | 10 432    | ticks/m    | Moyenne gauche/droite                   |
 | Entraxe effectif     | 200       | mm         | Centre chenille gauche à centre droite  |
 

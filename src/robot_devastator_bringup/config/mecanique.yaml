@@ -12,8 +12,8 @@ odometrie:
     ticks_par_tour: 1447
 
     # Ticks par mètre parcouru (mesurés empiriquement sur 1 m, sol dur)
-    ticks_par_metre_gauche: 10492
-    ticks_par_metre_droite: 10373
+    ticks_par_metre_gauche: 10432
+    ticks_par_metre_droite: 10432
     ticks_par_metre_moyen: 10432
 
     # Entraxe effectif entre les deux chenilles, en mètres
