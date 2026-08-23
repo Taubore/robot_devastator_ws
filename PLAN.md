@@ -187,11 +187,11 @@ est allé depuis son départ — sans GPS ni caméra. Cette estimation dérive a
 (comme marcher les yeux fermés), mais c'est la base de toute navigation. Tu reproduis
 maintenant sur Devastator réel ce que Gazebo t'a montré en Phase 5.
 
-- [ ] Nœud `odometrie` publiant `/odom` (`nav_msgs/Odometry`)
-- [ ] Transform `odom → base_link` publiée par le même nœud
-- [ ] Validation avance : ~1 m réel → X entre 0,95 et 1,05 m dans `/odom`
-- [ ] Validation rotation : ~90° sur place → yaw entre 1,47 et 1,67 rad
-- [ ] Dérive documentée : carré de 2 m de côté, écart de retour mesuré
+- [x] Nœud `odometrie` publiant `/odom` (`nav_msgs/Odometry`)
+- [x] Transform `odom → base_link` publiée par le même nœud
+- [x] Validation avance : ~1 m réel → X entre 0,95 et 1,05 m dans `/odom`
+- [x] Validation rotation : ~90° sur place → yaw entre 1,47 et 1,67 rad
+- [x] Dérive documentée : carré de 1,5 m de côté, écart de retour mesuré
 - [ ] Lecture : chapitres 11 et 12 de _Learn Robotics Programming 3e_
       et chapitres 1-2 de _Régulation PID par la pratique_
 
