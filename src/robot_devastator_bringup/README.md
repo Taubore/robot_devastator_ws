@@ -4,13 +4,28 @@
 centralise les fichiers de lancement et les fichiers de paramètres, ce qui évite d'avoir plusieurs
 points d'entrée concurrents dans les packages applicatifs.
 
+## Principe des fichiers de lancement
+
+Le lancement primaire `devastator.launch.yaml` démarre tous les nœuds de production. Seul
+`teleop.launch.yaml` fait exception au regroupement, car `teleop_clavier` capture les touches du
+terminal courant et ne peut pas tourner en arrière-plan. Tous les autres fichiers sont des
+lancements de diagnostic, préfixés `diag_`, jamais utilisés en exploitation normale.
+
+Démarrer le robot avec téléopération tient en deux commandes, dans deux terminaux :
+
+```bash
+ros2 launch robot_devastator_bringup devastator.launch.yaml
+ros2 launch robot_devastator_bringup teleop.launch.yaml
+```
+
 ## Fichiers de lancement
 
 | Fichier | Nœuds lancés | Cas d'usage |
 |---|---|---|
-| `devastator.launch.yaml` | `interface_pico`, `arbitre_commande_moteurs`, `annonces_audio`, `evitement_obstacle` | Lancement complet du robot en mode manuel, autonomie en attente |
-| `interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
-| `odometrie.launch.yaml` | `odometrie` | Diagnostic isolé de l'odométrie (Phase 6), à lancer en plus d'`interface_pico.launch.yaml` |
+| `devastator.launch.yaml` | `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `annonces_audio`, `evitement_obstacle` | Lancement complet du robot en mode manuel, autonomie en attente |
+| `teleop.launch.yaml` | `teleop_clavier` | Téléopération clavier, dans un terminal interactif séparé (production, exception documentée) |
+| `diag_interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
+| `diag_simulation.launch.yaml` | Simulation Gazebo | Diagnostic visuel sur Legion-Linux, sans matériel |
 
 ## Fichiers de configuration
 
@@ -33,46 +48,40 @@ colcon build --symlink-install --packages-select commun interface_pico odometrie
 source install/setup.bash
 ```
 
-Lancement complet du robot :
+Lancement complet du robot (téléopération incluse), dans deux terminaux SSH :
 
 ```bash
+# Terminal 1 : robot complet, mode manuel, autonomie et odométrie en marche
 ros2 launch robot_devastator_bringup devastator.launch.yaml
+
+# Terminal 2 : conduite clavier en avant-plan
+ros2 launch robot_devastator_bringup teleop.launch.yaml
 ```
 
 Lancement isolé de la couche Pico (diagnostic) :
 
 ```bash
-ros2 launch robot_devastator_bringup interface_pico.launch.yaml
-```
-
-Lancement isolé de l'odométrie (Phase 6), en plus de la couche Pico ci-dessus :
-
-```bash
-ros2 launch robot_devastator_bringup odometrie.launch.yaml
+ros2 launch robot_devastator_bringup diag_interface_pico.launch.yaml
 ```
 
 ## Téléopération clavier
 
-`teleop_clavier` se lance séparément dans un terminal interactif, local ou SSH, car il capture
-les touches du terminal courant :
-
-```bash
-# Terminal 1 : robot lancé
-ros2 launch robot_devastator_bringup devastator.launch.yaml
-
-# Terminal 2 : conduite clavier en avant-plan
-ros2 run robot_devastator teleop_clavier --ros-args --params-file src/robot_devastator_bringup/config/teleop_clavier.yaml
-```
+`teleop.launch.yaml` se lance dans un terminal interactif, local ou SSH, en plus de
+`devastator.launch.yaml` : `teleop_clavier` capture les touches du terminal courant et ne peut
+pas tourner en arrière-plan. C'est l'exception documentée au principe du lancement primaire
+unique. Le launch charge `config/teleop_clavier.yaml`, ce qui évite la commande `ros2 run` longue
+et dépendante du répertoire courant.
 
 ## Tâches VSCode (Legion-Linux)
 
-Depuis VSCode avec le profil `ROS2`, les tâches suivantes sont disponibles via
-`Tasks: Run Task` (F1) :
+L'exécution des nœuds se fait toujours en terminal, sur le Raspberry Pi 4. Les tâches VSCode ne
+couvrent que le build, le nettoyage et la simulation Gazebo sans matériel. Elles sont disponibles
+via `Tasks: Run Task` (F1) avec le profil `ROS2` :
 
 | Tâche | Équivalent CLI |
 |---|---|
-| `ROS 2 - Lancer Devastator` | `ros2 launch robot_devastator_bringup devastator.launch.yaml` |
-| `ROS 2 - Lancer interface Pico` | `ros2 launch robot_devastator_bringup interface_pico.launch.yaml` |
-| `ROS 2 - Lancer odométrie` | `ros2 launch robot_devastator_bringup odometrie.launch.yaml` |
 | `ROS 2 - Build Devastator` | `colcon build --symlink-install --packages-select ...` |
+| `ROS 2 - Build complet` | `colcon build --symlink-install` |
 | `ROS 2 - Nettoyer packages Devastator` | Nettoyage ciblé de `build/` et `install/` |
+| `ROS 2 - Nettoyer workspace complet` | Nettoyage complet de `build/`, `install/` et `log/` |
+| `ROS 2 - Lancer simulation Gazebo` | `ros2 launch robot_devastator_bringup diag_simulation.launch.yaml` |

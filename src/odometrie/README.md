@@ -49,21 +49,28 @@ configuration dédié n'a été dupliqué pour ce nœud.
 
 ## Lancement dans Devastator
 
+`odometrie` est démarré par le lancement primaire `devastator.launch.yaml`, avec le fichier de
+paramètres `robot_devastator_bringup/config/mecanique.yaml`. Aucun lancement dédié : le nœud est
+du calcul pur sur `/pico/encodeurs` et ne capture pas le terminal.
+
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install --packages-select commun odometrie robot_devastator_bringup
+colcon build --symlink-install --packages-select commun interface_pico odometrie robot_devastator robot_devastator_bringup
 source install/setup.bash
-ros2 launch robot_devastator_bringup odometrie.launch.yaml
+ros2 launch robot_devastator_bringup devastator.launch.yaml
 ```
 
-Ce lancement isolé suppose qu'`interface_pico` tourne déjà (par exemple via
-`interface_pico.launch.yaml`) pour que `/pico/encodeurs` soit publié. Depuis VSCode, utiliser la
-tâche `ROS 2 - Lancer odométrie`.
+Pour un diagnostic de l'odométrie seule, lancer `diag_interface_pico.launch.yaml` puis, dans un
+autre terminal sourcé :
+
+```bash
+ros2 run odometrie odometrie --ros-args --params-file src/robot_devastator_bringup/config/mecanique.yaml
+```
 
 ## Test rapide
 
-Lancer `interface_pico` puis `odometrie` dans deux terminaux séparés (ou les deux fichiers
-`*.launch.yaml` correspondants), roues dans le vide pour un premier essai :
+Roues dans le vide pour un premier essai, `/odom` et la TF observés pendant que le robot est
+poussé à la main :
 
 ```bash
 ros2 topic echo /odom

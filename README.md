@@ -27,8 +27,29 @@ communes du projet.
 | `src/robot_devastator_bringup` | Assemblage des nœuds et paramètres de lancement |
 | `src/robot_devastator_description` | Description URDF/Xacro du robot et visualisation RViz |
 | `docs` | Documentation du projet |
-| `.vscode/tasks.json` | Tâches de build, de nettoyage et de lancement |
+| `.vscode/tasks.json` | Tâches de build, de nettoyage et de simulation Gazebo |
 | `.vscode/launch.json` | Debug direct de nœuds Python précis |
+
+## Matériel — alimentation et procédures physiques
+
+### Fin de séance (quotidien)
+
+- **Débrancher le connecteur XT30 de la batterie moteur (6 V Melasta).** Le MDD3A reste alimenté en continu tant que ce connecteur est branché (buck-boost interne + LED de statut toujours actifs), même moteurs à l'arrêt. Consommation mesurée : ~32,5 mA en continu, soit ~780 mAh/jour sur un pack de 2000 mAh — à plat en environ 2,5 jours. Risque réel : inversion de cellule sur un pack NiMH 5S vidé à zéro, dommage permanent.
+- Le connecteur XT30 de la batterie logique (7,2 V Tenergy) n'a **pas** besoin d'être débranché quotidiennement. Consommation de veille des deux régulateurs Pololu (EN au repos) : de l'ordre de 0,2 mA, négligeable devant l'autodécharge normale du pack. Le débrancher seulement en cas d'inactivité prévue de plusieurs jours.
+
+### Repères de mesure (INA260, robot au repos, sans charge)
+
+| Rail | Tension typique | Courant typique |
+|---|---|---|
+| Logique (7,2 V) | ~7,1–7,2 V | ~380 mA (Pi 4 sans écran HDMI) |
+| Moteur (6 V) | ~5,8–6,4 V | ~20–34 mA (MDD3A en veille) |
+
+Le courant logique varie selon la charge active (SSH, nœuds ROS 2 lancés, écran HDMI branché — ce dernier ajoute ~145 mA). Ne pas s'en servir comme seuil d'alerte batterie faible ; utiliser la tension.
+
+### Limite de conception — lecture batterie robot éteint
+
+Les deux INA260 sont alimentés par le rail logique 3,3 V (Pololu 4090), lui-même coupé quand l'interrupteur logique est à off. Conséquence : aucune lecture de tension ou courant batterie n'est possible robot éteint, ni via les INA260 ni via un afficheur permanent (les voltmètres LED d'origine ont été retirés). Pour vérifier l'état de charge avant un rangement prolongé, allumer le robot brièvement ou utiliser un multimètre externe.
+
 
 ## Interfaces ROS 2
 
@@ -98,14 +119,14 @@ Les tâches disponibles sont définies dans `.vscode/tasks.json`.
 Utiliser ce nettoyage après modification, suppression ou renommage d'un `.msg` ou `.srv`, ou si
 ROS 2 semble conserver des artefacts obsolètes dans `build/` ou `install/`.
 
-### Lancement / debug
+### Simulation Gazebo (Legion-Linux)
 
-Les assemblages ROS 2 sont centralisés dans `robot_devastator_bringup`. Utiliser les tâches
-VSCode suivantes selon le besoin :
+- `Tasks: Run Task > ROS 2 - Lancer simulation Gazebo`
 
-- `Tasks: Run Task > ROS 2 - Lancer interface Pico`
-- `Tasks: Run Task > ROS 2 - Lancer odométrie`
-- `Tasks: Run Task > ROS 2 - Lancer Devastator`
+C'est la seule tâche VSCode d'exécution, réservée au diagnostic visuel sans matériel. Tous les
+nœuds du robot réel se lancent en terminal sur le Raspberry Pi 4, jamais depuis VSCode.
+
+### Debug d'un nœud Python
 
 Les configurations de `.vscode/launch.json` servent seulement au debug direct d'un nœud Python
 précis avec F5 :
@@ -114,11 +135,25 @@ précis avec F5 :
 `robot_devastator.evitement_obstacle`, `robot_devastator.annonces_audio` ou
 `interface_pico.interface_pico`.
 
-Le lancement principal `devastator.launch.yaml` démarre `interface_pico`, l'arbitre moteur,
-l'autonomie simple en attente et les annonces audio. Le mode initial est manuel. Lancer ensuite
-`teleop_clavier` dans un terminal local ou SSH séparé pour conduire le robot. La touche `m` bascule
-entre `manuel` et `autonomie`. L'arbitre publie seul vers `/pico/commande_moteurs`, ce qui évite un
-conflit entre le clavier et `evitement_obstacle`.
+### Lancement du robot (terminal, Raspberry Pi 4)
+
+Les assemblages ROS 2 sont centralisés dans `robot_devastator_bringup`. Démarrer le robot avec
+téléopération tient en deux commandes, dans deux terminaux SSH :
+
+```bash
+# Terminal 1 : robot complet
+ros2 launch robot_devastator_bringup devastator.launch.yaml
+
+# Terminal 2 : conduite clavier en avant-plan
+ros2 launch robot_devastator_bringup teleop.launch.yaml
+```
+
+Le lancement primaire `devastator.launch.yaml` démarre `interface_pico`, l'odométrie, l'arbitre
+moteur, l'autonomie simple en attente et les annonces audio. Le mode initial est manuel.
+`teleop.launch.yaml` se lance à part parce que `teleop_clavier` capture les touches du terminal
+courant : c'est l'exception documentée au principe du lancement primaire unique. La touche `m`
+bascule entre `manuel` et `autonomie`. L'arbitre publie seul vers `/pico/commande_moteurs`, ce qui
+évite un conflit entre le clavier et `evitement_obstacle`.
 
 L'autonomie simple fait avancer lentement le robot lorsque la distance ultrason est suffisante.
 Devant un obstacle, elle arrête les moteurs, oriente la tourelle à gauche, au centre puis à droite,
@@ -189,8 +224,8 @@ source install/setup.bash
 
 ```bash
 ros2 launch robot_devastator_bringup devastator.launch.yaml
-ros2 launch robot_devastator_bringup interface_pico.launch.yaml
-ros2 launch robot_devastator_bringup odometrie.launch.yaml
+ros2 launch robot_devastator_bringup teleop.launch.yaml
+ros2 launch robot_devastator_bringup diag_interface_pico.launch.yaml
 ```
 
 ```bash
@@ -206,7 +241,7 @@ Procédure courte sur Raspberry Pi 4 avec le firmware Pico récent :
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select commun interface_pico odometrie robot_devastator robot_devastator_bringup
 source install/setup.bash
-ros2 launch robot_devastator_bringup interface_pico.launch.yaml
+ros2 launch robot_devastator_bringup diag_interface_pico.launch.yaml
 ```
 
 Dans d'autres terminaux sourcés, garder les roues dans le vide et un arrêt accessible :
@@ -233,7 +268,7 @@ ros2 launch robot_devastator_bringup devastator.launch.yaml
 
 ```bash
 # Terminal 2 : conduite clavier en avant-plan.
-ros2 run robot_devastator teleop_clavier --ros-args --params-file src/robot_devastator_bringup/config/teleop_clavier.yaml
+ros2 launch robot_devastator_bringup teleop.launch.yaml
 ```
 
 Variante de diagnostic sans lancement principal :
@@ -243,7 +278,7 @@ Variante de diagnostic sans lancement principal :
 ros2 run robot_devastator arbitre_commande_moteurs
 
 # Terminal 2
-ros2 run robot_devastator teleop_clavier --ros-args --params-file src/robot_devastator_bringup/config/teleop_clavier.yaml
+ros2 launch robot_devastator_bringup teleop.launch.yaml
 ```
 
 Touches QWERTY disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,

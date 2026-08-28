@@ -46,32 +46,12 @@
             "problemMatcher": []
         },
         {
-            "label": "ROS 2 - Lancer Devastator",
+            "label": "ROS 2 - Lancer simulation Gazebo",
             "type": "shell",
             "command": "bash",
             "args": [
                 "-lc",
-                "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_devastator_bringup devastator.launch.yaml"
-            ],
-            "problemMatcher": []
-        },
-        {
-            "label": "ROS 2 - Lancer interface Pico",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-lc",
-                "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_devastator_bringup interface_pico.launch.yaml"
-            ],
-            "problemMatcher": []
-        },
-        {
-            "label": "ROS 2 - Lancer odométrie",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-lc",
-                "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_devastator_bringup odometrie.launch.yaml"
+                "source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 launch robot_devastator_bringup diag_simulation.launch.yaml"
             ],
             "problemMatcher": []
         }

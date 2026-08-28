@@ -1,0 +1,8 @@
+launch:
+- node:
+    pkg: robot_devastator
+    exec: teleop_clavier
+    name: teleop_clavier
+    output: screen
+    param:
+    - from: $(find-pkg-share robot_devastator_bringup)/config/teleop_clavier.yaml

@@ -60,7 +60,7 @@ documentée.
 - [x] Téléopération clavier permanente (`teleop_clavier`)
 - [x] Annonces audio (`annonces_audio` + Piper + MAX98357)
 - [x] Autonomie simple au sonar (`evitement_obstacle` — expérimental)
-- [x] Validation `interface_pico.launch.yaml` roues dans le vide
+- [x] Validation `diag_interface_pico.launch.yaml` roues dans le vide
 
 **Livre :** _ROS 2 from Scratch_ — topics, services, nœuds, packages.
 

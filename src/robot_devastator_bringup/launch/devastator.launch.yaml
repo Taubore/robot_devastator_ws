@@ -7,6 +7,13 @@ launch:
     param:
     - from: $(find-pkg-share robot_devastator_bringup)/config/interface_pico.yaml
 - node:
+    pkg: odometrie
+    exec: odometrie
+    name: odometrie
+    output: screen
+    param:
+    - from: $(find-pkg-share robot_devastator_bringup)/config/mecanique.yaml
+- node:
     pkg: robot_devastator
     exec: arbitre_commande_moteurs
     name: arbitre_commande_moteurs

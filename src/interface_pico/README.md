@@ -70,16 +70,19 @@ nouvelle consigne ROS avant d'autoriser un mouvement.
 
 ## Lancement dans Devastator
 
+En exploitation normale, `interface_pico` est démarré par le lancement primaire
+`devastator.launch.yaml`. Pour un diagnostic isolé de la couche UART, encodeurs, sonar et
+tourelle :
+
 ```bash
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select commun interface_pico robot_devastator_bringup
 source install/setup.bash
-ros2 launch robot_devastator_bringup interface_pico.launch.yaml
+ros2 launch robot_devastator_bringup diag_interface_pico.launch.yaml
 ```
 
 Les fichiers de lancement et de paramètres sont centralisés dans `robot_devastator_bringup` pour
-éviter plusieurs points d'entrée concurrents. Depuis VSCode, utiliser plutôt les tâches
-`ROS 2 - Lancer interface Pico`.
+éviter plusieurs points d'entrée concurrents.
 
 La configuration de débogage `Nœud Python ROS 2` permet de lancer directement
 `interface_pico.interface_pico` avec debugpy.

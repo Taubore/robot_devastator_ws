@@ -1,8 +1,0 @@
-launch:
-- node:
-    pkg: odometrie
-    exec: odometrie
-    name: odometrie
-    output: screen
-    param:
-    - from: $(find-pkg-share robot_devastator_bringup)/config/mecanique.yaml

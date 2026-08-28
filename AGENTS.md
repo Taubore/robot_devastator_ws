@@ -235,6 +235,27 @@ matérielle sur Raspberry Pi 4.
 - Utiliser `*.launch.py` seulement si YAML ne suffit pas
 - Garder les fichiers de paramètres séparés des fichiers de lancement
 
+### Organisation des fichiers de lancement
+
+Le workspace suit un principe strict de séparation entre lancement de production et lancement de
+diagnostic.
+
+- Tout nœud de production est démarré par le lancement primaire `devastator.launch.yaml` du
+  package `robot_devastator_bringup`. Ajouter un nouveau nœud de production revient à l'ajouter à
+  ce fichier, avec son fichier de paramètres YAML.
+- Seule exception : un nœud qui capture le terminal ou exige un contexte d'exécution particulier
+  possède son propre fichier de lancement de production, non préfixé. L'exception et sa raison
+  sont documentées dans le `README.md` du package concerné. Cas actuel : `teleop.launch.yaml`,
+  car `teleop_clavier` lit les touches du terminal courant.
+- Tous les autres fichiers de lancement sont des lancements de diagnostic : jamais utilisés en
+  exploitation normale, réservés à l'isolement d'un sous-système pour un test matériel ou une
+  mise au point. Ils sont préfixés `diag_` (par exemple `diag_interface_pico.launch.yaml`).
+- Objectif ferme : deux commandes au maximum pour démarrer le robot avec téléopération, soit
+  `ros2 launch robot_devastator_bringup devastator.launch.yaml` puis
+  `ros2 launch robot_devastator_bringup teleop.launch.yaml` dans un second terminal.
+- L'exécution des nœuds se fait toujours en terminal, sur le Raspberry Pi 4. Les tâches VSCode ne
+  couvrent que le build, le nettoyage et la simulation Gazebo sur Legion-Linux.
+
 ## Règles Python
 
 - Utiliser Python et `rclpy`

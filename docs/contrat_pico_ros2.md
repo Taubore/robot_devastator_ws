@@ -127,7 +127,7 @@ Préparer le terminal :
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select commun interface_pico robot_devastator_bringup
 source install/setup.bash
-ros2 launch robot_devastator_bringup interface_pico.launch.yaml
+ros2 launch robot_devastator_bringup diag_interface_pico.launch.yaml
 ```
 
 Dans d'autres terminaux sourcés :
