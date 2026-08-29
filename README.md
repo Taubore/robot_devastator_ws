@@ -23,6 +23,7 @@ communes du projet.
 | `src/commun` | Interfaces ROS 2 communes |
 | `src/interface_pico` | Pont ROS 2 ↔ UART ↔ Pico WH |
 | `src/odometrie` | Calcul de l'odométrie à partir des ticks encodeurs |
+| `src/surveillance_alimentation` | Surveillance tension et courant des batteries (INA260 sur I2C) |
 | `src/robot_devastator` | Logique principale du robot |
 | `src/robot_devastator_bringup` | Fichiers de lancement (`*.launch.yaml`) et paramètres |
 | `src/robot_devastator_description` | Description URDF/Xacro du robot et visualisation RViz |
@@ -151,8 +152,10 @@ d'un nœud isolé, jamais à l'exploitation du robot.
 | `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico` | `evitement_obstacle` | Publier la distance ultrason mesurée en millimètres |
 | `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | `odometrie`, outil de diagnostic | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
 | `/pico/etat` | `std_msgs/msg/String` | `interface_pico` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
-| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle` | `annonces_audio` | Signaler uniquement les transitions significatives du comportement autonome |
+| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle`, `surveillance_alimentation` | `annonces_audio` | Signaler les transitions du comportement autonome et les franchissements de seuil batterie |
 | `/odom` | `nav_msgs/msg/Odometry` | `odometrie` | RViz, outil de diagnostic | Publier la pose et la vitesse estimées à partir des encodeurs |
+| `/alimentation/logique` | `sensor_msgs/msg/BatteryState` | `surveillance_alimentation` | Outil de diagnostic | Publier tension et courant du rail logique (pack 7,2 V NiMH) |
+| `/alimentation/moteur` | `sensor_msgs/msg/BatteryState` | `surveillance_alimentation` | Outil de diagnostic | Publier tension et courant du rail moteur (pack 6 V NiMH) |
 
 ### Interfaces ROS 2 — services
 
@@ -178,6 +181,7 @@ clés racines des fichiers YAML de paramètres reprennent le nom exact du nœud 
 | `teleop_clavier` | `robot_devastator` | `teleop_clavier` / `robot_devastator.teleop_clavier` | Actif | Conduire localement au clavier et basculer entre mode manuel et autonomie |
 | `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les WAV manquants avec Piper, puis jouer les annonces selon les événements du robot |
 | `odometrie` | `odometrie` | `odometrie` / `odometrie.odometrie` | Actif | Calculer x, y, theta depuis `/pico/encodeurs` et publier `/odom` et la TF `odom → base_footprint` |
+| `surveillance_alimentation` | `surveillance_alimentation` | `surveillance_alimentation` / `surveillance_alimentation.surveillance_alimentation` | Diagnostic | Lire deux INA260 sur I2C, publier `sensor_msgs/BatteryState` par rail et alerter sur tension basse maintenue (hors `devastator.launch.yaml` pour l'instant) |
 
 ### Interfaces personnalisées
 
@@ -206,6 +210,11 @@ ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ros2 topic echo /pico/distance_ultrason_mm
 ros2 topic echo /pico/encodeurs
 ros2 service call /pico/reset_encodeurs std_srvs/srv/Trigger
+
+# Surveillance de l'alimentation seule (INA260 sur I2C)
+ros2 launch robot_devastator_bringup diag_surveillance_alimentation.launch.yaml
+ros2 topic echo /alimentation/logique
+ros2 topic echo /alimentation/moteur
 ```
 
 Les ticks doivent augmenter en marche avant et diminuer en marche arrière. Si un moteur tourne dans
@@ -225,6 +234,10 @@ la tension, pas le courant, comme indicateur de batterie faible. Les deux INA260
 le rail logique 3,3 V (Pololu 4090), coupé quand l'interrupteur logique est à off : aucune lecture
 de tension ou de courant batterie n'est possible robot éteint. Pour vérifier l'état de charge avant
 un rangement prolongé, allumer brièvement le robot ou utiliser un multimètre externe.
+
+Ces deux INA260 (0x40 rail logique, 0x41 rail moteur) sont lus par le nœud
+`surveillance_alimentation`, encore isolé dans `diag_surveillance_alimentation.launch.yaml` le
+temps de la mise au point. Voir `src/surveillance_alimentation/README.md`.
 
 ### Audio I2S — état du diagnostic
 

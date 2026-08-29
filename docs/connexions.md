@@ -17,6 +17,23 @@
 | 25        | PS2 | ACK     | Vert    | Acknowledge manette -> Pi4 via résistance série 1 kΩ + résistance de tirage 4,7 kΩ vers 3,3 V ; fil vert du faisceau PS2       |
 | 3,3V      | PS2 | VCC     | Rouge   | Alimentation logique PS2 en 3,3 V ; fil rouge du faisceau PS2                                                                  |
 | GND       | PS2 | GND     | Noir    | Masse commune ; fil noir du faisceau PS2                                                                                       |
+| 2 (SDA1)  | INA260 x2 | SDA | —       | Ligne de données I2C1, partagée par les deux INA260 (0x40 rail logique, 0x41 rail moteur) ; résistances de tirage sur les modules Adafruit |
+| 3 (SCL1)  | INA260 x2 | SCL | —       | Ligne d'horloge I2C1, partagée par les deux INA260                                                                            |
+
+## I2C — capteurs d'alimentation INA260
+
+Bus I2C1 du Raspberry Pi 4 (`/dev/i2c-1`, broches GPIO2/GPIO3), activé par
+`dtparam=i2c_arm=on`. Deux capteurs Adafruit INA260 y sont câblés en parallèle, chacun inséré
+en série sur le fil positif d'une batterie :
+
+| Adresse | Rail surveillé | Batterie |
+|---|---|---|
+| `0x40` | Logique | Pack Tenergy 7,2 V, 6 cellules NiMH |
+| `0x41` | Moteur | Pack Melasta 6 V, 5 cellules NiMH |
+
+Les deux modules sont alimentés en 3,3 V par le rail logique (Pololu 4090) : aucune lecture n'est
+possible robot éteint. Détection : `i2cdetect -y 1` doit montrer `40` et `41`. Lecture ROS 2 :
+nœud `surveillance_alimentation` (voir `src/surveillance_alimentation/README.md`).
 
 ## Audio I2S
 

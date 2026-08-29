@@ -214,7 +214,7 @@ chapitre 5, réglage PID prématuré à ce stade).
 ou tomber en panne sans avertir. L'INA260 mesure tension et courant en temps réel via
 le bus I2C. Sous-système simple, immédiatement utile, bon exercice d'intégration capteur.
 
-- [ ] INA260 câblé et détecté sur l'I2C du Pi 4 (`i2cdetect`)
+- [x] INA260 câblé et détecté sur l'I2C du Pi 4 (`i2cdetect`)
 - [ ] Nœud `surveillance_alimentation` publiant tension et courant
 - [ ] Seuil d'alerte bas testé (annonce audio ou log)
 - [ ] Lecture cohérente avec le voltmètre physique existant

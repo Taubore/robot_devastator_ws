@@ -13,6 +13,7 @@
 | BATT_MOTEUR | NiMH Melasta | Batterie | Alimentation moteurs | Actif | Pack 5 cellules NiMH 6 V 2000 mAh utilisé comme source d'alimentation des moteurs. |
 | VOLTM_LOGIQUE | Voltmètre logique | Mesure alimentation | Affichage tension | Actif | Afficheur numérique CC pour surveiller la tension d’alimentation de la batterie principale. |
 | VOLTM_MOTEUR | Voltmètre moteurs | Mesure alimentation | Affichage tension | Actif | Afficheur numérique CC pour surveiller la tension d’alimentation de la batterie des moteurs. |
+| INA260 | Adafruit INA260 (x2) | Mesure alimentation | Mesure tension/courant | Actif | Deux capteurs I2C insérés en série sur chaque batterie : 0x40 sur le rail logique, 0x41 sur le rail moteur. Lus par le nœud `surveillance_alimentation`. |
 | BUCK_3V3 | Pololu 4090 D36V50F3 | Alimentation | Rail logique 3,3 V | Actif | Régulateur abaisseur destiné à fournir une alimentation 3,3 V / 6,5 A stable aux capteurs et modules logiques compatibles. |
 | BUCK_5V | Pololu 4091 D36V50F5 | Alimentation | Rail logique 5 V | Actif | Régulateur abaisseur destiné à fournir une alimentation 5 V / 5,5 A stable aux capteurs et modules logiques du robot. |
 | ALIM_LOGIQUE | Circuit d’alimentation 3,3 V / 5 V | Alimentation | Distribution logique | Actif | Circuit maison sur perfboard alimenté par la batterie logique et fournissant le 3,3 V et le 5 V au  robot. Intègre les régulateurs abaisseurs Pololu et sert de point central pour l’alimentation des modules logiques. |
@@ -25,7 +26,6 @@
 
 | ID | Nom | Catégorie | Rôle | État | Description |
 |---|---|---|---|---|---|
-| INA260 | Adafruit INA260 | Mesure alimentation | Mesure tension/courant | Futur | Capteur de mesure courant/tension/puissance utile pour diagnostiquer l’alimentation. |
 | RPLIDAR | Slamtec RPLIDAR A1M8 | Lidar | Cartographie et navigation | Gelé | Capteur réservé pour une étape ROS 2 plus avancée. |
 | REALSENSE | Intel RealSense D435IF | Caméra profondeur | Perception 3D | Futur | Caméra de profondeur prévue pour étapes avancées. |
 | LCD2 | Waveshare LCD 2 pouces ST7789V | Affichage | Visage / état robot | Futur | Écran prévu pour afficher l’état du robot. |

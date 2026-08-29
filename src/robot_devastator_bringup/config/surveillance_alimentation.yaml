@@ -1,0 +1,51 @@
+surveillance_alimentation:
+  ros__parameters:
+    # Numéro du bus I2C du Raspberry Pi 4 (/dev/i2c-1 -> broches GPIO2/GPIO3).
+    bus_i2c: 1
+    # Cadence de publication des BatteryState et d'évaluation des seuils.
+    periode_publication_s: 1.0
+    # Moyennage matériel du INA260 (1, 4, 16, 64, 128, 256, 512, 1024).
+    # 64 lisse le bruit de mesure sans retard perceptible à 1 Hz.
+    nb_echantillons_moyenne: 64
+    # Nombre d'échecs de lecture I2C consécutifs avant de passer du WARN à l'ERROR.
+    echecs_avant_erreur: 5
+    # Topic d'événement consommé par annonces_audio sur Devastator.
+    topic_evenement: /robot/evenement
+    # Rails d'alimentation surveillés ; un capteur INA260 par rail.
+    rails:
+      - logique
+      - moteur
+
+    # --- Rail logique : pack Tenergy 7,2 V, 6 cellules NiMH, INA260 à 0x40 ---
+    rail.logique.adresse_i2c: 64          # 0x40
+    rail.logique.topic: /alimentation/logique
+    rail.logique.frame_id: alim_logique
+    rail.logique.technologie: nimh
+    # Seuils en volts absolus (pas dérivés du nombre de cellules dans le code).
+    # 6 cellules : avertissement 1,05 V/cellule, critique 1,00 V/cellule.
+    rail.logique.seuil_avertissement_v: 6.30
+    rail.logique.seuil_critique_v: 6.00
+    # Désarmement quand la tension repasse à seuil + cette marge.
+    rail.logique.hysteresis_rearmement_v: 0.20
+    # Le rail logique consomme ~0,38 A au repos (jusqu'à ~0,53 A avec écran HDMI) ;
+    # au-delà on ne juge pas la tension.
+    rail.logique.courant_max_evaluation_a: 0.90
+    # Condition maintenue ce délai avant d'alerter.
+    rail.logique.temporisation_s: 20.0
+    rail.logique.evenement_avertissement: batterie_logique_faible
+    rail.logique.evenement_critique: batterie_logique_critique
+
+    # --- Rail moteur : pack Melasta 6 V, 5 cellules NiMH, INA260 à 0x41 ---
+    rail.moteur.adresse_i2c: 65           # 0x41
+    rail.moteur.topic: /alimentation/moteur
+    rail.moteur.frame_id: alim_moteur
+    rail.moteur.technologie: nimh
+    # 5 cellules : avertissement 1,05 V/cellule, critique 1,00 V/cellule.
+    rail.moteur.seuil_avertissement_v: 5.25
+    rail.moteur.seuil_critique_v: 5.00
+    rail.moteur.hysteresis_rearmement_v: 0.20
+    # MDD3A en veille ~0,02-0,03 A ; on ne juge la tension que moteurs à l'arrêt.
+    rail.moteur.courant_max_evaluation_a: 0.30
+    rail.moteur.temporisation_s: 20.0
+    rail.moteur.evenement_avertissement: batterie_moteur_faible
+    rail.moteur.evenement_critique: batterie_moteur_critique

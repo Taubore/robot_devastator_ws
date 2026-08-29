@@ -296,3 +296,50 @@ Cette interface est gelé puisque l'usage du clavier USB sans-fil Rii X8 est bea
 - Garder la logique manette côté Raspberry Pi 4
 - La ligne ACK doit être câblée et considérée comme utile
 - La ligne ATT doit être pilotée explicitement pour chaque transaction
+
+# Surveillance de l'alimentation — INA260
+
+Nœud `surveillance_alimentation`, paramètres dans
+`robot_devastator_bringup/config/surveillance_alimentation.yaml`. Le package est réutilisable :
+aucune valeur propre à Devastator n'est codée en Python.
+
+## Bus I2C et cadence
+
+- Bus : `1` (`/dev/i2c-1`, GPIO2/GPIO3), activé par `dtparam=i2c_arm=on`
+- Utilisateur dans le groupe `i2c` ; paquet système `python3-smbus2` (apt)
+- Publication et évaluation des seuils : 1 Hz
+- Moyennage matériel INA260 : 64 échantillons (lisse le bruit sans retard perceptible)
+- Adresses : `0x40` rail logique, `0x41` rail moteur
+
+## Conversion INA260 (datasheet TI SBOS656C)
+
+- Registres : `0x00` config, `0x01` courant, `0x02` tension bus, `0xFE`/`0xFF` identification
+- LSB courant : 1,25 mA/bit, valeur en complément à deux sur 16 bits
+- LSB tension bus : 1,25 mV/bit, toujours positive
+- Mots 16 bits transmis octet de poids fort en premier
+
+## Seuils d'alerte (volts absolus, jamais dérivés du nombre de cellules en code)
+
+| Rail | Cellules NiMH | Avertissement | Critique | Hystérésis réarmement | Porte de courant | Temporisation |
+|---|---|---|---|---|---|---|
+| Logique | 6 | 6,30 V (1,05 V/cell) | 6,00 V (1,00 V/cell) | +0,20 V | < 0,90 A | 20 s |
+| Moteur | 5 | 5,25 V (1,05 V/cell) | 5,00 V (1,00 V/cell) | +0,20 V | < 0,30 A | 20 s |
+
+- **Porte de courant** : un seuil n'est évalué que si `abs(courant)` est sous la valeur indiquée ;
+  sous charge la tension chute par la résistance interne et ne renseigne pas l'état de charge.
+- **Temporisation** : la condition doit être maintenue ce délai avant l'émission de l'événement.
+- **Hystérésis** : un seuil armé ne se désarme que si la tension repasse au-dessus de
+  `seuil + hystérésis`, à courant faible.
+
+## Événements publiés sur `/robot/evenement`
+
+`batterie_logique_faible`, `batterie_logique_critique`, `batterie_moteur_faible`,
+`batterie_moteur_critique`. Libellés définis dans le YAML ; `annonces_audio` ne les annonce pas
+encore (intégration après validation isolée).
+
+## Repères de mesure (robot au repos, sans charge)
+
+| Rail | Tension typique | Courant typique |
+|---|---|---|
+| Logique (7,2 V) | ~7,1–7,2 V | ~380 mA (Pi 4 sans écran HDMI) |
+| Moteur (6 V) | ~5,8–6,4 V | ~20–34 mA (MDD3A en veille) |

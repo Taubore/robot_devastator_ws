@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>surveillance_alimentation</name>
+  <version>0.0.0</version>
+  <description>
+    Surveillance de tension et de courant des batteries d'un robot mobile à
+    partir de capteurs Adafruit INA260 sur bus I2C. Module réutilisable : toute
+    valeur propre à un robot vit dans le YAML.
+  </description>
+  <maintainer email="louis.st-hilaire@hotmail.com">taubore</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <!-- Accès I2C brut. Paquet Debian/Ubuntu : python3-smbus2 (apt). La clé rosdep
+       peut ne pas être résolue selon la version de rosdistro ; dans ce cas,
+       installer manuellement : sudo apt install python3-smbus2 -->
+  <exec_depend>python3-smbus2</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

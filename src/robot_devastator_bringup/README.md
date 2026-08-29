@@ -25,6 +25,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 | `devastator.launch.yaml` | `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `annonces_audio`, `evitement_obstacle` | Lancement complet du robot en mode manuel, autonomie en attente |
 | `teleop.launch.yaml` | `teleop_clavier` | Téléopération clavier, dans un terminal interactif séparé (production, exception documentée) |
 | `diag_interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
+| `diag_surveillance_alimentation.launch.yaml` | `surveillance_alimentation` | Diagnostic isolé de la lecture des INA260 (tension/courant batteries) |
 | `diag_simulation.launch.yaml` | Simulation Gazebo | Diagnostic visuel sur Legion-Linux, sans matériel |
 
 ## Fichiers de configuration
@@ -37,6 +38,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 | `annonces_audio.yaml` | `annonces_audio` | Exécutable Piper, modèle vocal, délai de répétition, liste des annonces par événement |
 | `autonomie_simple.yaml` | `evitement_obstacle` | Distance d'arrêt, vitesses, angles de tourelle, durées de rotation et de recul |
 | `teleop_clavier.yaml` | `teleop_clavier` | Vitesse initiale, bornes de vitesse, pas, période de publication |
+| `surveillance_alimentation.yaml` | `surveillance_alimentation` | Bus I2C, adresses INA260, seuils de tension par rail, porte de courant, temporisation, libellés d'événement |
 
 ## Lancement sur Raspberry Pi 4 via SSH
 
