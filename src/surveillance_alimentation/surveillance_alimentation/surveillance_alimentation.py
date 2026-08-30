@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from time import monotonic
 from typing import Final
 
 import rclpy
@@ -47,12 +46,26 @@ class SeuilAlerte:
 
     Un seuil dont la tension est nulle ou négative est considéré désactivé : il
     n'est jamais évalué. Cela permet de n'activer qu'un seul niveau si besoin.
+
+    La temporisation d'armement est suivie par un accumulateur de durée
+    (`duree_condition_s`) et non par un horodatage : une condition de surveillance
+    a trois états — vraie, fausse, inconnue. Quand la porte de courant est fermée
+    (courant élevé), la condition est *inconnue*, pas fausse : l'accumulateur est
+    alors laissé intact sans rien y ajouter, pour qu'une conduite alternant
+    accélérations et courts arrêts ne remette jamais la temporisation à zéro.
+
+    Le rappel périodique (`periode_rappel_s`) réémet l'événement tant que le seuil
+    reste armé. Son compteur (`duree_depuis_rappel_s`) suit l'état d'armement et
+    non la mesure : il avance même porte fermée et se réinitialise au désarmement.
+    Une période nulle désactive le rappel (émission unique à l'armement).
     """
 
     nom: str
     tension_v: float
     evenement: str
-    condition_depuis_s: float | None = None
+    periode_rappel_s: float = 0.0
+    duree_condition_s: float = 0.0
+    duree_depuis_rappel_s: float = 0.0
     arme: bool = False
 
     @property
@@ -70,6 +83,7 @@ class SurveillanceRail:
     publisher_etat: Publisher
     frame_id: str
     technologie: int
+    signe_courant: int
     courant_max_evaluation_a: float
     temporisation_s: float
     hysteresis_rearmement_v: float
@@ -169,11 +183,14 @@ class SurveillanceAlimentation(Node):
         self.declare_parameter(f'{prefixe}.topic', f'/alimentation/{nom}')
         self.declare_parameter(f'{prefixe}.frame_id', f'alim_{nom}')
         self.declare_parameter(f'{prefixe}.technologie', 'nimh')
+        self.declare_parameter(f'{prefixe}.signe_courant', 1)
         self.declare_parameter(f'{prefixe}.seuil_avertissement_v', 0.0)
         self.declare_parameter(f'{prefixe}.seuil_critique_v', 0.0)
         self.declare_parameter(f'{prefixe}.hysteresis_rearmement_v', 0.15)
         self.declare_parameter(f'{prefixe}.courant_max_evaluation_a', 1.0)
         self.declare_parameter(f'{prefixe}.temporisation_s', 5.0)
+        self.declare_parameter(f'{prefixe}.periode_rappel_avertissement_s', 0.0)
+        self.declare_parameter(f'{prefixe}.periode_rappel_critique_s', 0.0)
         self.declare_parameter(f'{prefixe}.evenement_avertissement', '')
         self.declare_parameter(f'{prefixe}.evenement_critique', '')
 
@@ -183,6 +200,7 @@ class SurveillanceAlimentation(Node):
         technologie_libelle = str(
             self.get_parameter(f'{prefixe}.technologie').value
         ).lower()
+        signe_courant = int(self.get_parameter(f'{prefixe}.signe_courant').value)
         seuil_avert_v = float(
             self.get_parameter(f'{prefixe}.seuil_avertissement_v').value
         )
@@ -194,6 +212,12 @@ class SurveillanceAlimentation(Node):
             self.get_parameter(f'{prefixe}.courant_max_evaluation_a').value
         )
         temporisation_s = float(self.get_parameter(f'{prefixe}.temporisation_s').value)
+        periode_rappel_avert_s = float(
+            self.get_parameter(f'{prefixe}.periode_rappel_avertissement_s').value
+        )
+        periode_rappel_crit_s = float(
+            self.get_parameter(f'{prefixe}.periode_rappel_critique_s').value
+        )
         evenement_avert = str(
             self.get_parameter(f'{prefixe}.evenement_avertissement').value
         )
@@ -207,6 +231,14 @@ class SurveillanceAlimentation(Node):
                 f"'{technologie_libelle}'. Valeurs permises : "
                 f'{sorted(TECHNOLOGIES_BATTERIE)}.'
             )
+        # Le contrat sensor_msgs/BatteryState veut un courant négatif en décharge.
+        # Le sens dépend du câblage VIN+/VIN- de chaque INA260 : on corrige par un
+        # facteur ±1 propre au rail, jamais par une négation codée en dur.
+        if signe_courant not in (1, -1):
+            raise ValueError(
+                f"Rail '{nom}' : 'signe_courant' doit valoir 1 ou -1, "
+                f'pas {signe_courant}.'
+            )
         if (
             seuil_avert_v > 0.0
             and seuil_crit_v > 0.0
@@ -218,8 +250,12 @@ class SurveillanceAlimentation(Node):
             )
 
         seuils = [
-            SeuilAlerte('avertissement', seuil_avert_v, evenement_avert),
-            SeuilAlerte('critique', seuil_crit_v, evenement_crit),
+            SeuilAlerte(
+                'avertissement', seuil_avert_v, evenement_avert, periode_rappel_avert_s
+            ),
+            SeuilAlerte(
+                'critique', seuil_crit_v, evenement_crit, periode_rappel_crit_s
+            ),
         ]
 
         rail = SurveillanceRail(
@@ -230,6 +266,7 @@ class SurveillanceAlimentation(Node):
             ),
             frame_id=frame_id,
             technologie=TECHNOLOGIES_BATTERIE[technologie_libelle],
+            signe_courant=signe_courant,
             courant_max_evaluation_a=courant_max_a,
             temporisation_s=temporisation_s,
             hysteresis_rearmement_v=hysteresis_v,
@@ -261,7 +298,9 @@ class SurveillanceAlimentation(Node):
         """Lit un capteur, publie son BatteryState et met à jour ses alertes."""
         try:
             tension_v = rail.lecteur.lire_tension_v()
-            courant_a = rail.lecteur.lire_courant_a()
+            # Signe ramené au contrat BatteryState (négatif en décharge) selon le
+            # câblage du capteur ; la logique d'alerte travaille sur abs(courant).
+            courant_a = rail.lecteur.lire_courant_a() * rail.signe_courant
         except OSError as erreur:
             self._gerer_echec_lecture(rail, erreur)
             return
@@ -348,63 +387,62 @@ class SurveillanceAlimentation(Node):
         tension_v: float,
         courant_a: float,
     ) -> None:
-        """Applique porte de courant, temporisation et hystérésis à chaque seuil."""
+        """Applique porte de courant, temporisation, hystérésis et rappel à chaque seuil."""
         # Porte de courant : sous charge, la tension chute par la résistance
         # interne (V = Vfem - R_interne x I) et ne dit rien de l'état de charge.
-        # On n'évalue les seuils que si le courant absolu reste faible.
+        # Courant élevé => condition de surveillance *inconnue*, ni vraie ni
+        # fausse : on ne touche alors ni à l'accumulateur ni à l'armement.
         courant_faible = abs(courant_a) < rail.courant_max_evaluation_a
-        maintenant_s = monotonic()
+        pas_s = self.periode_publication_s
 
         for seuil in rail.seuils:
             if not seuil.actif:
                 continue
 
-            condition_active = courant_faible and tension_v < seuil.tension_v
+            if courant_faible and tension_v < seuil.tension_v:
+                # Condition vraie : on accumule le temps passé sous le seuil.
+                seuil.duree_condition_s += pas_s
+                if not seuil.arme and seuil.duree_condition_s >= rail.temporisation_s:
+                    seuil.arme = True
+                    seuil.duree_depuis_rappel_s = 0.0
+                    self.get_logger().warn(
+                        f"Rail '{rail.nom}' : seuil {seuil.nom} franchi — "
+                        f'{tension_v:.2f} V sous {seuil.tension_v:.2f} V, '
+                        f'courant {courant_a:.2f} A, maintenu '
+                        f'{rail.temporisation_s:.0f} s.'
+                    )
+                    self._publier_evenement(seuil.evenement)
+            elif courant_faible:
+                # Condition fausse : la tension est au-dessus du seuil. On repart
+                # de zéro. Le désarmement exige en plus l'hystérésis complète :
+                # une tension qui remonte à peine ne prouve pas la récupération.
+                seuil.duree_condition_s = 0.0
+                tension_rearmement_v = seuil.tension_v + rail.hysteresis_rearmement_v
+                if seuil.arme and tension_v >= tension_rearmement_v:
+                    seuil.arme = False
+                    seuil.duree_depuis_rappel_s = 0.0
+                    self.get_logger().warn(
+                        f"Rail '{rail.nom}' : seuil {seuil.nom} rétabli — "
+                        f'{tension_v:.2f} V au-dessus de {tension_rearmement_v:.2f} V.'
+                    )
+            # Sinon : porte de courant fermée, mesure inconnue — on ne conclut
+            # rien ici. Le rappel ci-dessous suit l'armement, pas la mesure.
 
-            if condition_active:
-                self._suivre_condition_active(rail, seuil, tension_v, courant_a,
-                                              maintenant_s)
-                continue
+            self._rappeler_si_arme(rail, seuil)
 
-            # Condition inactive. Le désarmement exige que la tension repasse
-            # franchement au-dessus du seuil (hystérésis) ET un courant faible :
-            # une tension qui remonte sous charge ne prouve pas la récupération.
-            tension_rearmement_v = seuil.tension_v + rail.hysteresis_rearmement_v
-            if seuil.arme and courant_faible and tension_v >= tension_rearmement_v:
-                seuil.arme = False
-                seuil.condition_depuis_s = None
-                self.get_logger().warn(
-                    f"Rail '{rail.nom}' : seuil {seuil.nom} rétabli — "
-                    f'{tension_v:.2f} V au-dessus de {tension_rearmement_v:.2f} V.'
-                )
-            elif not seuil.arme:
-                # Pas encore armé : la temporisation redémarre au prochain
-                # passage sous le seuil.
-                seuil.condition_depuis_s = None
-
-    def _suivre_condition_active(
-        self,
-        rail: SurveillanceRail,
-        seuil: SeuilAlerte,
-        tension_v: float,
-        courant_a: float,
-        maintenant_s: float,
-    ) -> None:
-        """Démarre la temporisation d'un seuil et l'arme quand elle est écoulée."""
-        if seuil.condition_depuis_s is None:
-            seuil.condition_depuis_s = maintenant_s
+    def _rappeler_si_arme(self, rail: SurveillanceRail, seuil: SeuilAlerte) -> None:
+        """Réémet périodiquement l'événement d'un seuil tant qu'il reste armé."""
+        # Une alerte batterie est un état persistant : on la rappelle même pendant
+        # que la porte de courant est fermée. Période nulle => émission unique.
+        if not seuil.arme or seuil.periode_rappel_s <= 0.0:
             return
 
-        if seuil.arme:
-            return
-
-        if maintenant_s - seuil.condition_depuis_s >= rail.temporisation_s:
-            seuil.arme = True
+        seuil.duree_depuis_rappel_s += self.periode_publication_s
+        if seuil.duree_depuis_rappel_s >= seuil.periode_rappel_s:
+            seuil.duree_depuis_rappel_s = 0.0
             self.get_logger().warn(
-                f"Rail '{rail.nom}' : seuil {seuil.nom} franchi — "
-                f'{tension_v:.2f} V sous {seuil.tension_v:.2f} V, '
-                f'courant {courant_a:.2f} A, maintenu '
-                f'{rail.temporisation_s:.0f} s.'
+                f"Rail '{rail.nom}' : seuil {seuil.nom} toujours armé — "
+                f'rappel après {seuil.periode_rappel_s:.0f} s.'
             )
             self._publier_evenement(seuil.evenement)
 

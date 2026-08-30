@@ -318,6 +318,20 @@ aucune valeur propre à Devastator n'est codée en Python.
 - LSB tension bus : 1,25 mV/bit, toujours positive
 - Mots 16 bits transmis octet de poids fort en premier
 
+## Signe du courant
+
+`sensor_msgs/msg/BatteryState` veut un `current` négatif en décharge. Le câblage VIN+/VIN- des
+deux INA260 de Devastator donne des lectures positives alors que les deux rails sont en décharge
+permanente. Le paramètre `rail.<nom>.signe_courant` (`1` ou `-1`, rejeté au démarrage sinon)
+multiplie la lecture avant publication ; il est propre à chaque rail, car rien ne garantit que
+deux capteurs soient câblés dans le même sens sur un autre robot.
+
+- `rail.logique.signe_courant : -1`
+- `rail.moteur.signe_courant : -1`
+
+Après correction, les deux topics publient du courant négatif au repos. La logique d'alerte
+utilise `abs(courant)` et n'est pas affectée.
+
 ## Seuils d'alerte (volts absolus, jamais dérivés du nombre de cellules en code)
 
 | Rail | Cellules NiMH | Avertissement | Critique | Hystérésis réarmement | Porte de courant | Temporisation |
@@ -328,8 +342,16 @@ aucune valeur propre à Devastator n'est codée en Python.
 - **Porte de courant** : un seuil n'est évalué que si `abs(courant)` est sous la valeur indiquée ;
   sous charge la tension chute par la résistance interne et ne renseigne pas l'état de charge.
 - **Temporisation** : la condition doit être maintenue ce délai avant l'émission de l'événement.
+  Le délai est suivi par un accumulateur de durée. Porte de courant fermée = condition
+  *inconnue* : l'accumulateur est laissé intact sans rien accumuler, donc une conduite qui
+  alterne accélérations et courts arrêts ne remet jamais la temporisation à zéro. Il ne repart
+  de zéro que sur une mesure valide au-dessus du seuil.
 - **Hystérésis** : un seuil armé ne se désarme que si la tension repasse au-dessus de
   `seuil + hystérésis`, à courant faible.
+- **Rappel périodique** : tant qu'un seuil reste armé, l'événement est réémis toutes les
+  `rail.<nom>.periode_rappel_<niveau>_s` secondes. Devastator : 180 s pour l'avertissement,
+  30 s pour le critique, sur les deux rails (`0` = émission unique). Le rappel suit l'armement
+  (il continue porte fermée) et son compteur se réinitialise au désarmement.
 
 ## Événements publiés sur `/robot/evenement`
 
@@ -339,7 +361,9 @@ encore (intégration après validation isolée).
 
 ## Repères de mesure (robot au repos, sans charge)
 
-| Rail | Tension typique | Courant typique |
+| Rail | Tension typique | Courant typique (publié, `signe_courant = -1`) |
 |---|---|---|
-| Logique (7,2 V) | ~7,1–7,2 V | ~380 mA (Pi 4 sans écran HDMI) |
-| Moteur (6 V) | ~5,8–6,4 V | ~20–34 mA (MDD3A en veille) |
+| Logique (7,2 V) | ~7,1–7,2 V | ~-370 mA (Pi 4 sans écran HDMI) |
+| Moteur (6 V) | ~5,8–6,4 V | ~-20 à -34 mA (MDD3A en veille) |
+
+Lecture brute du capteur avant `signe_courant` : +0,3725 A (logique), +0,03375 A (moteur).

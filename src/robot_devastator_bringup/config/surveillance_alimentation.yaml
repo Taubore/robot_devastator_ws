@@ -21,6 +21,10 @@ surveillance_alimentation:
     rail.logique.topic: /alimentation/logique
     rail.logique.frame_id: alim_logique
     rail.logique.technologie: nimh
+    # Câblage VIN+/VIN- de ce INA260 : lecture positive alors que le rail est en
+    # décharge permanente. -1 ramène le courant au contrat BatteryState (négatif
+    # en décharge). Valeurs permises : 1 ou -1.
+    rail.logique.signe_courant: -1
     # Seuils en volts absolus (pas dérivés du nombre de cellules dans le code).
     # 6 cellules : avertissement 1,05 V/cellule, critique 1,00 V/cellule.
     rail.logique.seuil_avertissement_v: 6.30
@@ -32,6 +36,10 @@ surveillance_alimentation:
     rail.logique.courant_max_evaluation_a: 0.90
     # Condition maintenue ce délai avant d'alerter.
     rail.logique.temporisation_s: 20.0
+    # Réémission de l'événement tant que le seuil reste armé (0 = émission unique).
+    # L'avertissement se rappelle lentement, le critique souvent.
+    rail.logique.periode_rappel_avertissement_s: 180.0
+    rail.logique.periode_rappel_critique_s: 30.0
     rail.logique.evenement_avertissement: batterie_logique_faible
     rail.logique.evenement_critique: batterie_logique_critique
 
@@ -40,6 +48,9 @@ surveillance_alimentation:
     rail.moteur.topic: /alimentation/moteur
     rail.moteur.frame_id: alim_moteur
     rail.moteur.technologie: nimh
+    # Même constat de câblage que le rail logique : -1 pour publier du courant
+    # négatif au repos, conforme au contrat BatteryState.
+    rail.moteur.signe_courant: -1
     # 5 cellules : avertissement 1,05 V/cellule, critique 1,00 V/cellule.
     rail.moteur.seuil_avertissement_v: 5.25
     rail.moteur.seuil_critique_v: 5.00
@@ -47,5 +58,7 @@ surveillance_alimentation:
     # MDD3A en veille ~0,02-0,03 A ; on ne juge la tension que moteurs à l'arrêt.
     rail.moteur.courant_max_evaluation_a: 0.30
     rail.moteur.temporisation_s: 20.0
+    rail.moteur.periode_rappel_avertissement_s: 180.0
+    rail.moteur.periode_rappel_critique_s: 30.0
     rail.moteur.evenement_avertissement: batterie_moteur_faible
     rail.moteur.evenement_critique: batterie_moteur_critique

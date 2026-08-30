@@ -215,9 +215,10 @@ ou tomber en panne sans avertir. L'INA260 mesure tension et courant en temps ré
 le bus I2C. Sous-système simple, immédiatement utile, bon exercice d'intégration capteur.
 
 - [x] INA260 câblé et détecté sur l'I2C du Pi 4 (`i2cdetect`)
-- [ ] Nœud `surveillance_alimentation` publiant tension et courant
-- [ ] Seuil d'alerte bas testé (annonce audio ou log)
-- [ ] Lecture cohérente avec le voltmètre physique existant
+- [x] Nœud `surveillance_alimentation` publiant tension et courant
+- [x] Lecture cohérente avec le voltmètre physique existant
+- [x] Seuil d'alerte bas testé (log)
+- [ ] Seuil d'alerte bas testé avec annonce vocale
 - [ ] Lecture : chapitre 13, section "Connecting an IMU to a Raspberry
       Pi robot" de _Learn Robotics Programming 3e_
 

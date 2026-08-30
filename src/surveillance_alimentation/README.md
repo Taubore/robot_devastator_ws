@@ -54,12 +54,27 @@ courant est faible. Trois garde-fous, tous configurables par rail :
 
 1. **Porte de courant** : un seuil n'est évalué que si `abs(courant) < courant_max_evaluation_a`.
 2. **Temporisation** : la condition (tension sous le seuil, à courant faible) doit être
-   maintenue `temporisation_s` secondes avant que l'événement soit émis.
+   maintenue `temporisation_s` secondes avant que l'événement soit émis. La durée est suivie
+   par un accumulateur, pas par un horodatage : une condition de surveillance a trois états —
+   vraie, fausse, inconnue. **Porte de courant fermée = inconnue**, pas fausse : l'accumulateur
+   est alors laissé intact sans rien y ajouter, pour qu'une conduite alternant accélérations et
+   courts arrêts ne remette jamais la temporisation à zéro. Tension au-dessus du seuil à courant
+   faible = fausse : l'accumulateur repart de zéro.
 3. **Hystérésis** : un seuil armé ne se désarme que lorsque la tension repasse au-dessus de
    `seuil + hysteresis_rearmement_v`, et seulement à courant faible.
+4. **Rappel périodique** : une alerte batterie est un état persistant. Tant qu'un seuil reste
+   armé, l'événement est réémis toutes les `periode_rappel_<niveau>_s` secondes (`0` = émission
+   unique). Le rappel suit l'état d'armement et non la mesure : il continue même pendant que la
+   porte de courant est fermée, et son compteur se réinitialise au désarmement. L'avertissement
+   et le critique se rappellent chacun à leur rythme, sans hiérarchisation : les deux libellés
+   sont publiés si les deux seuils sont armés (la déduplication appartient au consommateur).
 
 Deux niveaux par rail : `avertissement` et `critique`, chacun avec son seuil en volts absolus
 et son libellé d'événement. Un seuil dont la tension est `0` est désactivé.
+
+Le signe du courant lu est ramené au contrat `BatteryState` (négatif en décharge) par le
+paramètre `signe_courant` propre à chaque rail (`1` ou `-1`, selon le câblage VIN+/VIN- du
+capteur). La logique d'alerte travaille sur `abs(courant)` et n'est pas affectée par ce choix.
 
 ## Paramètres
 
@@ -82,11 +97,14 @@ et son libellé d'événement. Un seuil dont la tension est `0` est désactivé.
 | `topic` | Topic `BatteryState` du rail |
 | `frame_id` | `header.frame_id` du message |
 | `technologie` | `nimh`, `lion`, `lipo`, `life`, `nicd`, `limn` ou `inconnue` |
+| `signe_courant` | Facteur appliqué au courant lu avant publication : `1` ou `-1` (rejeté sinon). `-1` si le câblage VIN+/VIN- du capteur donne un courant positif en décharge |
 | `seuil_avertissement_v` | Seuil bas d'avertissement, en volts absolus (`0` = désactivé) |
 | `seuil_critique_v` | Seuil bas critique, en volts absolus (`0` = désactivé) |
 | `hysteresis_rearmement_v` | Marge de tension au-dessus du seuil pour désarmer |
 | `courant_max_evaluation_a` | Courant absolu maximal pour juger la tension |
 | `temporisation_s` | Durée de maintien de la condition avant d'alerter |
+| `periode_rappel_avertissement_s` | Période de réémission de l'événement tant que l'avertissement est armé (`0` = émission unique) |
+| `periode_rappel_critique_s` | Période de réémission de l'événement tant que le critique est armé (`0` = émission unique) |
 | `evenement_avertissement` | Libellé publié sur `topic_evenement` (`''` = désactivé) |
 | `evenement_critique` | Libellé publié sur `topic_evenement` (`''` = désactivé) |
 
@@ -167,22 +185,39 @@ ros2 topic hz /alimentation/logique
 ```
 
 ```bash
-# 8. Écouter les événements d'alerte
+# 8. Vérifier le signe du courant : robot au repos, les deux topics doivent
+#    publier un current négatif (décharge). Champ current de :
+ros2 topic echo /alimentation/logique --field current
+```
+
+```bash
+ros2 topic echo /alimentation/moteur --field current
+```
+
+```bash
+# 9. Écouter les événements d'alerte
 ros2 topic echo /robot/evenement
 ```
 
 ```bash
-# 9. Test de seuil : relever temporairement seuil_avertissement_v du rail logique
-#    au-dessus de la tension réelle dans surveillance_alimentation.yaml, rebuild,
-#    relancer. Après temporisation_s, un String "batterie_logique_faible" doit
-#    être publié une fois. Remettre le seuil d'origine ensuite.
+# 10. Test de seuil + rappel : relever temporairement seuil_avertissement_v du
+#     rail logique au-dessus de la tension réelle dans surveillance_alimentation.yaml,
+#     rebuild, relancer. Après temporisation_s, un String "batterie_logique_faible"
+#     est publié. Il doit ensuite être réémis toutes les
+#     periode_rappel_avertissement_s (abaisser cette valeur, p. ex. 15.0, le temps
+#     du test). Remettre les valeurs d'origine ensuite.
+```
+
+```bash
+# 11. Non-rappel après désarmement : seuil de test toujours relevé, remettre
+#     seuil_avertissement_v sous la tension réelle (ou remonter la tension), rebuild,
+#     relancer. Après le WARN "seuil avertissement rétabli", plus aucun String ne
+#     doit sortir sur /robot/evenement.
 ```
 
 ## Limites connues
 
 - Le nœud publie `power_supply_status = DISCHARGING` dès qu'une lecture réussit : il ne détecte
   pas une charge (le robot ne se recharge pas en fonctionnement).
-- Le sens physique du signe du courant dépend du câblage IN+/IN- du INA260 ; seul le module de
-  la valeur est utilisé par la logique d'alerte.
 - Pas d'estimation d'autonomie restante : hors périmètre pour une chimie NiMH.
 - Les capteurs sont sur le rail logique 3,3 V : aucune lecture n'est possible robot éteint.
