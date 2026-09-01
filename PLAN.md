@@ -192,7 +192,7 @@ maintenant sur Devastator réel ce que Gazebo t'a montré en Phase 5.
 - [x] Validation avance : ~1 m réel → X entre 0,95 et 1,05 m dans `/odom`
 - [x] Validation rotation : ~90° sur place → yaw entre 1,47 et 1,67 rad
 - [x] Dérive documentée : carré de 1,5 m de côté, écart de retour mesuré
-- [ ] Lecture : chapitres 11 et 12 de _Learn Robotics Programming 3e_
+- [x] Lecture : chapitres 11 et 12 de _Learn Robotics Programming 3e_
       et chapitres 1-2 de _Régulation PID par la pratique_
 
 **Validation minimale :** trajectoire en carré visible dans RViz (Legion-Linux
@@ -219,7 +219,7 @@ le bus I2C. Sous-système simple, immédiatement utile, bon exercice d'intégrat
 - [x] Lecture cohérente avec le voltmètre physique existant
 - [x] Seuil d'alerte bas testé (log)
 - [ ] Seuil d'alerte bas testé avec annonce vocale
-- [ ] Lecture : chapitre 13, section "Connecting an IMU to a Raspberry
+- [x] Lecture : chapitre 13, section "Connecting an IMU to a Raspberry
       Pi robot" de _Learn Robotics Programming 3e_
 
 **Validation minimale :** tension publiée ≈ tension lue au voltmètre.

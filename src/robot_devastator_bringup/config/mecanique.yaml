@@ -17,4 +17,4 @@ odometrie:
     ticks_par_metre_moyen: 10432
 
     # Entraxe effectif entre les deux chenilles, en mètres
-    entraxe_m: 0.200
+    entraxe_m: 0.197

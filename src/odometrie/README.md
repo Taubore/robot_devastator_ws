@@ -121,7 +121,7 @@ avant de l'inscrire dans la configuration.
   dérive sur un carré de 1,5 m. Signature relevée : la composante `y` finale est restée identique
   au millimètre près entre les deux essais (−0,361 m avant et après), alors que la composante `x`
   a diminué. Deux mécanismes indépendants sont donc en cause ; seul celui agissant sur l'axe de
-  départ a été corrigé. L'`entraxe_m` de 0,200 m, mesuré au ruban et jamais validé
+  départ a été corrigé. L'`entraxe_m` de 0,197 m, mesuré au ruban et jamais validé
   expérimentalement, est le suspect principal — l'entraxe effectif d'un chenillé dépasse
   généralement l'écartement géométrique. Hypothèse non confirmée : le test du tour complet ne
   révèle aucune erreur de rotation.

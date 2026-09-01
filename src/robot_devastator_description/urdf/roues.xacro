@@ -4,8 +4,8 @@
   <!-- Dimensions des roues (en mètres) -->
   <xacro:property name="rayon_roue"   value="0.01966"/>
   <xacro:property name="largeur_roue" value="0.040"/>
-  <!-- Demi-entraxe : chaque roue est à ±0.100 m de base_link -->
-  <xacro:property name="y_roue"       value="0.100"/>
+  <!-- Demi-entraxe : chaque roue est à ±0.985 m de base_link -->
+  <xacro:property name="y_roue"       value="0.985"/>
 
   <!-- Empattement d'une chenille : distances horizontales depuis le moyeu moteur -->
   <xacro:property name="empattement_arriere" value="0.080"/>
