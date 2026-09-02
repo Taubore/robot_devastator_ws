@@ -38,6 +38,10 @@ EVENEMENTS_ANNONCES: Final[tuple[str, ...]] = (
     'recul_recuperation',
     'reprise_avance',
     'arret_robot',
+    'batterie_logique_faible',
+    'batterie_logique_critique',
+    'batterie_moteur_faible',
+    'batterie_moteur_critique',
 )
 
 

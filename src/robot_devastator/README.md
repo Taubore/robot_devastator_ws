@@ -67,9 +67,21 @@ d'obstacle et annonces audio.
 | `piper_model` | `/opt/piper/voix/fr_FR-siwis-low.onnx` | Modèle vocal français utilisé pour la synthèse |
 | `command_timeout_s` | `15.0` | Durée maximale accordée à Piper et à `aplay` avant échec |
 
-Les annonces sont définies par événement dans `annonces.yaml` sous la clé `annonces.<evenement>`.
-Chaque entrée est une liste de variantes ; une chaîne vide représente une variante silencieuse
-choisie aléatoirement.
+Les annonces sont définies par événement dans `annonces_audio.yaml` sous la clé
+`annonces.<evenement>`. Chaque entrée est une liste de variantes ; une chaîne vide représente une
+variante silencieuse choisie aléatoirement.
+
+Événements actuellement annoncés :
+
+- démarrage du nœud : `demarrage` (joué directement par `annonces_audio`) ;
+- comportement d'autonomie (`evitement_obstacle`) : `autonomie_demarre`, `obstacle_detecte`,
+  `analyse_obstacle`, `rotation_gauche`, `rotation_droite`, `recul_recuperation`,
+  `reprise_avance` ;
+- alertes batterie (`surveillance_alimentation`) : `batterie_logique_faible`,
+  `batterie_logique_critique`, `batterie_moteur_faible`, `batterie_moteur_critique`. Ces quatre
+  événements n'ont aucune variante silencieuse : une alerte batterie est toujours prononcée.
+
+`arret_robot` est défini mais aucun nœud ne le publie encore.
 
 ### `teleop_clavier` — `config/teleop_clavier.yaml`
 

@@ -1,6 +1,7 @@
 # Lancement de diagnostic : surveillance de l'alimentation seule.
-# Jamais utilisé en exploitation normale — réservé à la mise au point du
-# sous-système INA260 avant son intégration dans devastator.launch.yaml.
+# Jamais utilisé en exploitation normale — le nœud tourne en production dans
+# devastator.launch.yaml. Ce fichier sert à isoler le sous-système INA260 pour
+# une mise au point (réglage de seuils, câblage, adresses I2C).
 launch:
 - node:
     pkg: surveillance_alimentation

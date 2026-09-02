@@ -1,5 +1,12 @@
 launch:
 - node:
+    pkg: surveillance_alimentation
+    exec: surveillance_alimentation
+    name: surveillance_alimentation
+    output: screen
+    param:
+    - from: $(find-pkg-share robot_devastator_bringup)/config/surveillance_alimentation.yaml
+- node:
     pkg: interface_pico
     exec: interface_pico
     name: interface_pico

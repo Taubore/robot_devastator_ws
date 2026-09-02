@@ -219,7 +219,7 @@ le bus I2C. Sous-système simple, immédiatement utile, bon exercice d'intégrat
 - [x] Lecture cohérente avec le voltmètre physique existant
 - [x] Seuil d'alerte bas testé (log)
 - [ ] Seuil d'alerte bas testé avec annonce vocale
-- [x] Lecture : chapitre 13, section "Connecting an IMU to a Raspberry
+- [ ] Lecture : chapitre 13, section "Connecting an IMU to a Raspberry
       Pi robot" de _Learn Robotics Programming 3e_
 
 **Validation minimale :** tension publiée ≈ tension lue au voltmètre.
@@ -249,6 +249,27 @@ et l'affiche. Bon exercice de nœud abonné (subscriber) avec sortie matérielle
 **Livre :** aucun chapitre dédié dans les livres disponibles — utiliser
 la documentation Waveshare du ST7789V et une bibliothèque Python
 existante (luma.lcd ou pilote officiel).
+
+---
+
+## Jalon 8.5 — Tests unitaires sans matériel (mini-jalon)
+
+Objectif d'apprentissage : savoir vérifier la logique d'un nœud ROS 2 sur Legion-Linux, sans robot, sans capteur et sans batterie à décharger.
+
+Cobaye : `surveillance_alimentation`, phase 7 fermée et stable.
+
+Notion à acquérir : séparer la logique métier de l'accès matériel. Aujourd'hui `from smbus2 import SMBus` en tête de module empêche le nœud de démarrer hors du Pi. Le principe à comprendre est l'injection de dépendance — la logique reçoit ses mesures au lieu d'aller les chercher elle-même.
+
+Critères de complétion :
+- [ ] `colcon test --packages-select surveillance_alimentation` passe sur Legion-Linux, sans matériel
+- [ ] un test rejoue le scénario de conduite hachée (accélérations et arrêts alternés) et vérifie que l'alerte finit par être armée
+- [ ] un test vérifie qu'une porte de courant fermée n'arme jamais un seuil à elle seule
+- [ ] un test vérifie le désarmement par hystérésis et la réinitialisation du rappel
+- [ ] un test vérifie la conversion complément à deux du registre de courant sur une valeur négative
+
+Leçon à nommer et transférer : un test qui reproduit un bogue déjà rencontré vaut plus qu'un test écrit dans le vide. Les quatre premiers critères ci-dessus décrivent des défauts réellement trouvés en phase 7.
+
+Durée visée : une à deux séances. Si ça déborde, c'est que le jalon a grossi — le refermer et reporter le reste.
 
 ---
 

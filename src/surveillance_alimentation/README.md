@@ -131,11 +131,23 @@ devient illisible durablement, puis silence jusqu'au rétablissement.
 
 ## Lancement
 
-Ce package n'est pas encore intégré à `devastator.launch.yaml` : mise au point isolée d'abord.
+Le nœud tourne en production : il est démarré par `devastator.launch.yaml` du package
+`robot_devastator_bringup`, avec `config/surveillance_alimentation.yaml`.
+
+```bash
+ros2 launch robot_devastator_bringup devastator.launch.yaml
+```
+
+Pour une mise au point isolée (réglage de seuils, câblage, adresses I2C), le lancement de
+diagnostic ne démarre que ce nœud :
 
 ```bash
 ros2 launch robot_devastator_bringup diag_surveillance_alimentation.launch.yaml
 ```
+
+Sur Devastator, les événements d'alerte publiés sur `/robot/evenement` sont prononcés par
+`annonces_audio` (`batterie_logique_faible`, `batterie_logique_critique`, `batterie_moteur_faible`,
+`batterie_moteur_critique` ; aucune variante silencieuse).
 
 ## Procédure de test CLI sur le Raspberry Pi 4
 
@@ -213,6 +225,46 @@ ros2 topic echo /robot/evenement
 #     seuil_avertissement_v sous la tension réelle (ou remonter la tension), rebuild,
 #     relancer. Après le WARN "seuil avertissement rétabli", plus aucun String ne
 #     doit sortir sur /robot/evenement.
+```
+
+## Vérification de l'intégration permanente (Pi 4)
+
+Terminal SSH sourcé, robot allumé. Vérifie que le nœud démarre bien avec le robot complet et que
+l'alerte est prononcée.
+
+```bash
+# 1. Build
+cd ~/projets/robot_devastator_ws
+colcon build --symlink-install --packages-select surveillance_alimentation robot_devastator robot_devastator_bringup
+source install/setup.bash
+```
+
+```bash
+# 2. Lancement complet du robot
+ros2 launch robot_devastator_bringup devastator.launch.yaml
+```
+
+```bash
+# 3. Second terminal sourcé : le nœud doit être présent
+ros2 node list | grep surveillance_alimentation
+```
+
+```bash
+# 4. Les deux BatteryState sont publiés
+ros2 topic hz /alimentation/logique
+```
+
+```bash
+# 5. Écoute des événements batterie
+ros2 topic echo /robot/evenement
+```
+
+```bash
+# 6. Test bout en bout : relever temporairement rail.logique.seuil_avertissement_v
+#    au-dessus de la tension réelle dans surveillance_alimentation.yaml, rebuild,
+#    relancer devastator.launch.yaml. Après temporisation_s, "batterie_logique_faible"
+#    apparaît sur /robot/evenement ET l'annonce vocale est jouée par annonces_audio.
+#    Remettre la valeur d'origine ensuite.
 ```
 
 ## Limites connues

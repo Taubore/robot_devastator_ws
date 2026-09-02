@@ -12,7 +12,7 @@ flowchart TB
 
         BATT_MOTEUR["NiMH Melasta"]
         VOLTM_MOTEUR["Voltmètre moteurs"]
-        INA260["Adafruit INA260"]
+        INA260["Adafruit INA260 x2"]
     end
 
     subgraph CALCUL["Calcul et contrôle"]
@@ -79,18 +79,19 @@ flowchart TB
     RPLIDAR --> RASPI4
     REALSENSE --> RASPI4
 
-    INA260 -.-> ALIM_LOGIQUE
-    INA260 -.-> RASPI4
+    BATT_LOGIQUE --> INA260
+    BATT_MOTEUR --> INA260
+    INA260 --> RASPI4
 
     classDef actif fill:#d8f5d0,stroke:#2e7d32,stroke-width:2px,color:#000
     classDef gele fill:#fff3cd,stroke:#b8860b,stroke-width:2px,color:#000
     classDef futur fill:#e2e3e5,stroke:#6c757d,stroke-width:2px,color:#000
 
     class RASPI4,PICO_WH,MDD3A,FIT0521_G,FIT0521_D,ULTRASON,SERVO_TOUR actif
-    class BATT_LOGIQUE,BATT_MOTEUR,VOLTM_LOGIQUE,VOLTM_MOTEUR actif
+    class BATT_LOGIQUE,BATT_MOTEUR,VOLTM_LOGIQUE,VOLTM_MOTEUR,INA260 actif
     class BUCK_3V3,BUCK_5V,ALIM_LOGIQUE,SW_LOGIQUE actif
     class CLAV_X8,AUDIO_I2S,HP_BF37 actif
 
     class PS2,RPLIDAR gele
 
-    class INA260,REALSENSE,LCD2,MIC_ARRAY futur
+    class REALSENSE,LCD2,MIC_ARRAY futur

@@ -59,8 +59,9 @@ ros2 launch robot_devastator_bringup devastator.launch.yaml
 ros2 launch robot_devastator_bringup teleop.launch.yaml
 ```
 
-`devastator.launch.yaml` démarre l'interface Pico, l'odométrie, l'arbitre moteur, l'autonomie (en
-attente) et les annonces audio, en mode manuel. `teleop.launch.yaml` se lance à part parce que
+`devastator.launch.yaml` démarre la surveillance d'alimentation, l'interface Pico, l'odométrie,
+l'arbitre moteur, l'autonomie (en attente) et les annonces audio, en mode manuel.
+`teleop.launch.yaml` se lance à part parce que
 `teleop_clavier` lit les touches du terminal courant : c'est la seule exception au lancement
 unique.
 
@@ -103,6 +104,10 @@ Garder les roues dans le vide au premier essai. La vitesse par défaut est `300`
 - **Audio.** `annonces_audio` joue des annonces vocales (Piper) sur les événements du robot.
   Purement décoratif : si Piper ou `aplay` sont absents, l'erreur est journalisée et les autres
   nœuds continuent normalement.
+- **Surveillance d'alimentation.** `surveillance_alimentation` lit deux INA260 sur I2C, publie
+  `/alimentation/logique` et `/alimentation/moteur` (`sensor_msgs/BatteryState`) et émet un
+  événement batterie sur `/robot/evenement` quand une tension reste basse assez longtemps, à
+  courant faible. `annonces_audio` prononce alors l'alerte correspondante.
 
 ## Développement dans VSCode
 
@@ -181,7 +186,7 @@ clés racines des fichiers YAML de paramètres reprennent le nom exact du nœud 
 | `teleop_clavier` | `robot_devastator` | `teleop_clavier` / `robot_devastator.teleop_clavier` | Actif | Conduire localement au clavier et basculer entre mode manuel et autonomie |
 | `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les WAV manquants avec Piper, puis jouer les annonces selon les événements du robot |
 | `odometrie` | `odometrie` | `odometrie` / `odometrie.odometrie` | Actif | Calculer x, y, theta depuis `/pico/encodeurs` et publier `/odom` et la TF `odom → base_footprint` |
-| `surveillance_alimentation` | `surveillance_alimentation` | `surveillance_alimentation` / `surveillance_alimentation.surveillance_alimentation` | Diagnostic | Lire deux INA260 sur I2C, publier `sensor_msgs/BatteryState` par rail et alerter sur tension basse maintenue (hors `devastator.launch.yaml` pour l'instant) |
+| `surveillance_alimentation` | `surveillance_alimentation` | `surveillance_alimentation` / `surveillance_alimentation.surveillance_alimentation` | Actif | Lire deux INA260 sur I2C, publier `sensor_msgs/BatteryState` par rail et alerter sur tension basse maintenue |
 
 ### Interfaces personnalisées
 
@@ -222,22 +227,27 @@ le mauvais sens, corriger le câblage au MDD3A plutôt que le logiciel.
 
 ### Matériel — repères électriques
 
-Mesures INA260, robot au repos sans charge :
+Mesures INA260, robot au repos :
 
-| Rail | Tension typique | Courant typique |
+| Rail | Tension typique | Courant au repos |
 |---|---|---|
-| Logique (7,2 V) | ~7,1–7,2 V | ~380 mA (Pi 4 sans écran HDMI) |
+| Logique (7,2 V) | ~7,1–7,2 V | variable selon la charge active (SSH, nœuds ROS 2, écran HDMI) |
 | Moteur (6 V) | ~5,8–6,4 V | ~20–34 mA (MDD3A en veille) |
 
-Le courant logique varie selon la charge active (SSH, nœuds ROS 2, écran HDMI +~145 mA) : utiliser
-la tension, pas le courant, comme indicateur de batterie faible. Les deux INA260 sont alimentés par
-le rail logique 3,3 V (Pololu 4090), coupé quand l'interrupteur logique est à off : aucune lecture
-de tension ou de courant batterie n'est possible robot éteint. Pour vérifier l'état de charge avant
-un rangement prolongé, allumer brièvement le robot ou utiliser un multimètre externe.
+Utiliser la **tension**, pas le courant, comme indicateur de batterie faible : le courant au repos
+dépend trop de la charge active. Les courants moteur sous charge sont dans
+[docs/parametres.md](docs/parametres.md) (~0,5 A en rotation libre, ~1,25 A en charge partielle,
+~6,5 A les deux chenilles bloquées à consigne 1000). Un fusible rapide 10 A / 20 mm protège le
+positif du rail moteur.
 
-Ces deux INA260 (0x40 rail logique, 0x41 rail moteur) sont lus par le nœud
-`surveillance_alimentation`, encore isolé dans `diag_surveillance_alimentation.launch.yaml` le
-temps de la mise au point. Voir `src/surveillance_alimentation/README.md`.
+Les deux INA260 sont alimentés par le rail logique 3,3 V (Pololu 4090), coupé quand l'interrupteur
+logique est à off : aucune lecture n'est possible robot éteint. Pour vérifier l'état de charge
+avant un rangement prolongé, allumer brièvement le robot ou utiliser un multimètre externe.
+
+Ces deux INA260 (0x40 rail logique, 0x41 rail moteur) sont lus en permanence par le nœud
+`surveillance_alimentation`, lancé par `devastator.launch.yaml`.
+`diag_surveillance_alimentation.launch.yaml` reste disponible pour l'isoler lors d'une mise au
+point. Voir `src/surveillance_alimentation/README.md`.
 
 ### Audio I2S — état du diagnostic
 
@@ -265,3 +275,4 @@ chantier maintenant, conserver l'audio comme capacité décorative.
 - [Paramètres techniques](docs/parametres.md)
 - [Connexions des composantes matérielles](docs/connexions.md)
 - [Inventaire des composantes matérielles principales](docs/inventaire_composantes.md)
+- [Blocage de chenilles — mode de défaillance connu](docs/blocage_chenilles.md)

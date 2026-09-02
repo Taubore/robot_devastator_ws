@@ -357,14 +357,36 @@ utilise `abs(courant)` et n'est pas affectée.
 ## Événements publiés sur `/robot/evenement`
 
 `batterie_logique_faible`, `batterie_logique_critique`, `batterie_moteur_faible`,
-`batterie_moteur_critique`. Libellés définis dans le YAML ; `annonces_audio` ne les annonce pas
-encore (intégration après validation isolée).
+`batterie_moteur_critique`. Libellés définis dans le YAML et repris dans `EVENEMENTS_ANNONCES`
+d'`annonces_audio`, qui les prononce. Aucune variante silencieuse sur ces quatre événements : une
+alerte batterie est toujours annoncée. Le nœud tourne en permanence via `devastator.launch.yaml`.
 
-## Repères de mesure (robot au repos, sans charge)
+## Repères de mesure (robot au repos)
 
-| Rail | Tension typique | Courant typique (publié, `signe_courant = -1`) |
+| Rail | Tension typique | Courant au repos (publié, `signe_courant = -1`) |
 |---|---|---|
-| Logique (7,2 V) | ~7,1–7,2 V | ~-370 mA (Pi 4 sans écran HDMI) |
+| Logique (7,2 V) | ~7,1–7,2 V | variable : dépend de la charge active (SSH, nœuds ROS 2, écran HDMI) |
 | Moteur (6 V) | ~5,8–6,4 V | ~-20 à -34 mA (MDD3A en veille) |
 
-Lecture brute du capteur avant `signe_courant` : +0,3725 A (logique), +0,03375 A (moteur).
+Le courant au repos du rail logique n'est pas un repère fiable : il change selon ce qui tourne
+sur le Pi 4. La surveillance de batterie se fait sur la **tension**, jamais sur le courant ; le
+courant sert seulement à fermer la porte de courant quand le robot consomme.
+
+## Courant du rail moteur sous charge
+
+Valeurs établies sur le robot réel, même consigne envoyée aux deux chenilles :
+
+| Situation | Courant rail moteur (approx.) |
+|---|---|
+| Chenilles en rotation libre (robot sur cales) | ~0,5 A |
+| Charge partielle (robot roule au sol) | ~1,25 A |
+| Les deux chenilles bloquées à consigne 1000 | ~6,5 A |
+
+Le blocage des deux chenilles produit le courant maximal du robot. C'est un mode de défaillance
+connu de la plateforme — voir [blocage_chenilles.md](blocage_chenilles.md).
+
+## Protection — fusible du rail moteur
+
+Un **fusible rapide 10 A, format 20 mm**, est monté sur le fil positif du rail moteur, en amont
+du MDD3A et en série avec l'INA260 `0x41`. Il protège le câblage moteur contre un courant de
+blocage de chenilles prolongé, qui a déjà provoqué un échauffement du câblage de masse.

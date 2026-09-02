@@ -22,10 +22,10 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 
 | Fichier | Nœuds lancés | Cas d'usage |
 |---|---|---|
-| `devastator.launch.yaml` | `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `annonces_audio`, `evitement_obstacle` | Lancement complet du robot en mode manuel, autonomie en attente |
+| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `annonces_audio`, `evitement_obstacle` | Lancement complet du robot en mode manuel, autonomie en attente |
 | `teleop.launch.yaml` | `teleop_clavier` | Téléopération clavier, dans un terminal interactif séparé (production, exception documentée) |
 | `diag_interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
-| `diag_surveillance_alimentation.launch.yaml` | `surveillance_alimentation` | Diagnostic isolé de la lecture des INA260 (tension/courant batteries) |
+| `diag_surveillance_alimentation.launch.yaml` | `surveillance_alimentation` | Isole le sous-système INA260 pour une mise au point (le nœud tourne en production dans `devastator.launch.yaml`) |
 | `diag_simulation.launch.yaml` | Simulation Gazebo | Diagnostic visuel sur Legion-Linux, sans matériel |
 
 ## Fichiers de configuration
@@ -46,7 +46,7 @@ Build initial ou après modification :
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --symlink-install --packages-select commun interface_pico odometrie robot_devastator robot_devastator_bringup
+colcon build --symlink-install --packages-select commun interface_pico odometrie robot_devastator surveillance_alimentation robot_devastator_bringup
 source install/setup.bash
 ```
 
