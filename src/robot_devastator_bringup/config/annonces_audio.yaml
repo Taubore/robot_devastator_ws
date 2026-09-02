@@ -35,12 +35,12 @@ annonces_audio:
       - ''
     annonces.rotation_gauche:
       - 'rotation_gauche_01|À gauche ça semble mieux.'
-      - 'rotation_droite_01|Je vais à gauche.'
+      - 'rotation_gauche_02|Je vais à gauche.'
       - ''
       - ''
     annonces.rotation_droite:
       - 'rotation_droite_01|À droite ça semble mieux.'
-      - 'rotation_droite_01|Je vais à droite.'
+      - 'rotation_droite_02|Je vais à droite.'
       - ''
       - ''
     annonces.recul_recuperation:
