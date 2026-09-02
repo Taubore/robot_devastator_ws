@@ -218,8 +218,8 @@ le bus I2C. Sous-système simple, immédiatement utile, bon exercice d'intégrat
 - [x] Nœud `surveillance_alimentation` publiant tension et courant
 - [x] Lecture cohérente avec le voltmètre physique existant
 - [x] Seuil d'alerte bas testé (log)
-- [ ] Seuil d'alerte bas testé avec annonce vocale
-- [ ] Lecture : chapitre 13, section "Connecting an IMU to a Raspberry
+- [x] Seuil d'alerte bas testé avec annonce vocale
+- [x] Lecture : chapitre 13, section "Connecting an IMU to a Raspberry
       Pi robot" de _Learn Robotics Programming 3e_
 
 **Validation minimale :** tension publiée ≈ tension lue au voltmètre.
