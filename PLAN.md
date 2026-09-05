@@ -234,18 +234,31 @@ Adafruit/datasheet).
 
 >Hors parcours de formation
 
-**Concept :** un robot qui affiche son état localement se diagnostique sur le terrain
-sans SSH. L'écran LCD est un sous-système de sortie simple : il reçoit un état ROS 2
-et l'affiche. Bon exercice de nœud abonné (subscriber) avec sortie matérielle.
+**Concept :** un robot qui affiche son état localement se diagnostique sur le terrain sans SSH. 
+L'écran LCD est un sous-système de sortie simple : il reçoit un état ROS 2 et l'affiche. Bon 
+exercice de nœud abonné (subscriber) avec sortie matérielle. Il permettra aussi d'ajouter une 
+touche amusante en dessinant une bouche qui va bouger lorsque la voix avec Piper sera active. Pas 
+de synchronisation complexe, simplement faire bouger la bouche pour ajouter une touche plus vivante
+du robot.
 
 - [ ] LCD ST7789V initialisé, affichage texte basique
-- [ ] Nœud `affichage_lcd` abonné au mode et à l'état du robot
-- [ ] Pages minimales : mode actif, tension, état moteurs
-- [ ] Transition entre pages documentée
-- [ ] Lecture : documentation Waveshare du ST7789V (aucun chapitre de
-      livre dédié)
+- [ ] Nœud `affichage_lcd` démarré tôt dans la séquence de lancement, avant les nœuds à
+      initialisation longue
+- [ ] Page 0 : bouche animée de style dessin animé, animée pendant les annonces vocales
+- [ ] Pages 1 à N : statuts du robot (mode actif, tensions des deux rails, consignes moteurs)
+- [ ] Navigation entre pages par une touche du clavier, bouclage vers l'avant uniquement
+- [ ] Le passage du mode manuel au mode autonomie force la page 0, sur la transition et non en
+      continu ; le retour au mode manuel ne change pas la page
+- [ ] Boucle de rendu à cadence fixe (10 Hz) comparant l'état courant au dernier état affiché : 
+      aucun envoi vers l'écran si l'état est inchangé
+- [ ] Rafraîchissement limité à la zone modifiée via la fenêtre d'adressage du ST7789V ; plein 
+      écran réservé au changement de page
+- [ ] Lecture : documentation Waveshare du ST7789V (aucun chapitre de livre dédié)
 
-**Validation minimale :** basculer manuel/autonomie → l'affichage change.
+- 
+- 
+
+**Validation minimale :** basculer manuel/autonomie, l'affichage change.
 **Livre :** aucun chapitre dédié dans les livres disponibles — utiliser
 la documentation Waveshare du ST7789V et une bibliothèque Python
 existante (luma.lcd ou pilote officiel).
@@ -427,6 +440,8 @@ Ce que Devastator m'a appris que je ferais différemment dès la conception.
 
 Format : `YYYY-MM-DD — décision ou observation clé (une ligne)`
 
+- 2026-09-05 — manette PS2 retirée du projet, téléopération au clavier Rii X8 ; SPI0 libéré pour
+  le LCD ; rétroéclairage LCD sur GPIO12 en raison de l'I2S câblé en dur sur GPIO18-21.
 - 2026-07-04 — Avant Phase 5 : séparation de la chenille (visuel statique, fixed) et de la roue fonctionnelle (invisible, continuous, collision en sphère au niveau du sol). Nécessaire pour éviter que le triangle entier tourne comme un objet rigide unique — incompatible avec une simulation physique.
 - 2026-07-03 — Phase 4 close. Chenilles modélisées en triangle (roue menante + 2 roues folles) plutôt qu'un cylindre simple, via décomposition trigonométrique (atan2) des 3 boîtes de liaison.
 - 2026-06-22 — Plan enrichi : ordre validé (URDF → Gazebo → odométrie réelle),

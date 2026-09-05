@@ -10,13 +10,6 @@
 | 18        | AUDIO_I2S    | BCLK    | Blanc   |                                                                                                                                |
 | 19        | AUDIO_I2S    | LRC     | Bleu    |                                                                                                                                |
 | 21        | AUDIO_I2S    | DIN     | Jaune   |                                                                                                                                |
-| 24        | PS2 | ATT     | Jaune   | Attention via résistance série 1 kΩ ; fil jaune du faisceau PS2                                                                |
-| 9 (MISO)  | PS2 | DATA    | Brun    | Données manette -> Pi4 via résistance série 1 kΩ + résistance de tirage 4,7 kΩ vers 3,3 V ; fil brun du faisceau PS2           |
-| 10 (MOSI) | PS2 | COMMAND | Orange  | Commande Pi4 -> manette via résistance série 1 kΩ ; fil orange du faisceau PS2                                                 |
-| 11 (SCLK) | PS2 | CLOCK   | Bleu    | Horloge Pi4 -> manette via résistance série 1 kΩ ; fil bleu du faisceau PS2                                                    |
-| 25        | PS2 | ACK     | Vert    | Acknowledge manette -> Pi4 via résistance série 1 kΩ + résistance de tirage 4,7 kΩ vers 3,3 V ; fil vert du faisceau PS2       |
-| 3,3V      | PS2 | VCC     | Rouge   | Alimentation logique PS2 en 3,3 V ; fil rouge du faisceau PS2                                                                  |
-| GND       | PS2 | GND     | Noir    | Masse commune ; fil noir du faisceau PS2                                                                                       |
 | 2 (SDA1)  | INA260 x2 | SDA | —       | Ligne de données I2C1, partagée par les deux INA260 (0x40 rail logique, 0x41 rail moteur) ; résistances de tirage sur les modules Adafruit |
 | 3 (SCL1)  | INA260 x2 | SCL | —       | Ligne d'horloge I2C1, partagée par les deux INA260                                                                            |
 
@@ -83,12 +76,21 @@ audio persistant, ou une solution matérielle anti-pop si le besoin reste prése
 | ----- | --------------------- | ------------- |
 | CLAV_X8 | Permet de pouvoir saisir du texte directement sur le raspi4 | connecté  |
 
-## Fils du PS2 non connectés
+## Affichage LCD Waveshare 2" ST7789V — PLAN NON CÂBLÉ
 
-| Fil   | Usage                 | Commentaire   |
-| ----- | --------------------- | ------------- |
-| Rouge | Alimentation | Temporaire - penser à reconnecter si on désire l'utiliser |
-| Noir | Alimentation | Temporaire - penser à reconnecter si on désire l'utiliser  |
-| Gris  | Vibration motor power | Non utilisé  |
-| Blanc | Broche 8 inconnue     | Non utilisé  |
+Brochage prévu, non encore câblé. 
+
+| GPIO | Broche module | Commentaire |
+| --- | --- | --- |
+| 11 | SCLK | |
+| 10 | MOSI (DIN côté module) | |
+| 8 (CE0) | CS | |
+| 25 | DC | |
+| 24 | RST | |
+| 12 | BL (rétroéclairage) | PWM0 matériel ; déplacé de sa position usuelle car GPIO18-21 sont réservés à l'interface I2S du BCM2711 |
+| 9 (MISO) | — | Inutilisé, le ST7789V étant en écriture seule |
+
+Le brochage et la tension d'alimentation du module restent à confirmer contre la documentation
+Waveshare avant câblage. Mode de raccordement prévu : nappe Dupont femelle fournie avec le
+module, branchée directement sur les broches mâles du HAT du Raspberry Pi 4, sans breadboard.
 

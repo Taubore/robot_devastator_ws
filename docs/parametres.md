@@ -246,57 +246,10 @@ Mesures réalisées en Phase 3 sur le robot réel.
 - **Usage prévu** : ces valeurs seront chargées par le nœud `odometrie` lors de la Phase 6 via
   le fichier `robot_devastator_bringup/config/mecanique.yaml`.
 
-# Interface manette Lynxmotion PS2 ↔ Raspberry Pi 4 
+# Affichage LCD — ST7789V
 
-Cette interface est gelé puisque l'usage du clavier USB sans-fil Rii X8 est beaucoup plus simple d'usage et permet beaucoup plus de latitude pour téléopérer le robot et interagir avec lui. La manette pourra être implémentée si un besoin de contrôle plus ergonomique et précis est requis. En effet, il est plus commode de contrôler finement les mouvement du robot manuellement à l'aide de la manette PS2 que via des petits boutons sur un clavier USB sans-fil.
-
-## Alimentation
-
-- Manette PS2 alimentée en 3,3 V
-- Masse commune avec le Raspberry Pi 4
-- Fil rouge = VCC
-- Fil noir = GND
-
-## Affectation GPIO Raspberry Pi 4
-
-- GPIO24 = ATT
-- GPIO9 = DATA
-- GPIO10 = COMMAND
-- GPIO11 = CLOCK
-- GPIO25 = ACK
-
-## Convention couleur faisceau PS2 retenue
-
-- Brun = DATA
-- Orange = COMMAND
-- Noir = GND
-- Rouge = VCC
-- Jaune = ATT
-- Bleu = CLOCK
-- Vert = ACK
-- Gris = alimentation moteur vibration, non connecté
-- Blanc = broche 8 inconnue, non connectée
-
-## Composants passifs retenus
-
-- Résistance série 1 kΩ sur :
-  - COMMAND
-  - ATT
-  - CLOCK
-  - DATA
-  - ACK
-- Résistance de tirage 4,7 kΩ vers 3,3 V sur :
-  - DATA
-  - ACK
-
-## Règles de conception manette
-
-- Ne pas alimenter la manette en 5 V tant qu'aucun besoin réel n'est démontré
-- Ne pas connecter la ligne vibration à cette étape
-- Ne pas connecter la broche 8 blanche à cette étape
-- Garder la logique manette côté Raspberry Pi 4
-- La ligne ACK doit être câblée et considérée comme utile
-- La ligne ATT doit être pilotée explicitement pour chaque transaction
+- Fréquence SPI retenue : à caractériser après essai. Procédure : montée par paliers depuis
+  8 MHz, en retenant la fréquence maximale testée sans artefact d'affichage.
 
 # Surveillance de l'alimentation — INA260
 

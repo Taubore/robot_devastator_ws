@@ -21,6 +21,7 @@
 | AUDIO_I2S | MAX98357 + PCM5102A | Audio | Amplification et conversion audio | Actif | Modules audio prévus pour générer et amplifier et donner une voix au robot avec Piper. |
 | HP_BF37 | Visaton BF 37 | Audio | Sortie sonore du robot | Actif | Haut-parleur 8 Ω prévu pour la voix du robot et les retours sonores via la chaîne audio I2S. |
 | CLAV_X8 | Mini clavier USB sans-fil Rii X8| Interface opérateur | Téléopération | Actif | Pour téléopératio très simple pour tests manuels. |
+| LCD2 | Waveshare LCD 2 pouces ST7789V | Affichage | Bouche / état robot | Actif | Écran en cours d'intégration (phase 8) pour afficher l'état du robot. |
 
 # Composantes acquises mais non utilisées ou mises de côté temporairement
 
@@ -28,9 +29,7 @@
 |---|---|---|---|---|---|
 | RPLIDAR | Slamtec RPLIDAR A1M8 | Lidar | Cartographie et navigation | Gelé | Capteur réservé pour une étape ROS 2 plus avancée. |
 | REALSENSE | Intel RealSense D435IF | Caméra profondeur | Perception 3D | Futur | Caméra de profondeur prévue pour étapes avancées. |
-| LCD2 | Waveshare LCD 2 pouces ST7789V | Affichage | Visage / état robot | Futur | Écran prévu pour afficher l’état du robot. |
 | MIC_ARRAY | ReSpeaker Mic Array v3.0 | Audio entrée | Commandes vocales | Futur | Microphone prévu pour interaction vocale avec le robot. |
-| PS2 | Manette Lynxmotion PS2 | Interface opérateur | Téléopération | Gelé | Manette pouvant rendre plus facile et agréable la conduite manuelle du robot en téléopération. Non essentiel, puisque CLAV_X8 peut répondre à ces besoins tout en étant plus flexible, mais moins ergonomique pour la conduite. |
 
 ## Convention d’état
 

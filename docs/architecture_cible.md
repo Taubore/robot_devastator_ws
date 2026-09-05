@@ -5,13 +5,11 @@ flowchart TB
     subgraph ALIMENTATION["Alimentation"]
         BATT_LOGIQUE["NiMH Tenergy PRO — pack maison"]
         SW_LOGIQUE["Interrupteur alimentation logique"]
-        ALIM_LOGIQUE["Circuit d’alimentation 3,3 V / 5 V"]
+        ALIM_LOGIQUE["Circuit d’alimentation maison 3,3 V / 5 V"]
         BUCK_3V3["Pololu 4090 D36V50F3"]
         BUCK_5V["Pololu 4091 D36V50F5"]
-        VOLTM_LOGIQUE["Voltmètre logique"]
 
         BATT_MOTEUR["NiMH Melasta"]
-        VOLTM_MOTEUR["Voltmètre moteurs"]
         INA260["Adafruit INA260 x2"]
     end
 
@@ -33,7 +31,6 @@ flowchart TB
 
     subgraph INTERFACES["Interface opérateur et retours"]
         CLAV_X8["Mini clavier USB sans-fil Rii X8"]
-        PS2["Manette Lynxmotion PS2"]
         AUDIO_I2S["MAX98357 + PCM5102A"]
         HP_BF37["Visaton BF 37"]
         LCD2["Waveshare LCD 2 pouces ST7789V"]
@@ -49,14 +46,12 @@ flowchart TB
     SW_LOGIQUE --> ALIM_LOGIQUE
     ALIM_LOGIQUE --> BUCK_3V3
     ALIM_LOGIQUE --> BUCK_5V
-    BATT_LOGIQUE --> VOLTM_LOGIQUE
 
     BUCK_5V --> RASPI4
     BUCK_5V --> PICO_WH
     BUCK_5V --> SERVO_TOUR
     BUCK_3V3 --> ULTRASON
 
-    BATT_MOTEUR --> VOLTM_MOTEUR
     BATT_MOTEUR --> MDD3A
 
     RASPI4 --> PICO_WH
@@ -70,7 +65,6 @@ flowchart TB
     PICO_WH --> RASPI4
 
     CLAV_X8 --> RASPI4
-    PS2 --> RASPI4
     RASPI4 --> AUDIO_I2S
     AUDIO_I2S --> HP_BF37
     RASPI4 --> LCD2
@@ -90,8 +84,8 @@ flowchart TB
     class RASPI4,PICO_WH,MDD3A,FIT0521_G,FIT0521_D,ULTRASON,SERVO_TOUR actif
     class BATT_LOGIQUE,BATT_MOTEUR,VOLTM_LOGIQUE,VOLTM_MOTEUR,INA260 actif
     class BUCK_3V3,BUCK_5V,ALIM_LOGIQUE,SW_LOGIQUE actif
-    class CLAV_X8,AUDIO_I2S,HP_BF37 actif
+    class CLAV_X8,AUDIO_I2S,HP_BF37,LCD2 actif
 
-    class PS2,RPLIDAR gele
+    class RPLIDAR gele
 
-    class REALSENSE,LCD2,MIC_ARRAY futur
+    class REALSENSE,MIC_ARRAY futur
