@@ -137,23 +137,41 @@ Usage : permet de saisir du texte directement pour une téléopération simple p
 ### LCD2 (Waveshare 2" ST7789V)
 
 - **Contrôleur hôte** : Raspberry Pi 4
-- **Interface / bus** : SPI0, sélection de puce CE0 (GPIO8). Affichage en écriture seule.
-- **Alimentation** : 3,3 V, branché directement au Raspberry Pi 4 (fil violet). Broche J8 1 
-- **Mode de raccordement** : nappe Dupont femelle fournie avec le module, branchée directement sur
-  les broches mâles du HAT du Raspberry Pi 4.
-- **Statut** : câblé.
+- **Interface / bus** : SPI0, sélection de puce CE0 (GPIO8). Affichage en écriture seule
+  (quatre fils : CS, DS, CLK, DIN).
+- **Alimentation** : 3,3 V depuis l'embase J8. Le module accepte 3,3 V ou 5 V, mais la tension
+  d'alimentation doit être cohérente avec la tension logique — logique en 3,3 V, donc
+  alimentation en 3,3 V. Consommation maximale annoncée : 46 mA sous 3,3 V.
+- **Mode de raccordement** : nappe Dupont femelle 8 fils fournie avec le module, branchée
+  directement sur les broches mâles du HAT du Raspberry Pi 4. Aucune breadboard.
+- **Statut** : **PLAN — NON CÂBLÉ**. Brochage vérifié contre la documentation Waveshare et la
+  table du connecteur J8 ; couleurs relevées sur la nappe réelle.
+
+> **Avertissement couleurs** : sur cette nappe, l'alimentation est **violette** et la masse est
+> **blanche** — pas rouge et noire. Le blanc sert par ailleurs à des lignes de signal ailleurs
+> dans le robot. Vérifier la continuité violet ↔ VCC et blanc ↔ GND au multimètre avant la
+> première mise sous tension.
 
 | Broche composante | Signal | GPIO (BCM) | Broche J8 | Couleur | Commentaire |
 | --- | --- | --- | --- | --- | --- |
-| 3V3 | Alimentation 3,3 V | — | 1 | Violet | Branché directement au Raspberry Pi 4 |
-| GND | Masse | — | 6 | — | Broche J8 et couleur non renseignées dans la source |
-| SCLK | SPI0 — horloge | GPIO11 (SCLK) | 23 | Orange | |
-| DIN | SPI0 — données (MOSI ; « DIN » côté module) | GPIO10 (MOSI) | 19 | Vert | |
-| CS | SPI0 — sélection de puce (CE0) | GPIO8 (CE0) | 24 | Jaune | |
-| DC | Donnée / commande | GPIO25 | 22 | Bleu | |
-| RST | Réinitialisation | GPIO24 | 18 | Brun | |
-| BL | Rétroéclairage | GPIO12 (PWM0) | 32 | Gris | PWM0 matériel ; déplacé de sa position usuelle car GPIO18-21 sont réservés à l'interface I2S du BCM2711 |
-| — | SPI0 — MISO | GPIO9 (MISO) | 21 | — | Inutilisé, le ST7789V étant en écriture seule |
+| VCC | Alimentation 3,3 V | — | 1 | Violet | Couleur non conventionnelle : ce n'est pas un fil rouge |
+| GND | Masse | — | 6 | Blanc | Couleur non conventionnelle : ce n'est pas un fil noir |
+| DIN | SPI0 — données (MOSI) | GPIO10 (MOSI) | 19 | Vert | « DIN » est le repère du module |
+| CLK | SPI0 — horloge | GPIO11 (SCLK) | 23 | Orange | |
+| CS | SPI0 — sélection de puce | GPIO8 (CE0) | 24 | Jaune | |
+| DC | Donnée / commande | GPIO25 | 22 | Bleu | Apparait DS à un endroit dans la documentation Waveshare |
+| RST | Réinitialisation | GPIO24 | 18 | Brun | Waveshare propose GPIO27 ; GPIO24 retenu, broche libre au choix |
+| BL | Rétroéclairage | GPIO12 | 32 | Gris | Waveshare propose GPIO18, occupé par l'I2S. GPIO12 choisi comme broche libre ; le pilote emploie un PWM logiciel (lgpio), pas le PWM matériel de cette broche |
+
+**Notes**
+
+- Couleurs relevées sur la nappe fournie avec le module. La documentation Waveshare ne définit
+  aucun code couleur : seule la correspondance des repères de broches fait foi.
+- GPIO9 (MISO, J8-21) est réservé au bus SPI0 mais n'est pas raccordé : le ST7789V est en
+  écriture seule et la nappe ne comporte que huit fils.
+- Résolution 240 × 320, format de couleur RGB565, soit 153 600 octets pour un rafraîchissement
+  plein écran.
+- Le bus SPI doit être activé au niveau du système avant tout essai.
 
 ### MDD3A (Cytron MDD3A)
 
