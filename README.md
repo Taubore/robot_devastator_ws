@@ -89,6 +89,8 @@ Garder les roues dans le vide au premier essai. La vitesse par défaut est `300`
 - La batterie logique (7,2 V Tenergy) n'a **pas** besoin d'être débranchée chaque jour (veille des
   régulateurs Pololu ~0,2 mA). La débrancher seulement en cas d'inactivité de plusieurs jours.
 
+Justification chiffrée de ces consignes : section « Consommation du robot » ci-dessous.
+
 ## Comportement du robot
 
 - **Modes de conduite.** `teleop_clavier` publie le mode (`manuel` ou `autonomie`) ; l'arbitre
@@ -108,6 +110,49 @@ Garder les roues dans le vide au premier essai. La vitesse par défaut est `300`
   `/alimentation/logique` et `/alimentation/moteur` (`sensor_msgs/BatteryState`) et émet un
   événement batterie sur `/robot/evenement` quand une tension reste basse assez longtemps, à
   courant faible. `annonces_audio` prononce alors l'alerte correspondante.
+
+## Consommation du robot
+
+Repères de consommation établis sur le robot réel, mesurés par les deux INA260 du nœud
+`surveillance_alimentation` (topics `/alimentation/logique` et `/alimentation/moteur`,
+`sensor_msgs/BatteryState`, champ `current`). Ils servent au calcul d'autonomie et à
+l'interprétation des mesures. La surveillance de batterie, elle, se fait toujours sur la
+**tension**, jamais sur le courant.
+
+Journal d'observations : ajouter une ligne datée à chaque nouvel état caractérisé.
+
+### Rail logique — batterie 7,2 V Tenergy, INA260 `0x40`
+
+| État du robot | Courant rail logique | Observé le |
+|---|---|---|
+| Arrêté, sans afficheur LCD allumé, sans audio | 430–450 mA | 2026-09-06 |
+
+Le courant du rail logique dépend de ce qui tourne sur le Raspberry Pi 4 (session SSH, nœuds
+ROS 2, sortie HDMI) et de l'état du LCD Waveshare. Tension typique au repos : ~7,1–7,2 V.
+
+### Rail moteur — batterie 6 V Melasta, INA260 `0x41`
+
+Valeurs approximatives, même consigne envoyée aux deux chenilles :
+
+| Situation | Courant rail moteur |
+|---|---|
+| Robot au repos, MDD3A branché en veille | ~20–34 mA |
+| Chenilles en rotation libre (robot sur cales) | ~0,5 A |
+| Charge partielle (robot roule au sol) | ~1,25 A |
+| Les deux chenilles bloquées à consigne 1000 | ~6,5 A |
+
+Tension typique au repos : ~5,8–6,4 V. Le blocage des deux chenilles produit le courant maximal
+du robot — mode de défaillance connu de la plateforme, voir
+[docs/blocage_chenilles.md](docs/blocage_chenilles.md). Un fusible rapide 10 A protège le rail
+moteur (voir [docs/parametres.md](docs/parametres.md)).
+
+### Veille hors séance
+
+- **MDD3A : ~32,5 mA en continu** tant que le connecteur XT30 de la batterie moteur est branché,
+  même moteurs arrêtés. Le pack 2000 mAh est à plat en ~2,5 jours, avec risque d'inversion de
+  cellule sur un pack NiMH 5S. → Débrancher le XT30 en fin de séance.
+- **Régulateurs Pololu : ~0,2 mA** de veille sur le rail logique. → Débrancher la batterie
+  logique seulement après plusieurs jours d'inactivité.
 
 ## Développement dans VSCode
 
@@ -227,18 +272,9 @@ le mauvais sens, corriger le câblage au MDD3A plutôt que le logiciel.
 
 ### Matériel — repères électriques
 
-Mesures INA260, robot au repos :
-
-| Rail | Tension typique | Courant au repos |
-|---|---|---|
-| Logique (7,2 V) | ~7,1–7,2 V | variable selon la charge active (SSH, nœuds ROS 2, écran HDMI) |
-| Moteur (6 V) | ~5,8–6,4 V | ~20–34 mA (MDD3A en veille) |
-
-Utiliser la **tension**, pas le courant, comme indicateur de batterie faible : le courant au repos
-dépend trop de la charge active. Les courants moteur sous charge sont dans
-[docs/parametres.md](docs/parametres.md) (~0,5 A en rotation libre, ~1,25 A en charge partielle,
-~6,5 A les deux chenilles bloquées à consigne 1000). Un fusible rapide 10 A / 20 mm protège le
-positif du rail moteur.
+Tensions typiques, courants par rail et par état, veille hors séance : section
+**« Consommation du robot »** plus haut. Utiliser la **tension**, pas le courant, comme
+indicateur de batterie faible.
 
 Les deux INA260 sont alimentés par le rail logique 3,3 V (Pololu 4090), coupé quand l'interrupteur
 logique est à off : aucune lecture n'est possible robot éteint. Pour vérifier l'état de charge

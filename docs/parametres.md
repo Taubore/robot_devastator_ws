@@ -314,29 +314,15 @@ utilise `abs(courant)` et n'est pas affectée.
 d'`annonces_audio`, qui les prononce. Aucune variante silencieuse sur ces quatre événements : une
 alerte batterie est toujours annoncée. Le nœud tourne en permanence via `devastator.launch.yaml`.
 
-## Repères de mesure (robot au repos)
+## Repères de mesure et consommation
 
-| Rail | Tension typique | Courant au repos (publié, `signe_courant = -1`) |
-|---|---|---|
-| Logique (7,2 V) | ~7,1–7,2 V | variable : dépend de la charge active (SSH, nœuds ROS 2, écran HDMI) |
-| Moteur (6 V) | ~5,8–6,4 V | ~-20 à -34 mA (MDD3A en veille) |
+Les repères de consommation (courant par rail et par état du robot, tensions typiques au repos,
+courant du rail moteur sous charge, veille hors séance) sont regroupés dans la section
+**« Consommation du robot »** du [README.md](../README.md).
 
-Le courant au repos du rail logique n'est pas un repère fiable : il change selon ce qui tourne
-sur le Pi 4. La surveillance de batterie se fait sur la **tension**, jamais sur le courant ; le
-courant sert seulement à fermer la porte de courant quand le robot consomme.
-
-## Courant du rail moteur sous charge
-
-Valeurs établies sur le robot réel, même consigne envoyée aux deux chenilles :
-
-| Situation | Courant rail moteur (approx.) |
-|---|---|
-| Chenilles en rotation libre (robot sur cales) | ~0,5 A |
-| Charge partielle (robot roule au sol) | ~1,25 A |
-| Les deux chenilles bloquées à consigne 1000 | ~6,5 A |
-
-Le blocage des deux chenilles produit le courant maximal du robot. C'est un mode de défaillance
-connu de la plateforme — voir [blocage_chenilles.md](blocage_chenilles.md).
+Rappel utile pour le réglage des seuils : la surveillance de batterie se fait sur la **tension**,
+jamais sur le courant. Le courant sert seulement à fermer la porte de courant quand le robot
+consomme. Le signe publié est `signe_courant = -1` sur les deux rails (courant négatif au repos).
 
 ## Protection — fusible du rail moteur
 

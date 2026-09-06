@@ -15,7 +15,8 @@ sol trop adhérent en rotation sur place. Le moteur reste sous tension, à rotor
 
 - **Courant maximal du robot.** Les deux chenilles bloquées à consigne 1000 tirent environ
   **6,5 A** sur le rail moteur, contre ~0,5 A en rotation libre et ~1,25 A en charge partielle
-  (voir [parametres.md](parametres.md)). C'est le pire cas de consommation de la plateforme.
+  (voir la section « Consommation du robot » du [README.md](../README.md)). C'est le pire cas de
+  consommation de la plateforme.
 - **Échauffement du câblage de masse.** Un blocage prolongé a déjà provoqué un échauffement
   visible du câblage de masse du rail moteur. Un **fusible rapide 10 A / 20 mm** a été ajouté
   sur le positif du rail moteur en réponse (voir [parametres.md](parametres.md)).
