@@ -196,6 +196,17 @@ Environnement principal de développement.
 - Profil VSCode : `ROS2`
 - Rôle : édition, refactorisation, documentation, Codex / Claude Code, Git, tests sans matériel
 
+### Surface-Pro 7
+
+Environnement de développement mobile.
+
+- Tablet Surface Pro 7, Intel Core i7-1065G7 CPU @ 1.30 GHz, 16 Go RAM
+  Intel Iris Plus Graphics 128 MB
+- Windows 11
+- VSCode
+- Profil VSCode : `ROS2`
+- Rôle : consultation et analyse, édition légère de code, documentation, Codex / Claude Code, Git
+
 ### Raspberry Pi 4
 
 Environnement d’intégration réelle.
@@ -217,6 +228,25 @@ matérielle sur Raspberry Pi 4.
 - Utiliser l’environnement Python système lié à ROS 2
 - Ne pas ajouter de dépendance Python externe sans justification et validation
 - Aviser s’il est préférable d’installer de nouvelles bibliothèques ou composantes dans un `venv`
+
+## Vérification du poste au démarrage
+
+Au début de chaque session, vérifier la disponibilité de ROS 2 :
+
+    ros2 --version
+
+Si la commande échoue, l'environnement ne permet ni `colcon build`, ni exécution, ni tests. 
+Annoncer explicitement ce mode réduit dans la première réponse de la session.
+
+### Mode réduit (ROS 2 absent)
+
+Autorisé : documentation, lecture et analyse de code, rédaction de prompts, correctifs d'une ou 
+deux lignes sans effet structurel.
+
+Interdit : nouveau nœud, modification d'interface, changement de structure de packages
+refactorisation, modification des fichiers de configuration YAML ou launch.
+
+Ne jamais affirmer qu'une modification fonctionne. Aucune vérification n'est possible dans ce mode.
 
 ## Règles ROS 2
 
