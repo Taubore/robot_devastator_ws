@@ -242,21 +242,14 @@ de synchronisation complexe, simplement faire bouger la bouche pour ajouter une 
 du robot.
 
 - [ ] LCD ST7789V initialisé, affichage texte basique
-- [ ] Nœud `affichage_lcd` démarré tôt dans la séquence de lancement, avant les nœuds à
-      initialisation longue
+- [ ] Nœud `affichage_lcd` démarré tôt dans la séquence de lancement, avant les nœuds à initialisation longue
 - [ ] Page 0 : bouche animée de style dessin animé, animée pendant les annonces vocales
 - [ ] Pages 1 à N : statuts du robot (mode actif, tensions des deux rails, consignes moteurs)
 - [ ] Navigation entre pages par une touche du clavier, bouclage vers l'avant uniquement
-- [ ] Le passage du mode manuel au mode autonomie force la page 0, sur la transition et non en
-      continu ; le retour au mode manuel ne change pas la page
-- [ ] Boucle de rendu à cadence fixe (10 Hz) comparant l'état courant au dernier état affiché : 
-      aucun envoi vers l'écran si l'état est inchangé
-- [ ] Rafraîchissement limité à la zone modifiée via la fenêtre d'adressage du ST7789V ; plein 
-      écran réservé au changement de page
+- [ ] Le passage du mode manuel au mode autonomie force la page 0, sur la transition et non en continu ; le retour au mode manuel ne change pas la page
+- [ ] Boucle de rendu à cadence fixe (10 Hz) comparant l'état courant au dernier état affiché : aucun envoi vers l'écran si l'état est inchangé
+- [ ] Rafraîchissement limité à la zone modifiée via la fenêtre d'adressage du ST7789V ; plein écran réservé au changement de page
 - [ ] Lecture : documentation Waveshare du ST7789V (aucun chapitre de livre dédié)
-
-- 
-- 
 
 **Validation minimale :** basculer manuel/autonomie, l'affichage change.
 **Livre :** aucun chapitre dédié dans les livres disponibles — utiliser
