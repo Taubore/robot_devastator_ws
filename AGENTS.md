@@ -229,6 +229,17 @@ matérielle sur Raspberry Pi 4.
 - Ne pas ajouter de dépendance Python externe sans justification et validation
 - Aviser s’il est préférable d’installer de nouvelles bibliothèques ou composantes dans un `venv`
 
+## GPIO et SPI
+
+- `lgpio` est l’unique bibliothèque d’accès GPIO du projet, sur le Raspberry Pi 4 comme sur
+  toute cible future.
+- `spidev` est l’unique bibliothèque d’accès au bus SPI.
+- `gpiozero`, `RPi.GPIO`, `pigpio`, `bcm2835` et `wiringPi` sont proscrits, y compris comme
+  dépendance transitoire d’un code de référence copié ou adapté.
+- Motif : mélanger plusieurs bibliothèques GPIO dans un même système provoque des conflits
+  d’accès aux broches, et le mécanisme de sélection de backend de `gpiozero` rend le
+  comportement dépendant de ce qui se trouve installé sur la machine.
+
 ## Vérification du poste au démarrage
 
 Au début de chaque session, vérifier la disponibilité de ROS 2 :

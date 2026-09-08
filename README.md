@@ -24,6 +24,7 @@ communes du projet.
 | `src/interface_pico` | Pont ROS 2 ↔ UART ↔ Pico WH |
 | `src/odometrie` | Calcul de l'odométrie à partir des ticks encodeurs |
 | `src/surveillance_alimentation` | Surveillance tension et courant des batteries (INA260 sur I2C) |
+| `src/lcd_st7789v` | Pilote bas niveau, sans dépendance ROS 2, de l'écran LCD Waveshare 2" (ST7789V) |
 | `src/robot_devastator` | Logique principale du robot |
 | `src/robot_devastator_bringup` | Fichiers de lancement (`*.launch.yaml`) et paramètres |
 | `src/robot_devastator_description` | Description URDF/Xacro du robot et visualisation RViz |

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>lcd_st7789v</name>
+  <version>0.0.0</version>
+  <description>
+    Pilote bas niveau, indépendant de ROS 2, de l'écran LCD Waveshare 2 pouces
+    (contrôleur ST7789V) sur bus SPI. Couche la plus basse d'un empilement à trois
+    niveaux : ce pilote, un module de rendu texte, puis un package ROS 2. Module
+    réutilisable tel quel sur un autre projet.
+  </description>
+  <maintainer email="louis.st-hilaire@hotmail.com">taubore</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <!-- Aucune dépendance ROS 2 : le pilote est une bibliothèque Python autonome.
+       Paquets Debian/Ubuntu à installer manuellement, la clé rosdep pouvant ne pas
+       être résolue selon la version de rosdistro :
+       sudo apt install python3-spidev python3-lgpio python3-pil python3-numpy -->
+  <exec_depend>python3-spidev</exec_depend>
+  <exec_depend>python3-lgpio</exec_depend>
+  <exec_depend>python3-pil</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
