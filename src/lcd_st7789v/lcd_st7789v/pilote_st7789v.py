@@ -313,21 +313,27 @@ class EcranSt7789v:
         """
         Convertit une image Pillow en RGB565 et l'envoie par blocs sur le SPI.
 
-        Formule de conversion reprise telle quelle du code Waveshare : l'octet
-        haut porte les 5 bits de rouge et les 3 bits de poids fort du vert,
-        l'octet bas porte les 3 bits de poids faible du vert et les 5 bits de
-        bleu. Le découpage en blocs évite de dépasser la taille maximale d'un
-        transfert spidev sur ce noyau.
+        Formule reprise du code Waveshare (5 bits rouge, 6 bits vert, 5 bits bleu),
+        mais combinée en une seule expression numpy plutôt qu'en cinq opérations
+        séparées : chaque opération numpy balaie l'image entière, donc réduire leur
+        nombre réduit le nombre de passages en mémoire, pas le résultat produit.
         """
-        tableau = np.asarray(image.convert('RGB'))
-        pixels = np.zeros((tableau.shape[0], tableau.shape[1], 2), dtype=np.uint8)
-        pixels[..., 0] = (tableau[..., 0] & 0xF8) | (tableau[..., 1] >> 5)
-        pixels[..., 1] = ((tableau[..., 1] << 3) & 0xE0) | (tableau[..., 2] >> 3)
-        octets = pixels.tobytes()
+        tableau = np.asarray(image.convert('RGB'), dtype=np.uint16)
+        rouge = tableau[..., 0]
+        vert = tableau[..., 1]
+        bleu = tableau[..., 2]
+
+        # Un seul entier 16 bits par pixel, construit directement : les mêmes bits
+        # que la version en deux octets, assemblés en une passe plutôt que deux.
+        valeur_565 = ((rouge & 0xF8) << 8) | ((vert & 0xFC) << 3) | (bleu >> 3)
+
+        # Reconversion en paire d'octets gros-boutiste, ordre attendu par le
+        # contrôleur ST7789V (identique à l'octet haut/octet bas d'origine).
+        octets = valeur_565.astype('>u2').tobytes()
 
         lgpio.gpio_write(self._poignee_gpio, self._broche_dc, 1)
         for debut in range(0, len(octets), self._taille_bloc_spi):
-            self._spi.writebytes2(octets[debut:debut + self._taille_bloc_spi])
+            self._spi.writebytes2(octets[debut:debut + self._taille_bloc_spi])    
 
     # --- Cycle de vie ---
 
