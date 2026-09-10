@@ -241,7 +241,7 @@ touche amusante en dessinant une bouche qui va bouger lorsque la voix avec Piper
 de synchronisation complexe, simplement faire bouger la bouche pour ajouter une touche plus vivante
 du robot.
 
-- [ ] LCD ST7789V initialisé, affichage texte basique
+- [x] LCD ST7789V initialisé, affichage texte basique
 - [ ] Nœud `affichage_lcd` démarré tôt dans la séquence de lancement, avant les nœuds à initialisation longue
 - [ ] Page 0 : bouche animée de style dessin animé, animée pendant les annonces vocales
 - [ ] Pages 1 à N : statuts du robot (mode actif, tensions des deux rails, consignes moteurs)
