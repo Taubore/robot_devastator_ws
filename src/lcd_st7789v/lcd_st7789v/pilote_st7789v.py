@@ -89,7 +89,7 @@ class EcranSt7789v:
         broche_dc: int = 25,
         broche_rst: int = 24,
         broche_bl: int = 12,
-        frequence_spi_hz: int = 8_000_000,
+        frequence_spi_hz: int = 32_000_000,
         frequence_pwm_bl_hz: int = 1000,
         paysage: bool = True,
         puce_gpio: int = 0,
@@ -98,9 +98,10 @@ class EcranSt7789v:
         """
         Ouvre le bus SPI, réclame les broches GPIO puis initialise le contrôleur.
 
-        `frequence_spi_hz` : 8 MHz par défaut, valeur prudente. Pour l'augmenter,
-        procéder par paliers (par exemple 8 -> 16 -> 24 MHz) jusqu'à l'apparition
-        d'artefacts à l'écran, puis redescendre d'un palier.
+        `frequence_spi_hz` : 32 MHz par défaut. J'ai dû l'augmenter pour aler chercher une 
+        performance d'affichage correcte (53 ms). En effet, à 8 MHz, le temps d'affichage était 
+        vraiment lent, soit de 172 ms.
+
 
         `paysage` fixe l'orientation logique pour toute la durée de vie de
         l'instance, selon le montage physique du panneau (côté long à l'horizontal

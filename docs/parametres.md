@@ -248,8 +248,7 @@ Mesures réalisées en Phase 3 sur le robot réel.
 
 # Affichage LCD — ST7789V
 
-- Fréquence SPI retenue : à caractériser après essai. Procédure : montée par paliers depuis
-  8 MHz, en retenant la fréquence maximale testée sans artefact d'affichage.
+- Fréquence SPI retenue : 32 MHz. 
 
 # Surveillance de l'alimentation — INA260
 
