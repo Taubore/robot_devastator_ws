@@ -218,13 +218,21 @@ autre processus).
 
 La séquence d'initialisation du contrôleur ST7789V (réglages gamma compris), les
 codes de commande, la logique de définition de la fenêtre d'adressage, la formule de
-conversion RGB565 et la séquence de réinitialisation matérielle sont repris tels
-quels du code de démonstration Waveshare (dépôt `LCD_Module_RPI_code`, licence MIT,
+conversion RGB565 et la séquence de réinitialisation matérielle sont repris du code
+de démonstration Waveshare (dépôt `LCD_Module_RPI_code`, licence MIT,
 Copyright 2022 Waveshare Electronics) : ce sont des faits matériels du contrôleur et
 du panneau, déjà validés sur le robot physique (après adaptation des broches RST et
 BL au câblage réel). La structure de classe, la gestion des ressources, les
 identifiants et l'interface publique sont propres à ce projet et n'ont pas
 d'équivalent dans le code Waveshare, qui dépend de `gpiozero` (proscrit ici).
+
+Un seul écart volontaire au code Waveshare, dans `_definir_fenetre` : la référence
+décrémente uniquement l'octet bas de l'adresse de fin et laisse l'octet haut porter
+la valeur non décrémentée. L'asymétrie est sans effet tant que la fin de fenêtre
+n'est pas un multiple de 256, ce qui n'arrive jamais en plein écran (320 ou 240) ;
+elle transmet en revanche 511 au lieu de 255 pour une fenêtre se terminant
+exactement à 256. Le pilote convertit donc la borne exclusive en adresse inclusive
+avant de séparer les deux octets.
 
 ## Limites connues du pilote
 
