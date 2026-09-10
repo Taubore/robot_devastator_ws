@@ -291,22 +291,34 @@ class EcranSt7789v:
         """
         Définit la fenêtre d'adressage active du contrôleur.
 
-        Reprend la logique Waveshare telle quelle, y compris la particularité de
-        l'octet bas de fin de fenêtre transmis comme (fin - 1) alors que l'octet
-        haut ne l'est pas : c'est le comportement exact du contrôleur, validé sur
-        le panneau physique, pas une asymétrie à corriger.
+        Les bornes reçues sont exclusives (à la façon de Python), alors que CASET et
+        RASET attendent une adresse de fin **inclusive**. La conversion se fait donc
+        une seule fois, avant la séparation en octet haut et octet bas.
+
+        C'est le seul écart volontaire au code Waveshare, qui décrémente uniquement
+        l'octet bas et laisse l'octet haut porter la valeur non décrémentée. Cette
+        asymétrie est sans effet tant que la fin de fenêtre n'est pas un multiple de
+        256, ce qui n'arrive jamais en plein écran (320 ou 240) : elle passe donc
+        inaperçue dans la démonstration Waveshare. Elle devient fausse pour une
+        fenêtre se terminant exactement à 256, où la valeur transmise vaut 511 au
+        lieu de 255 — cas atteint par une grille de texte à cellules de 8 px de
+        large, dont la colonne 31 finit à x = 256.
         """
+        # Adresses de fin inclusives, converties avant tout découpage en octets.
+        x_dernier = x_fin - 1
+        y_dernier = y_fin - 1
+
         self._commande(_CMD_CASET)
         self._donnee(x_debut >> 8)
         self._donnee(x_debut & 0xFF)
-        self._donnee(x_fin >> 8)
-        self._donnee((x_fin - 1) & 0xFF)
+        self._donnee(x_dernier >> 8)
+        self._donnee(x_dernier & 0xFF)
 
         self._commande(_CMD_RASET)
         self._donnee(y_debut >> 8)
         self._donnee(y_debut & 0xFF)
-        self._donnee(y_fin >> 8)
-        self._donnee((y_fin - 1) & 0xFF)
+        self._donnee(y_dernier >> 8)
+        self._donnee(y_dernier & 0xFF)
 
         self._commande(_CMD_RAMWR)
 
