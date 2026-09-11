@@ -12,6 +12,8 @@ page 1 (tableau de bord : mode, alimentation, consignes moteur).
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import auto, Enum
+import random
 from typing import Final
 
 from commun.msg import ConsigneMoteurs
@@ -19,6 +21,7 @@ from lcd_st7789v.pilote_st7789v import EcranSt7789v
 from lcd_st7789v.rendu_texte import CYAN, GrilleTexte, GRIS, JAUNE, NOIR, VERT
 from PIL import Image, ImageDraw
 import rclpy
+from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from rclpy.time import Time
@@ -30,6 +33,60 @@ PAGE_BOUCHE: Final[int] = 0
 PAGE_TABLEAU_BORD: Final[int] = 1
 
 TEXTE_INCONNU: Final[str] = '--'
+
+
+class EtatBouche(Enum):
+    """Les quatre ouvertures possibles de la bouche de la page 0."""
+
+    REPOS = auto()
+    LEGER = auto()
+    MOYEN = auto()
+    LARGE = auto()
+
+
+@dataclass(frozen=True)
+class FormeBouche:
+    """Géométrie et couleur d'un état de bouche, avec cavité optionnelle."""
+
+    demi_hauteur: int
+    couleur: tuple[int, int, int]
+    cavite_rayons: tuple[int, int] | None = None
+    cavite_couleur: tuple[int, int, int] | None = None
+
+
+# Centre et demi-largeur fixes, maquette validée hors code : seule la demi-hauteur
+# varie d'un état à l'autre. Toutes les teintes restent dans le même bleu, du plus
+# foncé (repos, cavité) au plus clair (grande ouverture).
+CENTRE_BOUCHE_X: Final[int] = 160
+CENTRE_BOUCHE_Y: Final[int] = 140
+DEMI_LARGEUR_BOUCHE: Final[int] = 120
+
+FORMES_BOUCHE: Final[dict[EtatBouche, FormeBouche]] = {
+    EtatBouche.REPOS: FormeBouche(demi_hauteur=18, couleur=(13, 52, 106)),
+    EtatBouche.LEGER: FormeBouche(demi_hauteur=45, couleur=(26, 84, 160)),
+    EtatBouche.MOYEN: FormeBouche(
+        demi_hauteur=65,
+        couleur=(40, 110, 200),
+        cavite_rayons=(70, 38),
+        cavite_couleur=(6, 26, 54),
+    ),
+    EtatBouche.LARGE: FormeBouche(
+        demi_hauteur=85,
+        couleur=(60, 140, 230),
+        cavite_rayons=(90, 55),
+        cavite_couleur=(6, 26, 54),
+    ),
+}
+
+# États parcourus pendant la parole, tirés au sort pour éviter un cycle mécanique.
+ETATS_PAROLE: Final[tuple[EtatBouche, ...]] = (
+    EtatBouche.LEGER,
+    EtatBouche.MOYEN,
+    EtatBouche.LARGE,
+)
+PLAGE_TIRAGE_MS: Final[tuple[float, float]] = (130.0, 260.0)
+PLAGE_PAUSE_RESPIRATION_MS: Final[tuple[float, float]] = (90.0, 170.0)
+PROBABILITE_PAUSE_RESPIRATION: Final[float] = 0.12
 
 
 @dataclass
@@ -65,7 +122,7 @@ class AffichageLcd(Node):
         self.ecran = EcranSt7789v()
         self.ecran.regler_retroeclairage(retroeclairage_pourcent)
         self.grille = GrilleTexte(self.ecran)
-        self.image_bouche = self._construire_image_bouche()
+        self.images_bouche = self._construire_images_bouche()
 
         # État interne, mis à jour uniquement par les callbacks ci-dessous.
         self.mode_conduite: str | None = None
@@ -77,11 +134,17 @@ class AffichageLcd(Node):
         self.consigne_gauche = 0
         self.consigne_droite = 0
 
+        # État de l'animation de la bouche, mis à jour uniquement par le timer
+        # d'affichage (_mettre_a_jour_etat_bouche), jamais par une callback directe.
+        self._etat_bouche = EtatBouche.REPOS
+        self._prochain_tirage_bouche: Time | None = None
+
         # Dernière page effectivement dessinée à l'écran. None = inconnue : force
         # une resynchronisation complète au premier passage du timer, exactement
         # comme le premier effacer() attendu par GrilleTexte avant son premier
         # rendre().
         self._derniere_page_dessinee: int | None = None
+        self._dernier_etat_bouche_dessine: EtatBouche | None = None
 
         qos_parole_en_cours = QoSProfile(
             depth=1,
@@ -180,36 +243,83 @@ class AffichageLcd(Node):
         page_affichee = PAGE_BOUCHE if self.parole_en_cours else self.page_courante
 
         if page_affichee == PAGE_BOUCHE:
+            self._mettre_a_jour_etat_bouche()
             self._dessiner_page_bouche()
         else:
             self._dessiner_page_tableau_bord()
 
     # --- Méthodes privées utilitaires ---
 
-    def _construire_image_bouche(self) -> Image.Image:
-        """Construit une fois l'image plein écran de la bouche simple (Pillow)."""
-        image = Image.new('RGB', (self.ecran.largeur, self.ecran.hauteur), NOIR)
-        dessin = ImageDraw.Draw(image)
+    def _construire_images_bouche(self) -> dict[EtatBouche, Image.Image]:
+        """Construit une fois les images plein écran de chaque état de bouche (Pillow)."""
+        images: dict[EtatBouche, Image.Image] = {}
 
-        centre_x, centre_y = self.ecran.largeur // 2, self.ecran.hauteur // 2
-        demi_largeur, demi_hauteur = 60, 25
-        dessin.ellipse(
-            (
-                centre_x - demi_largeur,
-                centre_y - demi_hauteur,
-                centre_x + demi_largeur,
-                centre_y + demi_hauteur,
-            ),
-            fill=(255, 255, 255),
+        for etat, forme in FORMES_BOUCHE.items():
+            image = Image.new('RGB', (self.ecran.largeur, self.ecran.hauteur), NOIR)
+            dessin = ImageDraw.Draw(image)
+            dessin.ellipse(
+                (
+                    CENTRE_BOUCHE_X - DEMI_LARGEUR_BOUCHE,
+                    CENTRE_BOUCHE_Y - forme.demi_hauteur,
+                    CENTRE_BOUCHE_X + DEMI_LARGEUR_BOUCHE,
+                    CENTRE_BOUCHE_Y + forme.demi_hauteur,
+                ),
+                fill=forme.couleur,
+            )
+            # Cavité plus sombre par-dessus, pour "moyen" et "large" seulement.
+            if forme.cavite_rayons is not None:
+                rayon_x, rayon_y = forme.cavite_rayons
+                dessin.ellipse(
+                    (
+                        CENTRE_BOUCHE_X - rayon_x,
+                        CENTRE_BOUCHE_Y - rayon_y,
+                        CENTRE_BOUCHE_X + rayon_x,
+                        CENTRE_BOUCHE_Y + rayon_y,
+                    ),
+                    fill=forme.cavite_couleur,
+                )
+            images[etat] = image
+
+        return images
+
+    def _mettre_a_jour_etat_bouche(self) -> None:
+        """Fait évoluer l'état de la bouche à un rythme irrégulier pendant la parole."""
+        if not self.parole_en_cours:
+            # Retour immédiat au repos, sans attendre la fin du sous-état en cours.
+            self._etat_bouche = EtatBouche.REPOS
+            self._prochain_tirage_bouche = None
+            return
+
+        maintenant = self.get_clock().now()
+        if (
+            self._prochain_tirage_bouche is not None
+            and maintenant < self._prochain_tirage_bouche
+        ):
+            return
+
+        # Courte pause au repos de temps à autre, pour évoquer une respiration
+        # entre les mots plutôt qu'un cycle mécanique entre les trois états.
+        if random.random() < PROBABILITE_PAUSE_RESPIRATION:
+            self._etat_bouche = EtatBouche.REPOS
+            duree_ms = random.uniform(*PLAGE_PAUSE_RESPIRATION_MS)
+        else:
+            self._etat_bouche = random.choice(ETATS_PAROLE)
+            duree_ms = random.uniform(*PLAGE_TIRAGE_MS)
+
+        self._prochain_tirage_bouche = maintenant + Duration(
+            nanoseconds=int(duree_ms * 1e6)
         )
-        return image
 
     def _dessiner_page_bouche(self) -> None:
-        """Affiche la bouche, seulement si elle n'était pas déjà à l'écran."""
-        if self._derniere_page_dessinee == PAGE_BOUCHE:
+        """Affiche la bouche, seulement si l'image à afficher a changé depuis le dernier tick."""
+        if (
+            self._derniere_page_dessinee == PAGE_BOUCHE
+            and self._dernier_etat_bouche_dessine == self._etat_bouche
+        ):
             return
-        self.ecran.afficher_image_pleine(self.image_bouche)
+        self.ecran.afficher_image_pleine(self.images_bouche[self._etat_bouche])
         self._derniere_page_dessinee = PAGE_BOUCHE
+        self._dernier_etat_bouche_dessine = self._etat_bouche
 
     def _dessiner_page_tableau_bord(self) -> None:
         """Dessine le tableau de bord : mode, alimentation, consignes moteur."""

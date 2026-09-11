@@ -9,14 +9,45 @@ rendu texte fournis par [`lcd_st7789v`](../lcd_st7789v/README.md) : `EcranSt7789
 
 Traduit l'état courant du robot en deux pages affichées à l'écran :
 
-- **Page bouche** (page 0) : visage simple dessiné avec Pillow, imposée pendant une
-  annonce vocale (`/robot/parole_en_cours`), et forcée juste après un passage du mode
-  manuel vers le mode autonomie.
+- **Page bouche** (page 0) : bouche dessinée avec Pillow, imposée pendant une annonce
+  vocale (`/robot/parole_en_cours`), et forcée juste après un passage du mode manuel
+  vers le mode autonomie.
 - **Page tableau de bord** (page 1) : mode de conduite, tension/courant des deux rails
   d'alimentation, consignes moteur gauche/droite réellement appliquées.
 
 Les abonnements ne font que mettre à jour un état interne en mémoire ; un timer à
 10 Hz est le seul endroit du nœud qui dessine à l'écran.
+
+### Forme et animation de la page bouche
+
+Une seule forme, une ellipse pleine dessinée directement avec Pillow sur l'écran
+complet 320 x 240 (pas de `GrilleTexte`) : centre fixe (160, 140), demi-largeur fixe
+120 px, seule la demi-hauteur varie selon l'état. Quatre états, du plus fermé (bleu
+foncé) au plus ouvert (bleu clair) :
+
+| État    | Demi-hauteur | Couleur RVB      | Cavité (rayons) | Couleur cavité |
+|---|---|---|---|---|
+| repos   | 18 px        | (13, 52, 106)    | —               | —              |
+| leger   | 45 px        | (26, 84, 160)    | —               | —              |
+| moyen   | 65 px        | (40, 110, 200)   | (70, 38)        | (6, 26, 54)    |
+| large   | 85 px        | (60, 140, 230)   | (90, 55)        | (6, 26, 54)    |
+
+Les états "moyen" et "large" ajoutent une ellipse plus sombre au même centre, pour
+suggérer une cavité. Les quatre images sont précalculées une seule fois à
+l'initialisation du nœud.
+
+Animation pilotée par `/robot/parole_en_cours` :
+
+- faux : bouche toujours à l'état "repos" (bleu foncé aplati) ;
+- vrai : tirage aléatoire d'un nouvel état parmi leger/moyen/large toutes les
+  130 à 260 ms, avec 12 % de chance à chaque tirage d'insérer une courte pause à
+  "repos" (90 à 170 ms) pour simuler une respiration entre les mots. Le rythme
+  irrégulier évite un cycle mécanique et évoque une phrase parlée.
+- dès que `/robot/parole_en_cours` repasse à faux, retour immédiat à "repos" au
+  tick suivant du timer d'affichage, sans attendre la fin du sous-état en cours.
+
+Le timer à 10 Hz ne retransmet à l'écran que si l'image à afficher (page et état de
+bouche) a changé depuis le dernier tick.
 
 ### Mise en page de la page tableau de bord
 
@@ -88,14 +119,25 @@ ros2 topic pub --once /robot/mode_conduite std_msgs/msg/String '{data: autonomie
 
 ros2 topic pub /robot/parole_en_cours std_msgs/msg/Bool '{data: true}' \
   --qos-durability transient_local --once
-# Page bouche imposée
+# Page bouche imposée : passe du bleu foncé aplati (repos) à un cycle irrégulier
+# d'ellipses bleues plus claires et plus hautes (leger/moyen/large), avec de
+# courtes pauses au repos
 
 ros2 topic pub --once /affichage/page_suivante std_msgs/msg/Empty '{}'
 # Ignoré : la page reste sur la bouche tant que /robot/parole_en_cours est vrai
+
+ros2 topic pub /robot/parole_en_cours std_msgs/msg/Bool '{data: false}' \
+  --qos-durability transient_local --once
+# Retour immédiat au repos (bleu foncé aplati)
+
+ros2 topic pub --once /affichage/page_suivante std_msgs/msg/Empty '{}'
+# Fonctionne à nouveau : bascule vers la page 1
 ```
 
 ## Limites connues
 
 - Une seule page de statut pour l'instant (page 1) ; le bouclage de
   `/affichage/page_suivante` n'alterne donc qu'entre les pages 0 et 1.
-- La bouche de la page 0 est une forme simple statique, non animée.
+- Le rythme de l'animation de la bouche est calé sur le tick du timer d'affichage
+  à 10 Hz : les durées tirées (130 à 260 ms, pauses 90 à 170 ms) ne sont donc
+  respectées qu'à environ 100 ms près.
