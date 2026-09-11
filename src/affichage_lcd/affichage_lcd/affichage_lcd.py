@@ -16,7 +16,7 @@ from typing import Final
 
 from commun.msg import ConsigneMoteurs
 from lcd_st7789v.pilote_st7789v import EcranSt7789v
-from lcd_st7789v.rendu_texte import CYAN, GrilleTexte, JAUNE, NOIR, VERT
+from lcd_st7789v.rendu_texte import CYAN, GrilleTexte, GRIS, JAUNE, NOIR, VERT
 from PIL import Image, ImageDraw
 import rclpy
 from rclpy.node import Node
@@ -220,32 +220,40 @@ class AffichageLcd(Node):
             self.grille.effacer(NOIR)
             self._derniere_page_dessinee = PAGE_TABLEAU_BORD
 
+        separateur = '-' * self.grille.colonnes
+
         mode_texte = (self.mode_conduite or TEXTE_INCONNU).upper()
-        self.grille.ecrire_texte(0, 0, f'Mode: {mode_texte:<10}', CYAN)
+        self.grille.ecrire_texte(0, 0, f'MODE : {mode_texte}', CYAN)
+        self.grille.ecrire_texte(0, 1, separateur, GRIS)
 
         self.grille.ecrire_texte(
-            0, 2, self._texte_ligne_alimentation('Log', self.etat_logique), VERT
+            0, 2, self._texte_ligne_alimentation('Logique', self.etat_logique), VERT
         )
         self.grille.ecrire_texte(
-            0, 3, self._texte_ligne_alimentation('Mot', self.etat_moteur), VERT
+            0, 3, self._texte_ligne_alimentation('Moteur', self.etat_moteur), VERT
         )
+        self.grille.ecrire_texte(0, 4, separateur, GRIS)
 
         self.grille.ecrire_texte(
-            0, 5, self._texte_ligne_moteur('G', self.consigne_gauche), JAUNE
+            0, 5, self._texte_ligne_moteur('Gauche', self.consigne_gauche), JAUNE
         )
         self.grille.ecrire_texte(
-            0, 6, self._texte_ligne_moteur('D', self.consigne_droite), JAUNE
+            0, 6, self._texte_ligne_moteur('Droite', self.consigne_droite), JAUNE
         )
 
         self.grille.rendre()
 
-    def _texte_ligne_alimentation(self, prefixe: str, etat: EtatMesure) -> str:
+    def _texte_ligne_alimentation(self, etiquette: str, etat: EtatMesure) -> str:
         """Construit le texte d'une ligne tension/courant, '--' si périmée."""
         if self._est_perime(etat.horodatage_reception):
-            return f'{prefixe} {TEXTE_INCONNU:>5} V {TEXTE_INCONNU:>6} A'
-        return f'{prefixe} {etat.tension_v:>5.1f} V {etat.courant_a:>6.2f} A'
+            valeurs = f'{TEXTE_INCONNU:>4} V {TEXTE_INCONNU:>5} A'
+        else:
+            # Le courant sert ici de repère de charge, jamais de signe de décharge :
+            # la valeur absolue évite une lecture négative inutile à l'écran.
+            valeurs = f'{etat.tension_v:>4.1f} V {abs(etat.courant_a):>5.1f} A'
+        return f'{etiquette:<9}: {valeurs}'
 
-    def _texte_ligne_moteur(self, prefixe: str, consigne: int) -> str:
+    def _texte_ligne_moteur(self, etiquette: str, consigne: int) -> str:
         """Construit le texte d'une ligne de consigne moteur : sens et intensité PWM."""
         if consigne > 0:
             sens = 'avance'
@@ -253,7 +261,7 @@ class AffichageLcd(Node):
             sens = 'recule'
         else:
             sens = 'arrêt'
-        return f'{prefixe} {sens:<6} {abs(consigne):>4}'
+        return f'{etiquette:<9}: {sens:<7}{abs(consigne):>5}'
 
     def _est_perime(self, horodatage_reception: Time | None) -> bool:
         """Indique si une mesure n'a pas été reçue depuis plus que la péremption."""

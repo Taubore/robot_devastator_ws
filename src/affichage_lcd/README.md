@@ -18,6 +18,23 @@ Traduit l'état courant du robot en deux pages affichées à l'écran :
 Les abonnements ne font que mettre à jour un état interne en mémoire ; un timer à
 10 Hz est le seul endroit du nœud qui dessine à l'écran.
 
+### Mise en page de la page tableau de bord
+
+```
+MODE : MANUEL
+--------------------------------
+Logique  : 12.3 V   0.4 A
+Moteur   : 11.8 V   1.2 A
+--------------------------------
+Gauche   : avance   650
+Droite   : avance   650
+```
+
+Une couleur par bloc (mode, alimentation, consignes moteur), rouge exclu (réservé aux
+erreurs). Le courant est toujours affiché en valeur absolue : seule la tension sert de
+repère de charge, voir `docs/parametres.md`. Un champ affiche `--` si la mesure
+correspondante dépasse `peremption_alimentation_s` sans nouvelle réception.
+
 ## Paramètres ROS 2
 
 | Paramètre | Défaut | Rôle |
