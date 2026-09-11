@@ -56,10 +56,13 @@ _CMD_NVGAMCTRL: Final[int] = 0xE1     # Réglages gamma négatifs
 _CMD_SLPOUT: Final[int] = 0x11        # Sortie du mode veille
 _CMD_DISPON: Final[int] = 0x29        # Allumage de l'affichage
 
-# Orientation logique : MADCTL réglé une seule fois à l'initialisation, jamais
-# recalculé par image. Valeurs reprises telles quelles du code Waveshare.
+## Orientation logique : MADCTL réglé une seule fois à l'initialisation, jamais
+# recalculé par image. 
 _MADCTL_PORTRAIT: Final[int] = 0x00   # Orientation native du panneau (240 x 320)
-_MADCTL_PAYSAGE: Final[int] = 0x70    # Rotation 90 degrés (320 x 240)
+_MADCTL_PAYSAGE: Final[int] = 0xA0    # Rotation 90 degrés (320 x 240) - valeur déterminée
+                                      # empiriquement sur le matériel réel. 0x70,
+                                      # repris tel quel du code Waveshare, produisait
+                                      # une image tête en bas sur ce panneau.
 
 # Limite habituelle d'un transfert spidev sur Raspberry Pi sans reconfiguration du
 # tampon noyau (voir contrainte de conception « découpage des transferts SPI »).

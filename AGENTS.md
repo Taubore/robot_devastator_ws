@@ -301,9 +301,9 @@ diagnostic.
 
 - Utiliser Python et `rclpy`
 - Identifiants en français sans accents
+- Lignes de code et commentaires limitées à 100 caractères
 - Commentaires, docstrings et textes utilisateur en français avec accents
 - Docstrings multilignes
-- Lignes limitées à 100 caractères
 - Code lisible, maintenable, sobre et pédagogique
 - Respecter les bonnes pratiques Python, sans purisme ni complexité décorative
 - Ne pas extraire une méthode ou une fonction si elle ne contient que quelques lignes triviales ;

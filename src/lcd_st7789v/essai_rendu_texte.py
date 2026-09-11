@@ -135,7 +135,7 @@ def main() -> int:
                 '(parcours de la grille seul, aucun envoi SPI)'
             )
 
-            time.sleep(1.0)
+            time.sleep(5.0)
 
             # --- Effacement puis redessin complet ---
             debut = time.perf_counter()
