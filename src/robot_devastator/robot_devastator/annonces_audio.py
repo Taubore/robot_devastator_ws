@@ -14,10 +14,12 @@ from typing import Final
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
+from rclpy.qos import DurabilityPolicy, QoSProfile
 from rclpy.signals import SignalHandlerOptions
-from std_msgs.msg import String
+from std_msgs.msg import Bool, String
 
 TOPIC_EVENEMENT_ROBOT: Final[str] = '/robot/evenement'
+TOPIC_PAROLE_EN_COURS: Final[str] = '/robot/parole_en_cours'
 TAILLE_FILE_MESSAGES: Final[int] = 10
 SEPARATEUR_VARIANTE: Final[str] = '|'
 DEFAULT_PIPER_EXECUTABLE: Final[str] = '/usr/local/bin/piper'
@@ -97,6 +99,18 @@ class AnnoncesAudio(Node):
         self._valider_parametres()
         self.repertoire_audio.mkdir(parents=True, exist_ok=True)
         self.get_logger().info(f'Cache audio persistant utilisé : {self.repertoire_audio}.')
+
+        # Transient local : un futur nœud LCD démarré après une annonce doit tout de
+        # même connaître le dernier état connu du signal de parole.
+        qos_parole_en_cours = QoSProfile(
+            depth=1,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+        )
+        self.publisher_parole_en_cours = self.create_publisher(
+            Bool,
+            TOPIC_PAROLE_EN_COURS,
+            qos_parole_en_cours,
+        )
 
         # La préparation est volontairement synchrone : le nœud ne commence à écouter
         # /robot/evenement qu'après avoir préparé les fichiers ou journalisé les échecs.
@@ -316,6 +330,7 @@ class AnnoncesAudio(Node):
             )
             return
 
+        self._publier_parole_en_cours(True)
         try:
             self._executer_commande_externe(['aplay', str(chemin_audio)])
             self.get_logger().info(f'Lecture audio réussie : {chemin_audio.name}.')
@@ -337,6 +352,12 @@ class AnnoncesAudio(Node):
             self.get_logger().error(
                 f'Lecture audio échouée pour {chemin_audio.name} : {erreur}'
             )
+        finally:
+            self._publier_parole_en_cours(False)
+
+    def _publier_parole_en_cours(self, en_cours: bool) -> None:
+        """Publie l'état du signal de parole utilisé par le futur affichage LCD."""
+        self.publisher_parole_en_cours.publish(Bool(data=en_cours))
 
     def _executer_commande_externe(
         self,

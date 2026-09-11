@@ -29,6 +29,7 @@ d'obstacle et annonces audio.
 | Direction | Topic | Type | Rôle |
 |---|---|---|---|
 | Entrée | `/robot/evenement` | `std_msgs/msg/String` | Événement déclenchant une annonce |
+| Sortie | `/robot/parole_en_cours` | `std_msgs/msg/Bool` | `true` pendant la lecture `aplay`, `false` sinon (QoS transient local, profondeur 1) |
 
 ### `teleop_clavier`
 
@@ -118,3 +119,10 @@ car il capture les touches du terminal courant. Il ne peut pas s'exécuter en ar
 **`evitement_obstacle`** est expérimental. Il démarre systématiquement en attente
 (`actif_au_demarrage: false`) et ne devient actif que lorsque `teleop_clavier` bascule en mode
 autonomie avec la touche `m`.
+
+**`/robot/parole_en_cours`** sert de signal d'état pour un futur nœud d'affichage LCD
+(animation de bouche). Test rapide sur le Raspberry Pi 4 : lancer `annonces_audio` isolément,
+observer `ros2 topic echo /robot/parole_en_cours` pendant qu'une annonce est déclenchée via
+`/robot/evenement`, et confirmer que le signal passe à `true` juste avant la lecture puis revient
+à `false` juste après. Une variante silencieuse ne doit déclencher aucune publication, puisque
+`aplay` n'est jamais appelé dans ce cas.
