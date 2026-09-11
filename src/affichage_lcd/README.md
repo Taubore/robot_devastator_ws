@@ -20,23 +20,22 @@ Les abonnements ne font que mettre à jour un état interne en mémoire ; un tim
 
 ### Forme et animation de la page bouche
 
-Une seule forme, un rectangle à coins très arrondis et légèrement irrégulier, dessiné
-directement avec Pillow sur l'écran complet 320 x 240 (pas de `GrilleTexte`) : centre
-fixe (160, 140), demi-largeur fixe 120 px. Seule la demi-hauteur varie, entre 18 px
-(fermée) et 85 px (grande ouverture), selon une **ouverture** continue de 0.0 à 1.0.
+Deux rectangles à coins arrondis nets et concentriques, dessinés directement avec
+Pillow sur l'écran complet 320 x 240 (pas de `GrilleTexte`), centre fixe (160, 140),
+toujours dessinés tous les deux — l'intérieur ne disparaît jamais, même au repos.
+Rayon de coin uniforme pour chaque rectangle : 0.55 x sa propre demi-hauteur
+courante. Seules les dimensions suivent l'**ouverture** continue (0.0 à 1.0) ;
+chaque rectangle garde sa couleur fixe à tout degré d'ouverture.
 
-- Rayon de chaque coin : 0.55 x la demi-hauteur courante, multiplié par un facteur
-  propre à ce coin (entre 0.8 et 1.2), tiré une seule fois au démarrage du nœud avec
-  une graine fixe — la bouche garde ainsi la même "personnalité" d'une image à
-  l'autre plutôt que de changer de forme à chaque tirage.
-- Contour légèrement ondulé (deux fréquences superposées sur le tour complet,
-  phases fixées au démarrage), amplitude d'environ `2.5 + 0.12 x demi-hauteur` px.
-- Couleur du corps toujours RVB (13, 52, 106), à tout degré d'ouverture.
-- Cavité interne (même construction de rectangle arrondi, mais sans ondulation du
-  contour) visible dès que l'ouverture dépasse 0.05 : rayons `(90 x ouverture,
-  55 x ouverture)`, couleur interpolée linéairement entre RVB (13, 52, 106) et
-  RVB (4, 16, 34) selon l'ouverture — elle grandit et s'assombrit avec l'ouverture,
-  sans jamais changer la teinte dominante du corps.
+- Extérieur : demi-largeur interpolée entre 88 px (ouverture 0.0) et 112 px
+  (ouverture 1.0), demi-hauteur interpolée entre 26 px et 40 px. Couleur fixe
+  RVB (46, 87, 135).
+- Intérieur : demi-largeur = demi-largeur de l'extérieur moins 15 px (marge fixe,
+  suit donc automatiquement la largeur de l'extérieur), demi-hauteur interpolée
+  entre 5 px (mince mais toujours visible) et 32 px. Couleur fixe RVB (22, 42, 65).
+  L'intérieur grandit beaucoup plus que l'extérieur avec l'ouverture, surtout en
+  hauteur, ce qui suggère une bouche qui s'ouvre plutôt qu'un simple agrandissement
+  d'ensemble.
 
 Animation pilotée par `/robot/parole_en_cours`, par transitions lissées (smoothstep)
 d'une ouverture de départ vers une ouverture cible :
@@ -127,10 +126,9 @@ ros2 topic pub --once /robot/mode_conduite std_msgs/msg/String '{data: autonomie
 
 ros2 topic pub /robot/parole_en_cours std_msgs/msg/Bool '{data: true}' \
   --qos-durability transient_local --once
-# Page bouche imposée : passe du rectangle bleu foncé aplati (ouverture 0) à un
-# mouvement continu et fluide entre plusieurs degrés d'ouverture, avec un
-# ombrage interne qui grandit et s'assombrit avec l'ouverture, sans jamais
-# changer de teinte dominante
+# Page bouche imposée : le rectangle extérieur s'élargit et s'agrandit
+# modérément, l'intérieur grandit beaucoup plus (surtout en hauteur), les deux
+# couleurs restant chacune constantes tout au long du mouvement
 
 ros2 topic pub --once /affichage/page_suivante std_msgs/msg/Empty '{}'
 # Ignoré : la page reste sur la bouche tant que /robot/parole_en_cours est vrai

@@ -35,31 +35,27 @@ PAGE_TABLEAU_BORD: Final[int] = 1
 TEXTE_INCONNU: Final[str] = '--'
 
 
-# Centre et demi-largeur fixes, maquette validée hors code : seule la demi-hauteur
-# varie avec l'ouverture. Le corps garde toujours la même teinte ; seule la cavité
-# interne s'assombrit avec l'ouverture, pour suggérer une profondeur.
+# Centre fixe, maquette validée hors code. Deux rectangles à coins arrondis nets
+# et concentriques, toujours dessinés tous les deux, chacun dans une couleur fixe :
+# seules leurs dimensions suivent l'ouverture, jamais leur teinte.
 CENTRE_BOUCHE_X: Final[int] = 160
 CENTRE_BOUCHE_Y: Final[int] = 140
-DEMI_LARGEUR_BOUCHE: Final[float] = 120.0
-DEMI_HAUTEUR_BOUCHE_MIN: Final[float] = 18.0
-DEMI_HAUTEUR_BOUCHE_MAX: Final[float] = 85.0
 
-COULEUR_CORPS_BOUCHE: Final[tuple[int, int, int]] = (13, 52, 106)
-COULEUR_CAVITE_BOUCHE_MAX: Final[tuple[int, int, int]] = (4, 16, 34)
-RAYON_X_CAVITE_BOUCHE_MAX: Final[float] = 90.0
-RAYON_Y_CAVITE_BOUCHE_MAX: Final[float] = 55.0
-SEUIL_OUVERTURE_CAVITE: Final[float] = 0.05
+DEMI_LARGEUR_EXTERIEUR_BOUCHE_MIN: Final[float] = 88.0
+DEMI_LARGEUR_EXTERIEUR_BOUCHE_MAX: Final[float] = 112.0
+DEMI_HAUTEUR_EXTERIEUR_BOUCHE_MIN: Final[float] = 26.0
+DEMI_HAUTEUR_EXTERIEUR_BOUCHE_MAX: Final[float] = 40.0
+COULEUR_EXTERIEUR_BOUCHE: Final[tuple[int, int, int]] = (46, 87, 135)
 
-# Rectangle à coins arrondis irréguliers : rayon de coin proportionnel à la
-# demi-hauteur, avec un facteur propre à chaque coin (personnalité fixe de la
-# bouche) et un contour légèrement ondulé (deux fréquences superposées sur le
-# tour complet, phases fixes). La cavité réutilise la même construction, mais
-# sans ondulation (contour net).
+MARGE_INTERIEUR_BOUCHE: Final[float] = 15.0
+DEMI_HAUTEUR_INTERIEUR_BOUCHE_MIN: Final[float] = 5.0
+DEMI_HAUTEUR_INTERIEUR_BOUCHE_MAX: Final[float] = 32.0
+COULEUR_INTERIEUR_BOUCHE: Final[tuple[int, int, int]] = (22, 42, 65)
+
+# Rectangle à coins arrondis net et symétrique : rayon de coin uniforme,
+# proportionnel à la demi-hauteur de la forme concernée.
 FACTEUR_RAYON_COIN_BOUCHE: Final[float] = 0.55
-PLAGE_FACTEUR_COIN_BOUCHE: Final[tuple[float, float]] = (0.8, 1.2)
-FREQUENCES_IRREGULARITE_BOUCHE: Final[tuple[int, int]] = (3, 5)
 NB_POINTS_PAR_COIN_BOUCHE: Final[int] = 10
-GRAINE_PERSONNALITE_BOUCHE: Final[int] = 20260911
 
 # Animation : ouverture continue (0.0 à 1.0), interpolée par transitions lissées
 # (smoothstep) plutôt qu'un tirage entre paliers fixes.
@@ -103,18 +99,6 @@ class AffichageLcd(Node):
         self.ecran = EcranSt7789v()
         self.ecran.regler_retroeclairage(retroeclairage_pourcent)
         self.grille = GrilleTexte(self.ecran)
-
-        # Personnalité fixe de la bouche (rayons de coin, ondulation du contour),
-        # tirée une seule fois avec une graine fixe : un générateur dédié évite de
-        # perturber le random global utilisé plus loin pour le rythme de parole.
-        generateur_personnalite = random.Random(GRAINE_PERSONNALITE_BOUCHE)
-        self._facteurs_coins_bouche = tuple(
-            generateur_personnalite.uniform(*PLAGE_FACTEUR_COIN_BOUCHE) for _ in range(4)
-        )
-        self._phases_irregularite_bouche = (
-            generateur_personnalite.uniform(0.0, 2 * math.pi),
-            generateur_personnalite.uniform(0.0, 2 * math.pi),
-        )
 
         # État interne, mis à jour uniquement par les callbacks ci-dessous.
         self.mode_conduite: str | None = None
@@ -255,60 +239,39 @@ class AffichageLcd(Node):
         centre_y: float,
         demi_largeur: float,
         demi_hauteur: float,
-        amplitude_irreguliere: float,
     ) -> list[tuple[float, float]]:
         """
-        Construit les sommets d'un rectangle à coins arrondis, un par coin.
+        Construit les sommets d'un rectangle à coins arrondis, net et symétrique.
 
-        Chaque coin a son propre rayon (rayon de base x facteur fixe du coin) ;
-        les côtés droits ne portent aucun sommet, le polygone les relie
-        implicitement. Une amplitude non nulle ondule le contour vers l'extérieur
-        (deux fréquences superposées sur le tour complet, phases fixes) ; une
-        amplitude nulle donne un contour net, utilisé pour la cavité interne.
+        Rayon de coin uniforme (proportionnel à la demi-hauteur) ; les côtés droits
+        ne portent aucun sommet, le polygone les relie implicitement d'un coin à
+        l'autre.
         """
         gauche = centre_x - demi_largeur
         droite = centre_x + demi_largeur
         haut = centre_y - demi_hauteur
         bas = centre_y + demi_hauteur
 
-        rayon_base = FACTEUR_RAYON_COIN_BOUCHE * demi_hauteur
-        rayons = tuple(rayon_base * facteur for facteur in self._facteurs_coins_bouche)
+        rayon = FACTEUR_RAYON_COIN_BOUCHE * demi_hauteur
 
         # Ordre horaire : haut-gauche, haut-droite, bas-droite, bas-gauche. Chaque
         # coin balaie un quart de cercle, du côté précédent vers le côté suivant.
         coins = (
-            (gauche + rayons[0], haut + rayons[0], math.pi, 1.5 * math.pi),
-            (droite - rayons[1], haut + rayons[1], 1.5 * math.pi, 2.0 * math.pi),
-            (droite - rayons[2], bas - rayons[2], 0.0, 0.5 * math.pi),
-            (gauche + rayons[3], bas - rayons[3], 0.5 * math.pi, math.pi),
+            (gauche + rayon, haut + rayon, math.pi, 1.5 * math.pi),
+            (droite - rayon, haut + rayon, 1.5 * math.pi, 2.0 * math.pi),
+            (droite - rayon, bas - rayon, 0.0, 0.5 * math.pi),
+            (gauche + rayon, bas - rayon, 0.5 * math.pi, math.pi),
         )
 
-        nb_sommets_total = NB_POINTS_PAR_COIN_BOUCHE * len(coins)
-        phase_frequence_3, phase_frequence_5 = self._phases_irregularite_bouche
-        frequence_3, frequence_5 = FREQUENCES_IRREGULARITE_BOUCHE
         sommets: list[tuple[float, float]] = []
-
-        for indice_coin, (centre_arc_x, centre_arc_y, angle_debut, angle_fin) in enumerate(
-            coins
-        ):
-            rayon = rayons[indice_coin]
+        for centre_arc_x, centre_arc_y, angle_debut, angle_fin in coins:
             for indice_point in range(NB_POINTS_PAR_COIN_BOUCHE):
                 fraction_coin = indice_point / (NB_POINTS_PAR_COIN_BOUCHE - 1)
                 angle = angle_debut + (angle_fin - angle_debut) * fraction_coin
-
-                fraction_contour = (
-                    indice_coin * NB_POINTS_PAR_COIN_BOUCHE + indice_point
-                ) / nb_sommets_total
-                decalage = amplitude_irreguliere * (
-                    math.sin(2 * math.pi * frequence_3 * fraction_contour + phase_frequence_3)
-                    + math.sin(2 * math.pi * frequence_5 * fraction_contour + phase_frequence_5)
-                ) / 2.0
-
-                rayon_point = rayon + decalage
                 sommets.append(
                     (
-                        centre_arc_x + rayon_point * math.cos(angle),
-                        centre_arc_y + rayon_point * math.sin(angle),
+                        centre_arc_x + rayon * math.cos(angle),
+                        centre_arc_y + rayon * math.sin(angle),
                     )
                 )
 
@@ -319,33 +282,27 @@ class AffichageLcd(Node):
         image = Image.new('RGB', (self.ecran.largeur, self.ecran.hauteur), NOIR)
         dessin = ImageDraw.Draw(image)
 
-        demi_hauteur = (
-            DEMI_HAUTEUR_BOUCHE_MIN
-            + (DEMI_HAUTEUR_BOUCHE_MAX - DEMI_HAUTEUR_BOUCHE_MIN) * ouverture
+        demi_largeur_exterieur = DEMI_LARGEUR_EXTERIEUR_BOUCHE_MIN + (
+            DEMI_LARGEUR_EXTERIEUR_BOUCHE_MAX - DEMI_LARGEUR_EXTERIEUR_BOUCHE_MIN
+        ) * ouverture
+        demi_hauteur_exterieur = DEMI_HAUTEUR_EXTERIEUR_BOUCHE_MIN + (
+            DEMI_HAUTEUR_EXTERIEUR_BOUCHE_MAX - DEMI_HAUTEUR_EXTERIEUR_BOUCHE_MIN
+        ) * ouverture
+        sommets_exterieur = self._sommets_rectangle_arrondi(
+            CENTRE_BOUCHE_X, CENTRE_BOUCHE_Y, demi_largeur_exterieur, demi_hauteur_exterieur
         )
-        amplitude_irreguliere = 2.5 + 0.12 * demi_hauteur
+        dessin.polygon(sommets_exterieur, fill=COULEUR_EXTERIEUR_BOUCHE)
 
-        sommets_corps = self._sommets_rectangle_arrondi(
-            CENTRE_BOUCHE_X, CENTRE_BOUCHE_Y, DEMI_LARGEUR_BOUCHE, demi_hauteur,
-            amplitude_irreguliere,
+        # Rectangle intérieur toujours visible, jamais absent : mince au repos,
+        # il grandit surtout en hauteur avec l'ouverture.
+        demi_largeur_interieur = demi_largeur_exterieur - MARGE_INTERIEUR_BOUCHE
+        demi_hauteur_interieur = DEMI_HAUTEUR_INTERIEUR_BOUCHE_MIN + (
+            DEMI_HAUTEUR_INTERIEUR_BOUCHE_MAX - DEMI_HAUTEUR_INTERIEUR_BOUCHE_MIN
+        ) * ouverture
+        sommets_interieur = self._sommets_rectangle_arrondi(
+            CENTRE_BOUCHE_X, CENTRE_BOUCHE_Y, demi_largeur_interieur, demi_hauteur_interieur
         )
-        dessin.polygon(sommets_corps, fill=COULEUR_CORPS_BOUCHE)
-
-        # Cavité interne continue : grandit et s'assombrit avec l'ouverture, pour
-        # suggérer une profondeur plutôt qu'un palier fixe par état.
-        if ouverture > SEUIL_OUVERTURE_CAVITE:
-            couleur_cavite = tuple(
-                round(depart + (arrivee - depart) * ouverture)
-                for depart, arrivee in zip(COULEUR_CORPS_BOUCHE, COULEUR_CAVITE_BOUCHE_MAX)
-            )
-            sommets_cavite = self._sommets_rectangle_arrondi(
-                CENTRE_BOUCHE_X,
-                CENTRE_BOUCHE_Y,
-                RAYON_X_CAVITE_BOUCHE_MAX * ouverture,
-                RAYON_Y_CAVITE_BOUCHE_MAX * ouverture,
-                amplitude_irreguliere=0.0,
-            )
-            dessin.polygon(sommets_cavite, fill=couleur_cavite)
+        dessin.polygon(sommets_interieur, fill=COULEUR_INTERIEUR_BOUCHE)
 
         return image
 
