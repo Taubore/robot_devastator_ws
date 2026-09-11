@@ -242,14 +242,14 @@ de synchronisation complexe, simplement faire bouger la bouche pour ajouter une 
 du robot.
 
 - [x] LCD ST7789V initialisé, affichage texte basique
-- [ ] Nœud `affichage_lcd` démarré tôt dans la séquence de lancement, avant les nœuds à initialisation longue
-- [ ] Page 0 : bouche animée de style dessin animé, animée pendant les annonces vocales
-- [ ] Pages 1 à N : statuts du robot (mode actif, tensions des deux rails, consignes moteurs)
-- [ ] Navigation entre pages par une touche du clavier, bouclage vers l'avant uniquement
-- [ ] Le passage du mode manuel au mode autonomie force la page 0, sur la transition et non en continu ; le retour au mode manuel ne change pas la page
-- [ ] Boucle de rendu à cadence fixe (10 Hz) comparant l'état courant au dernier état affiché : aucun envoi vers l'écran si l'état est inchangé
-- [ ] Rafraîchissement limité à la zone modifiée via la fenêtre d'adressage du ST7789V ; plein écran réservé au changement de page
-- [ ] Lecture : documentation Waveshare du ST7789V (aucun chapitre de livre dédié)
+- [x] Nœud `affichage_lcd` démarré tôt dans la séquence de lancement, avant les nœuds à initialisation longue
+- [x] Page 0 : bouche animée de style dessin animé, animée pendant les annonces vocales
+- [x] Pages 1 à N : statuts du robot (mode actif, tensions des deux rails, consignes moteurs)
+- [x] Navigation entre pages par une touche du clavier, bouclage vers l'avant uniquement
+- [-] Le passage du mode manuel au mode autonomie force la page 0, sur la transition et non en continu ; le retour au mode manuel ne change pas la page
+- [x] Boucle de rendu à cadence fixe (10 Hz) comparant l'état courant au dernier état affiché : aucun envoi vers l'écran si l'état est inchangé
+- [x] Rafraîchissement limité à la zone modifiée via la fenêtre d'adressage du ST7789V ; plein écran réservé au changement de page
+- [-] Lecture : documentation Waveshare du ST7789V (aucun chapitre de livre dédié)
 
 **Validation minimale :** basculer manuel/autonomie, l'affichage change.
 **Livre :** aucun chapitre dédié dans les livres disponibles — utiliser
@@ -446,6 +446,8 @@ Ce que Devastator m'a appris que je ferais différemment dès la conception.
 
 Format : `YYYY-MM-DD — décision ou observation clé (une ligne)`
 
+- 2026-09-11 — `affichage_lcd` intégré à `devastator.launch.yaml`, placé avant `annonces_audio`
+  pour que l'écran soit déjà actif pendant la génération synchrone des WAV Piper au démarrage.
 - 2026-09-09 — MADCTL paysage corrigé de 0x70 (valeur Waveshare, jamais testée en
   paysage avec du contenu asymétrique) à 0xA0, déterminé par essai direct sur le matériel.
 - 2026-09-05 — manette PS2 retirée du projet, téléopération au clavier Rii X8 ; SPI0 libéré pour

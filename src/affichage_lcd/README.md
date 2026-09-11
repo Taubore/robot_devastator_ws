@@ -95,14 +95,13 @@ Aucun topic publié, aucun service, aucune action.
 
 ## Exemple de lancement
 
-Isolé, sans autre nœud (tous les signaux ci-dessus peuvent être publiés à la main) :
+Intégré au lancement de production via `devastator.launch.yaml`
+(`robot_devastator_bringup/config/affichage_lcd.yaml`). Pour un essai isolé, sans autre
+nœud (tous les signaux ci-dessus peuvent être publiés à la main) :
 
 ```bash
 ros2 run affichage_lcd affichage_lcd
 ```
-
-L'intégration à `devastator.launch.yaml` est une étape séparée, hors de portée de ce
-package pour l'instant.
 
 ## Test simple
 

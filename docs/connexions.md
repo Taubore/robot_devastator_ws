@@ -144,8 +144,9 @@ Usage : permet de saisir du texte directement pour une téléopération simple p
   alimentation en 3,3 V. Consommation maximale annoncée : 46 mA sous 3,3 V.
 - **Mode de raccordement** : nappe Dupont femelle 8 fils fournie avec le module, branchée
   directement sur les broches mâles du HAT du Raspberry Pi 4. Aucune breadboard.
-- **Statut** : **PLAN — NON CÂBLÉ**. Brochage vérifié contre la documentation Waveshare et la
-  table du connecteur J8 ; couleurs relevées sur la nappe réelle.
+- **Statut** : câblé, intégré et validé ; démarré par `devastator.launch.yaml` (nœud
+  `affichage_lcd`). Brochage vérifié contre la documentation Waveshare et la table du
+  connecteur J8 ; couleurs relevées sur la nappe réelle.
 
 > **Avertissement couleurs** : sur cette nappe, l'alimentation est **violette** et la masse est
 > **blanche** — pas rouge et noire. Le blanc sert par ailleurs à des lignes de signal ailleurs

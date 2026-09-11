@@ -62,7 +62,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 ```
 
 `devastator.launch.yaml` démarre la surveillance d'alimentation, l'interface Pico, l'odométrie,
-l'arbitre moteur, l'autonomie (en attente) et les annonces audio, en mode manuel.
+l'arbitre moteur, l'affichage LCD, l'autonomie (en attente) et les annonces audio, en mode manuel.
 `teleop.launch.yaml` se lance à part parce que
 `teleop_clavier` lit les touches du terminal courant : c'est la seule exception au lancement
 unique.
@@ -237,7 +237,7 @@ clés racines des fichiers YAML de paramètres reprennent le nom exact du nœud 
 | `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les WAV manquants avec Piper, puis jouer les annonces selon les événements du robot |
 | `odometrie` | `odometrie` | `odometrie` / `odometrie.odometrie` | Actif | Calculer x, y, theta depuis `/pico/encodeurs` et publier `/odom` et la TF `odom → base_footprint` |
 | `surveillance_alimentation` | `surveillance_alimentation` | `surveillance_alimentation` / `surveillance_alimentation.surveillance_alimentation` | Actif | Lire deux INA260 sur I2C, publier `sensor_msgs/BatteryState` par rail et alerter sur tension basse maintenue |
-| `affichage_lcd` | `affichage_lcd` | `affichage_lcd` / `affichage_lcd.affichage_lcd` | Validé isolément, pas encore dans `devastator.launch.yaml` | Afficher mode, alimentation et consignes moteur sur l'écran LCD, avec page visage pendant la parole |
+| `affichage_lcd` | `affichage_lcd` | `affichage_lcd` / `affichage_lcd.affichage_lcd` | Actif | Afficher mode, alimentation et consignes moteur sur l'écran LCD, avec page visage pendant la parole |
 
 ### Interfaces personnalisées
 

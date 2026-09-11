@@ -28,6 +28,13 @@ launch:
     param:
     - from: $(find-pkg-share robot_devastator_bringup)/config/arbitre_commande_moteurs.yaml
 - node:
+    pkg: affichage_lcd
+    exec: affichage_lcd
+    name: affichage_lcd
+    output: screen
+    param:
+    - from: $(find-pkg-share robot_devastator_bringup)/config/affichage_lcd.yaml
+- node:
     pkg: robot_devastator
     exec: annonces_audio
     name: annonces_audio

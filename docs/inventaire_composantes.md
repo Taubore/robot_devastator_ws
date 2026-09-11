@@ -21,7 +21,7 @@
 | AUDIO_I2S | MAX98357 + PCM5102A | Audio | Amplification et conversion audio | Actif | Modules audio prévus pour générer et amplifier et donner une voix au robot avec Piper. |
 | HP_BF37 | Visaton BF 37 | Audio | Sortie sonore du robot | Actif | Haut-parleur 8 Ω prévu pour la voix du robot et les retours sonores via la chaîne audio I2S. |
 | CLAV_X8 | Mini clavier USB sans-fil Rii X8| Interface opérateur | Téléopération | Actif | Pour téléopératio très simple pour tests manuels. |
-| LCD2 | Waveshare LCD 2 pouces ST7789V | Affichage | Bouche / état robot | Actif | Écran en cours d'intégration (phase 8) pour afficher l'état du robot. |
+| LCD2 | Waveshare LCD 2 pouces ST7789V | Affichage | Bouche / état robot | Actif | Écran intégré (phase 8), démarré par `devastator.launch.yaml`, pour afficher l'état du robot. |
 
 # Composantes acquises mais non utilisées ou mises de côté temporairement
 

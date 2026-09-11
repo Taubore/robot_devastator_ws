@@ -1,0 +1,9 @@
+affichage_lcd:
+  ros__parameters:
+    # Au-delà de ce délai sans réception d'un BatteryState pour un rail, ce rail affiche "--"
+    # plutôt que sa dernière valeur connue.
+    peremption_alimentation_s: 3.0
+    # Période du timer d'affichage (10 Hz par défaut).
+    periode_rafraichissement_s: 0.1
+    # Intensité du rétroéclairage réglée au démarrage (0 à 100).
+    retroeclairage_pourcent: 80.0

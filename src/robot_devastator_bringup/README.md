@@ -22,7 +22,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 
 | Fichier | Nœuds lancés | Cas d'usage |
 |---|---|---|
-| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `annonces_audio`, `evitement_obstacle` | Lancement complet du robot en mode manuel, autonomie en attente |
+| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `affichage_lcd`, `annonces_audio`, `evitement_obstacle` | Lancement complet du robot en mode manuel, autonomie en attente |
 | `teleop.launch.yaml` | `teleop_clavier` | Téléopération clavier, dans un terminal interactif séparé (production, exception documentée) |
 | `diag_interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
 | `diag_surveillance_alimentation.launch.yaml` | `surveillance_alimentation` | Isole le sous-système INA260 pour une mise au point (le nœud tourne en production dans `devastator.launch.yaml`) |
@@ -35,6 +35,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 | `interface_pico.yaml` | `interface_pico` | Port UART, débit, délai d'expiration consigne moteur, périodes sonar et encodeurs |
 | `mecanique.yaml` | `odometrie` | Ticks par tour, ticks par mètre gauche/droite/moyen, entraxe — mesurés en Phase 3 |
 | `arbitre_commande_moteurs.yaml` | `arbitre_commande_moteurs` | Mode initial (`manuel`), période de publication, délai d'expiration source |
+| `affichage_lcd.yaml` | `affichage_lcd` | Péremption des mesures d'alimentation, période de rafraîchissement, intensité du rétroéclairage |
 | `annonces_audio.yaml` | `annonces_audio` | Exécutable Piper, modèle vocal, délai de répétition, liste des annonces par événement |
 | `autonomie_simple.yaml` | `evitement_obstacle` | Distance d'arrêt, vitesses, angles de tourelle, durées de rotation et de recul |
 | `teleop_clavier.yaml` | `teleop_clavier` | Vitesse initiale, bornes de vitesse, pas, période de publication |
