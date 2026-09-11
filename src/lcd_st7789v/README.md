@@ -236,8 +236,8 @@ avant de séparer les deux octets.
 
 ## Limites connues du pilote
 
-- Orientation `paysage=True` (320x240, rotation MADCTL) non encore validée sur le
-  matériel réel : seule l'orientation native (`paysage=False`) correspond au sens
-  déjà exercé dans la démonstration Waveshare sur ce robot. À confirmer au premier
-  essai.
+- Orientation `paysage=True` validée sur le matériel réel avec MADCTL = 0xA0
+  (voir la constante `_MADCTL_PAYSAGE`). La valeur 0x70 reprise du code Waveshare
+  produisait une image inversée à 180° ; jamais testée par Waveshare lui-même avec
+  du contenu asymétrique.
 - Écriture seule : aucune lecture d'état du panneau (MISO non câblé).
