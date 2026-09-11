@@ -20,34 +20,42 @@ Les abonnements ne font que mettre à jour un état interne en mémoire ; un tim
 
 ### Forme et animation de la page bouche
 
-Une seule forme, une ellipse pleine dessinée directement avec Pillow sur l'écran
-complet 320 x 240 (pas de `GrilleTexte`) : centre fixe (160, 140), demi-largeur fixe
-120 px, seule la demi-hauteur varie selon l'état. Quatre états, du plus fermé (bleu
-foncé) au plus ouvert (bleu clair) :
+Une seule forme, un rectangle à coins très arrondis et légèrement irrégulier, dessiné
+directement avec Pillow sur l'écran complet 320 x 240 (pas de `GrilleTexte`) : centre
+fixe (160, 140), demi-largeur fixe 120 px. Seule la demi-hauteur varie, entre 18 px
+(fermée) et 85 px (grande ouverture), selon une **ouverture** continue de 0.0 à 1.0.
 
-| État    | Demi-hauteur | Couleur RVB      | Cavité (rayons) | Couleur cavité |
-|---|---|---|---|---|
-| repos   | 18 px        | (13, 52, 106)    | —               | —              |
-| leger   | 45 px        | (26, 84, 160)    | —               | —              |
-| moyen   | 65 px        | (40, 110, 200)   | (70, 38)        | (6, 26, 54)    |
-| large   | 85 px        | (60, 140, 230)   | (90, 55)        | (6, 26, 54)    |
+- Rayon de chaque coin : 0.55 x la demi-hauteur courante, multiplié par un facteur
+  propre à ce coin (entre 0.8 et 1.2), tiré une seule fois au démarrage du nœud avec
+  une graine fixe — la bouche garde ainsi la même "personnalité" d'une image à
+  l'autre plutôt que de changer de forme à chaque tirage.
+- Contour légèrement ondulé (deux fréquences superposées sur le tour complet,
+  phases fixées au démarrage), amplitude d'environ `2.5 + 0.12 x demi-hauteur` px.
+- Couleur du corps toujours RVB (13, 52, 106), à tout degré d'ouverture.
+- Cavité interne (même construction de rectangle arrondi, mais sans ondulation du
+  contour) visible dès que l'ouverture dépasse 0.05 : rayons `(90 x ouverture,
+  55 x ouverture)`, couleur interpolée linéairement entre RVB (13, 52, 106) et
+  RVB (4, 16, 34) selon l'ouverture — elle grandit et s'assombrit avec l'ouverture,
+  sans jamais changer la teinte dominante du corps.
 
-Les états "moyen" et "large" ajoutent une ellipse plus sombre au même centre, pour
-suggérer une cavité. Les quatre images sont précalculées une seule fois à
-l'initialisation du nœud.
+Animation pilotée par `/robot/parole_en_cours`, par transitions lissées (smoothstep)
+d'une ouverture de départ vers une ouverture cible :
 
-Animation pilotée par `/robot/parole_en_cours` :
+- faux : ouverture toujours ramenée à 0.0 (bouche aplatie) ;
+- vrai : dès qu'une transition se termine, tirage d'une nouvelle transition — 88 %
+  du temps vers une cible aléatoire entre 0.3 et 1.0 sur une durée aléatoire de
+  65 à 130 ms, 12 % du temps vers 0.0 (courte pause de 45 à 85 ms, simule une
+  respiration entre les mots). Le tirage évite un cycle mécanique et évoque une
+  phrase parlée ;
+- dès que `/robot/parole_en_cours` repasse à faux, une nouvelle transition vers 0.0
+  démarre immédiatement en continuité depuis l'ouverture courante (départ = valeur
+  au moment de la coupure, durée ~80 ms), sans attendre la fin de la transition
+  interrompue : le retour au repos est rapide et fluide, jamais un saut brusque.
 
-- faux : bouche toujours à l'état "repos" (bleu foncé aplati) ;
-- vrai : tirage aléatoire d'un nouvel état parmi leger/moyen/large toutes les
-  130 à 260 ms, avec 12 % de chance à chaque tirage d'insérer une courte pause à
-  "repos" (90 à 170 ms) pour simuler une respiration entre les mots. Le rythme
-  irrégulier évite un cycle mécanique et évoque une phrase parlée.
-- dès que `/robot/parole_en_cours` repasse à faux, retour immédiat à "repos" au
-  tick suivant du timer d'affichage, sans attendre la fin du sous-état en cours.
-
-Le timer à 10 Hz ne retransmet à l'écran que si l'image à afficher (page et état de
-bouche) a changé depuis le dernier tick.
+Le timer à 10 Hz ne retransmet à l'écran que si l'ouverture à afficher a changé
+depuis le dernier tick. L'ouverture varie en continu, mais reste échantillonnée par
+ce timer : la fluidité perçue est donc plafonnée à 10 images par seconde (décision
+antérieure sur la boucle de rendu, hors de portée de cette page).
 
 ### Mise en page de la page tableau de bord
 
@@ -119,16 +127,17 @@ ros2 topic pub --once /robot/mode_conduite std_msgs/msg/String '{data: autonomie
 
 ros2 topic pub /robot/parole_en_cours std_msgs/msg/Bool '{data: true}' \
   --qos-durability transient_local --once
-# Page bouche imposée : passe du bleu foncé aplati (repos) à un cycle irrégulier
-# d'ellipses bleues plus claires et plus hautes (leger/moyen/large), avec de
-# courtes pauses au repos
+# Page bouche imposée : passe du rectangle bleu foncé aplati (ouverture 0) à un
+# mouvement continu et fluide entre plusieurs degrés d'ouverture, avec un
+# ombrage interne qui grandit et s'assombrit avec l'ouverture, sans jamais
+# changer de teinte dominante
 
 ros2 topic pub --once /affichage/page_suivante std_msgs/msg/Empty '{}'
 # Ignoré : la page reste sur la bouche tant que /robot/parole_en_cours est vrai
 
 ros2 topic pub /robot/parole_en_cours std_msgs/msg/Bool '{data: false}' \
   --qos-durability transient_local --once
-# Retour immédiat au repos (bleu foncé aplati)
+# Retour rapide et fluide au rectangle aplati (pas un saut brusque)
 
 ros2 topic pub --once /affichage/page_suivante std_msgs/msg/Empty '{}'
 # Fonctionne à nouveau : bascule vers la page 1
@@ -138,6 +147,6 @@ ros2 topic pub --once /affichage/page_suivante std_msgs/msg/Empty '{}'
 
 - Une seule page de statut pour l'instant (page 1) ; le bouclage de
   `/affichage/page_suivante` n'alterne donc qu'entre les pages 0 et 1.
-- Le rythme de l'animation de la bouche est calé sur le tick du timer d'affichage
-  à 10 Hz : les durées tirées (130 à 260 ms, pauses 90 à 170 ms) ne sont donc
-  respectées qu'à environ 100 ms près.
+- L'ouverture de la bouche varie en continu, mais reste échantillonnée par le
+  timer d'affichage à 10 Hz : les durées de transition tirées (65 à 130 ms,
+  pauses 45 à 85 ms) ne sont donc respectées qu'à environ 100 ms près.

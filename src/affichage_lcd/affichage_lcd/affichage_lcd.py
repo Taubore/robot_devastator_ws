@@ -12,7 +12,7 @@ page 1 (tableau de bord : mode, alimentation, consignes moteur).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import auto, Enum
+import math
 import random
 from typing import Final
 
@@ -35,58 +35,39 @@ PAGE_TABLEAU_BORD: Final[int] = 1
 TEXTE_INCONNU: Final[str] = '--'
 
 
-class EtatBouche(Enum):
-    """Les quatre ouvertures possibles de la bouche de la page 0."""
-
-    REPOS = auto()
-    LEGER = auto()
-    MOYEN = auto()
-    LARGE = auto()
-
-
-@dataclass(frozen=True)
-class FormeBouche:
-    """Géométrie et couleur d'un état de bouche, avec cavité optionnelle."""
-
-    demi_hauteur: int
-    couleur: tuple[int, int, int]
-    cavite_rayons: tuple[int, int] | None = None
-    cavite_couleur: tuple[int, int, int] | None = None
-
-
 # Centre et demi-largeur fixes, maquette validée hors code : seule la demi-hauteur
-# varie d'un état à l'autre. Toutes les teintes restent dans le même bleu, du plus
-# foncé (repos, cavité) au plus clair (grande ouverture).
+# varie avec l'ouverture. Le corps garde toujours la même teinte ; seule la cavité
+# interne s'assombrit avec l'ouverture, pour suggérer une profondeur.
 CENTRE_BOUCHE_X: Final[int] = 160
 CENTRE_BOUCHE_Y: Final[int] = 140
-DEMI_LARGEUR_BOUCHE: Final[int] = 120
+DEMI_LARGEUR_BOUCHE: Final[float] = 120.0
+DEMI_HAUTEUR_BOUCHE_MIN: Final[float] = 18.0
+DEMI_HAUTEUR_BOUCHE_MAX: Final[float] = 85.0
 
-FORMES_BOUCHE: Final[dict[EtatBouche, FormeBouche]] = {
-    EtatBouche.REPOS: FormeBouche(demi_hauteur=18, couleur=(13, 52, 106)),
-    EtatBouche.LEGER: FormeBouche(demi_hauteur=45, couleur=(26, 84, 160)),
-    EtatBouche.MOYEN: FormeBouche(
-        demi_hauteur=65,
-        couleur=(40, 110, 200),
-        cavite_rayons=(70, 38),
-        cavite_couleur=(6, 26, 54),
-    ),
-    EtatBouche.LARGE: FormeBouche(
-        demi_hauteur=85,
-        couleur=(60, 140, 230),
-        cavite_rayons=(90, 55),
-        cavite_couleur=(6, 26, 54),
-    ),
-}
+COULEUR_CORPS_BOUCHE: Final[tuple[int, int, int]] = (13, 52, 106)
+COULEUR_CAVITE_BOUCHE_MAX: Final[tuple[int, int, int]] = (4, 16, 34)
+RAYON_X_CAVITE_BOUCHE_MAX: Final[float] = 90.0
+RAYON_Y_CAVITE_BOUCHE_MAX: Final[float] = 55.0
+SEUIL_OUVERTURE_CAVITE: Final[float] = 0.05
 
-# États parcourus pendant la parole, tirés au sort pour éviter un cycle mécanique.
-ETATS_PAROLE: Final[tuple[EtatBouche, ...]] = (
-    EtatBouche.LEGER,
-    EtatBouche.MOYEN,
-    EtatBouche.LARGE,
-)
-PLAGE_TIRAGE_MS: Final[tuple[float, float]] = (130.0, 260.0)
-PLAGE_PAUSE_RESPIRATION_MS: Final[tuple[float, float]] = (90.0, 170.0)
+# Rectangle à coins arrondis irréguliers : rayon de coin proportionnel à la
+# demi-hauteur, avec un facteur propre à chaque coin (personnalité fixe de la
+# bouche) et un contour légèrement ondulé (deux fréquences superposées sur le
+# tour complet, phases fixes). La cavité réutilise la même construction, mais
+# sans ondulation (contour net).
+FACTEUR_RAYON_COIN_BOUCHE: Final[float] = 0.55
+PLAGE_FACTEUR_COIN_BOUCHE: Final[tuple[float, float]] = (0.8, 1.2)
+FREQUENCES_IRREGULARITE_BOUCHE: Final[tuple[int, int]] = (3, 5)
+NB_POINTS_PAR_COIN_BOUCHE: Final[int] = 10
+GRAINE_PERSONNALITE_BOUCHE: Final[int] = 20260911
+
+# Animation : ouverture continue (0.0 à 1.0), interpolée par transitions lissées
+# (smoothstep) plutôt qu'un tirage entre paliers fixes.
+PLAGE_CIBLE_OUVERTURE_BOUCHE: Final[tuple[float, float]] = (0.3, 1.0)
+PLAGE_DUREE_TIRAGE_S: Final[tuple[float, float]] = (0.065, 0.130)
+PLAGE_DUREE_PAUSE_RESPIRATION_S: Final[tuple[float, float]] = (0.045, 0.085)
 PROBABILITE_PAUSE_RESPIRATION: Final[float] = 0.12
+DUREE_TRANSITION_ARRET_S: Final[float] = 0.080
 
 
 @dataclass
@@ -122,7 +103,18 @@ class AffichageLcd(Node):
         self.ecran = EcranSt7789v()
         self.ecran.regler_retroeclairage(retroeclairage_pourcent)
         self.grille = GrilleTexte(self.ecran)
-        self.images_bouche = self._construire_images_bouche()
+
+        # Personnalité fixe de la bouche (rayons de coin, ondulation du contour),
+        # tirée une seule fois avec une graine fixe : un générateur dédié évite de
+        # perturber le random global utilisé plus loin pour le rythme de parole.
+        generateur_personnalite = random.Random(GRAINE_PERSONNALITE_BOUCHE)
+        self._facteurs_coins_bouche = tuple(
+            generateur_personnalite.uniform(*PLAGE_FACTEUR_COIN_BOUCHE) for _ in range(4)
+        )
+        self._phases_irregularite_bouche = (
+            generateur_personnalite.uniform(0.0, 2 * math.pi),
+            generateur_personnalite.uniform(0.0, 2 * math.pi),
+        )
 
         # État interne, mis à jour uniquement par les callbacks ci-dessous.
         self.mode_conduite: str | None = None
@@ -134,17 +126,24 @@ class AffichageLcd(Node):
         self.consigne_gauche = 0
         self.consigne_droite = 0
 
-        # État de l'animation de la bouche, mis à jour uniquement par le timer
-        # d'affichage (_mettre_a_jour_etat_bouche), jamais par une callback directe.
-        self._etat_bouche = EtatBouche.REPOS
-        self._prochain_tirage_bouche: Time | None = None
+        # État de la transition d'ouverture de la bouche (0.0 à 1.0), mis à jour
+        # uniquement par le timer d'affichage (_mettre_a_jour_ouverture_bouche),
+        # jamais par une callback directe. Transition déjà "terminée" au départ,
+        # pour déclencher un premier tirage dès que la parole commence.
+        maintenant = self.get_clock().now()
+        self._ouverture_bouche = 0.0
+        self._depart_ouverture_bouche = 0.0
+        self._cible_ouverture_bouche = 0.0
+        self._depart_transition_bouche = maintenant
+        self._duree_transition_bouche_s = 0.001
+        self._fin_transition_bouche = maintenant
 
         # Dernière page effectivement dessinée à l'écran. None = inconnue : force
         # une resynchronisation complète au premier passage du timer, exactement
         # comme le premier effacer() attendu par GrilleTexte avant son premier
         # rendre().
         self._derniere_page_dessinee: int | None = None
-        self._dernier_etat_bouche_dessine: EtatBouche | None = None
+        self._derniere_ouverture_dessinee: float | None = None
 
         qos_parole_en_cours = QoSProfile(
             depth=1,
@@ -243,83 +242,176 @@ class AffichageLcd(Node):
         page_affichee = PAGE_BOUCHE if self.parole_en_cours else self.page_courante
 
         if page_affichee == PAGE_BOUCHE:
-            self._mettre_a_jour_etat_bouche()
+            self._mettre_a_jour_ouverture_bouche()
             self._dessiner_page_bouche()
         else:
             self._dessiner_page_tableau_bord()
 
     # --- Méthodes privées utilitaires ---
 
-    def _construire_images_bouche(self) -> dict[EtatBouche, Image.Image]:
-        """Construit une fois les images plein écran de chaque état de bouche (Pillow)."""
-        images: dict[EtatBouche, Image.Image] = {}
+    def _sommets_rectangle_arrondi(
+        self,
+        centre_x: float,
+        centre_y: float,
+        demi_largeur: float,
+        demi_hauteur: float,
+        amplitude_irreguliere: float,
+    ) -> list[tuple[float, float]]:
+        """
+        Construit les sommets d'un rectangle à coins arrondis, un par coin.
 
-        for etat, forme in FORMES_BOUCHE.items():
-            image = Image.new('RGB', (self.ecran.largeur, self.ecran.hauteur), NOIR)
-            dessin = ImageDraw.Draw(image)
-            dessin.ellipse(
-                (
-                    CENTRE_BOUCHE_X - DEMI_LARGEUR_BOUCHE,
-                    CENTRE_BOUCHE_Y - forme.demi_hauteur,
-                    CENTRE_BOUCHE_X + DEMI_LARGEUR_BOUCHE,
-                    CENTRE_BOUCHE_Y + forme.demi_hauteur,
-                ),
-                fill=forme.couleur,
-            )
-            # Cavité plus sombre par-dessus, pour "moyen" et "large" seulement.
-            if forme.cavite_rayons is not None:
-                rayon_x, rayon_y = forme.cavite_rayons
-                dessin.ellipse(
-                    (
-                        CENTRE_BOUCHE_X - rayon_x,
-                        CENTRE_BOUCHE_Y - rayon_y,
-                        CENTRE_BOUCHE_X + rayon_x,
-                        CENTRE_BOUCHE_Y + rayon_y,
-                    ),
-                    fill=forme.cavite_couleur,
-                )
-            images[etat] = image
+        Chaque coin a son propre rayon (rayon de base x facteur fixe du coin) ;
+        les côtés droits ne portent aucun sommet, le polygone les relie
+        implicitement. Une amplitude non nulle ondule le contour vers l'extérieur
+        (deux fréquences superposées sur le tour complet, phases fixes) ; une
+        amplitude nulle donne un contour net, utilisé pour la cavité interne.
+        """
+        gauche = centre_x - demi_largeur
+        droite = centre_x + demi_largeur
+        haut = centre_y - demi_hauteur
+        bas = centre_y + demi_hauteur
 
-        return images
+        rayon_base = FACTEUR_RAYON_COIN_BOUCHE * demi_hauteur
+        rayons = tuple(rayon_base * facteur for facteur in self._facteurs_coins_bouche)
 
-    def _mettre_a_jour_etat_bouche(self) -> None:
-        """Fait évoluer l'état de la bouche à un rythme irrégulier pendant la parole."""
-        if not self.parole_en_cours:
-            # Retour immédiat au repos, sans attendre la fin du sous-état en cours.
-            self._etat_bouche = EtatBouche.REPOS
-            self._prochain_tirage_bouche = None
-            return
-
-        maintenant = self.get_clock().now()
-        if (
-            self._prochain_tirage_bouche is not None
-            and maintenant < self._prochain_tirage_bouche
-        ):
-            return
-
-        # Courte pause au repos de temps à autre, pour évoquer une respiration
-        # entre les mots plutôt qu'un cycle mécanique entre les trois états.
-        if random.random() < PROBABILITE_PAUSE_RESPIRATION:
-            self._etat_bouche = EtatBouche.REPOS
-            duree_ms = random.uniform(*PLAGE_PAUSE_RESPIRATION_MS)
-        else:
-            self._etat_bouche = random.choice(ETATS_PAROLE)
-            duree_ms = random.uniform(*PLAGE_TIRAGE_MS)
-
-        self._prochain_tirage_bouche = maintenant + Duration(
-            nanoseconds=int(duree_ms * 1e6)
+        # Ordre horaire : haut-gauche, haut-droite, bas-droite, bas-gauche. Chaque
+        # coin balaie un quart de cercle, du côté précédent vers le côté suivant.
+        coins = (
+            (gauche + rayons[0], haut + rayons[0], math.pi, 1.5 * math.pi),
+            (droite - rayons[1], haut + rayons[1], 1.5 * math.pi, 2.0 * math.pi),
+            (droite - rayons[2], bas - rayons[2], 0.0, 0.5 * math.pi),
+            (gauche + rayons[3], bas - rayons[3], 0.5 * math.pi, math.pi),
         )
 
+        nb_sommets_total = NB_POINTS_PAR_COIN_BOUCHE * len(coins)
+        phase_frequence_3, phase_frequence_5 = self._phases_irregularite_bouche
+        frequence_3, frequence_5 = FREQUENCES_IRREGULARITE_BOUCHE
+        sommets: list[tuple[float, float]] = []
+
+        for indice_coin, (centre_arc_x, centre_arc_y, angle_debut, angle_fin) in enumerate(
+            coins
+        ):
+            rayon = rayons[indice_coin]
+            for indice_point in range(NB_POINTS_PAR_COIN_BOUCHE):
+                fraction_coin = indice_point / (NB_POINTS_PAR_COIN_BOUCHE - 1)
+                angle = angle_debut + (angle_fin - angle_debut) * fraction_coin
+
+                fraction_contour = (
+                    indice_coin * NB_POINTS_PAR_COIN_BOUCHE + indice_point
+                ) / nb_sommets_total
+                decalage = amplitude_irreguliere * (
+                    math.sin(2 * math.pi * frequence_3 * fraction_contour + phase_frequence_3)
+                    + math.sin(2 * math.pi * frequence_5 * fraction_contour + phase_frequence_5)
+                ) / 2.0
+
+                rayon_point = rayon + decalage
+                sommets.append(
+                    (
+                        centre_arc_x + rayon_point * math.cos(angle),
+                        centre_arc_y + rayon_point * math.sin(angle),
+                    )
+                )
+
+        return sommets
+
+    def _dessiner_image_bouche(self, ouverture: float) -> Image.Image:
+        """Dessine l'image plein écran de la bouche pour une ouverture (0.0 à 1.0) donnée."""
+        image = Image.new('RGB', (self.ecran.largeur, self.ecran.hauteur), NOIR)
+        dessin = ImageDraw.Draw(image)
+
+        demi_hauteur = (
+            DEMI_HAUTEUR_BOUCHE_MIN
+            + (DEMI_HAUTEUR_BOUCHE_MAX - DEMI_HAUTEUR_BOUCHE_MIN) * ouverture
+        )
+        amplitude_irreguliere = 2.5 + 0.12 * demi_hauteur
+
+        sommets_corps = self._sommets_rectangle_arrondi(
+            CENTRE_BOUCHE_X, CENTRE_BOUCHE_Y, DEMI_LARGEUR_BOUCHE, demi_hauteur,
+            amplitude_irreguliere,
+        )
+        dessin.polygon(sommets_corps, fill=COULEUR_CORPS_BOUCHE)
+
+        # Cavité interne continue : grandit et s'assombrit avec l'ouverture, pour
+        # suggérer une profondeur plutôt qu'un palier fixe par état.
+        if ouverture > SEUIL_OUVERTURE_CAVITE:
+            couleur_cavite = tuple(
+                round(depart + (arrivee - depart) * ouverture)
+                for depart, arrivee in zip(COULEUR_CORPS_BOUCHE, COULEUR_CAVITE_BOUCHE_MAX)
+            )
+            sommets_cavite = self._sommets_rectangle_arrondi(
+                CENTRE_BOUCHE_X,
+                CENTRE_BOUCHE_Y,
+                RAYON_X_CAVITE_BOUCHE_MAX * ouverture,
+                RAYON_Y_CAVITE_BOUCHE_MAX * ouverture,
+                amplitude_irreguliere=0.0,
+            )
+            dessin.polygon(sommets_cavite, fill=couleur_cavite)
+
+        return image
+
+    def _ouverture_bouche_a(self, instant: Time) -> float:
+        """Retourne l'ouverture lissée (smoothstep) à l'instant donné."""
+        if instant >= self._fin_transition_bouche:
+            return self._cible_ouverture_bouche
+
+        ecoulement_s = (instant - self._depart_transition_bouche).nanoseconds / 1e9
+        t = ecoulement_s / self._duree_transition_bouche_s
+        lissage = 3.0 * t * t - 2.0 * t * t * t
+        return (
+            self._depart_ouverture_bouche
+            + (self._cible_ouverture_bouche - self._depart_ouverture_bouche) * lissage
+        )
+
+    def _demarrer_transition_bouche(
+        self,
+        instant_depart: Time,
+        ouverture_depart: float,
+        ouverture_cible: float,
+        duree_s: float,
+    ) -> None:
+        """Amorce une transition d'ouverture, en continuité depuis l'ouverture actuelle."""
+        self._depart_transition_bouche = instant_depart
+        self._depart_ouverture_bouche = ouverture_depart
+        self._cible_ouverture_bouche = ouverture_cible
+        self._duree_transition_bouche_s = duree_s
+        self._fin_transition_bouche = instant_depart + Duration(seconds=duree_s)
+
+    def _mettre_a_jour_ouverture_bouche(self) -> None:
+        """Fait évoluer l'ouverture de la bouche, en continu et à un rythme irrégulier."""
+        maintenant = self.get_clock().now()
+        ouverture_courante = self._ouverture_bouche_a(maintenant)
+
+        if not self.parole_en_cours:
+            # Retour immédiat au repos, sans attendre la fin de la transition en
+            # cours ; ne redémarre pas une transition déjà en cours vers 0.0.
+            if self._cible_ouverture_bouche != 0.0:
+                self._demarrer_transition_bouche(
+                    maintenant, ouverture_courante, 0.0, DUREE_TRANSITION_ARRET_S
+                )
+        elif maintenant >= self._fin_transition_bouche:
+            # Rythme irrégulier plutôt qu'un cycle mécanique entre paliers fixes,
+            # avec une courte pause occasionnelle pour évoquer une respiration.
+            if random.random() < PROBABILITE_PAUSE_RESPIRATION:
+                cible = 0.0
+                duree_s = random.uniform(*PLAGE_DUREE_PAUSE_RESPIRATION_S)
+            else:
+                cible = random.uniform(*PLAGE_CIBLE_OUVERTURE_BOUCHE)
+                duree_s = random.uniform(*PLAGE_DUREE_TIRAGE_S)
+            self._demarrer_transition_bouche(maintenant, ouverture_courante, cible, duree_s)
+
+        self._ouverture_bouche = self._ouverture_bouche_a(maintenant)
+
     def _dessiner_page_bouche(self) -> None:
-        """Affiche la bouche, seulement si l'image à afficher a changé depuis le dernier tick."""
+        """Affiche la bouche, seulement si l'ouverture a changé depuis le dernier tick."""
         if (
             self._derniere_page_dessinee == PAGE_BOUCHE
-            and self._dernier_etat_bouche_dessine == self._etat_bouche
+            and self._derniere_ouverture_dessinee == self._ouverture_bouche
         ):
             return
-        self.ecran.afficher_image_pleine(self.images_bouche[self._etat_bouche])
+        image = self._dessiner_image_bouche(self._ouverture_bouche)
+        self.ecran.afficher_image_pleine(image)
         self._derniere_page_dessinee = PAGE_BOUCHE
-        self._dernier_etat_bouche_dessine = self._etat_bouche
+        self._derniere_ouverture_dessinee = self._ouverture_bouche
 
     def _dessiner_page_tableau_bord(self) -> None:
         """Dessine le tableau de bord : mode, alimentation, consignes moteur."""
