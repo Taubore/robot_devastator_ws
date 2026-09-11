@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>affichage_lcd</name>
+  <version>0.0.0</version>
+  <description>
+    Nœud ROS 2 d'affichage sur l'écran LCD Waveshare 2 pouces (ST7789V). Troisième
+    couche de l'empilement d'affichage : traduit les signaux ROS 2 du robot en
+    pages affichées, au-dessus du pilote et du rendu texte de lcd_st7789v. Aucun
+    accès matériel direct.
+  </description>
+  <maintainer email="louis.st-hilaire@hotmail.com">taubore</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>commun</depend>
+  <depend>lcd_st7789v</depend>
+
+  <!-- Construction de la page 0 (bouche). Déjà requis par lcd_st7789v. -->
+  <exec_depend>python3-pil</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

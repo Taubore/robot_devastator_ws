@@ -25,6 +25,7 @@ communes du projet.
 | `src/odometrie` | Calcul de l'odométrie à partir des ticks encodeurs |
 | `src/surveillance_alimentation` | Surveillance tension et courant des batteries (INA260 sur I2C) |
 | `src/lcd_st7789v` | Pilote bas niveau, sans dépendance ROS 2, de l'écran LCD Waveshare 2" (ST7789V) |
+| `src/affichage_lcd` | Nœud ROS 2 d'affichage (pages écran), au-dessus de `lcd_st7789v` |
 | `src/robot_devastator` | Logique principale du robot |
 | `src/robot_devastator_bringup` | Fichiers de lancement (`*.launch.yaml`) et paramètres |
 | `src/robot_devastator_description` | Description URDF/Xacro du robot et visualisation RViz |
@@ -205,8 +206,8 @@ d'un nœud isolé, jamais à l'exploitation du robot.
 | `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | `odometrie`, outil de diagnostic | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
 | `/pico/etat` | `std_msgs/msg/String` | `interface_pico` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
 | `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle`, `surveillance_alimentation` | `annonces_audio` | Signaler les transitions du comportement autonome et les franchissements de seuil batterie |
-| `/robot/parole_en_cours` | `std_msgs/msg/Bool` | `annonces_audio` | Futur nœud d'affichage LCD | Indiquer si une annonce est en cours de lecture (QoS transient local, profondeur 1) |
-| `/affichage/page_suivante` | `std_msgs/msg/Empty` | `teleop_clavier` | Futur nœud d'affichage LCD | Demander le changement de page à l'affichage, actif quel que soit le mode de conduite |
+| `/robot/parole_en_cours` | `std_msgs/msg/Bool` | `annonces_audio` | `affichage_lcd` | Indiquer si une annonce est en cours de lecture (QoS transient local, profondeur 1) |
+| `/affichage/page_suivante` | `std_msgs/msg/Empty` | `teleop_clavier` | `affichage_lcd` | Demander le changement de page à l'affichage, actif quel que soit le mode de conduite |
 | `/odom` | `nav_msgs/msg/Odometry` | `odometrie` | RViz, outil de diagnostic | Publier la pose et la vitesse estimées à partir des encodeurs |
 | `/alimentation/logique` | `sensor_msgs/msg/BatteryState` | `surveillance_alimentation` | Outil de diagnostic | Publier tension et courant du rail logique (pack 7,2 V NiMH) |
 | `/alimentation/moteur` | `sensor_msgs/msg/BatteryState` | `surveillance_alimentation` | Outil de diagnostic | Publier tension et courant du rail moteur (pack 6 V NiMH) |
@@ -236,6 +237,7 @@ clés racines des fichiers YAML de paramètres reprennent le nom exact du nœud 
 | `annonces_audio` | `robot_devastator` | `annonces_audio` / `robot_devastator.annonces_audio` | Actif | Préparer les WAV manquants avec Piper, puis jouer les annonces selon les événements du robot |
 | `odometrie` | `odometrie` | `odometrie` / `odometrie.odometrie` | Actif | Calculer x, y, theta depuis `/pico/encodeurs` et publier `/odom` et la TF `odom → base_footprint` |
 | `surveillance_alimentation` | `surveillance_alimentation` | `surveillance_alimentation` / `surveillance_alimentation.surveillance_alimentation` | Actif | Lire deux INA260 sur I2C, publier `sensor_msgs/BatteryState` par rail et alerter sur tension basse maintenue |
+| `affichage_lcd` | `affichage_lcd` | `affichage_lcd` / `affichage_lcd.affichage_lcd` | Validé isolément, pas encore dans `devastator.launch.yaml` | Afficher mode, alimentation et consignes moteur sur l'écran LCD, avec page visage pendant la parole |
 
 ### Interfaces personnalisées
 
