@@ -16,7 +16,7 @@ from commun.msg import ConsigneMoteurs
 import rclpy
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
-from std_msgs.msg import String
+from std_msgs.msg import Empty, String
 
 DELAI_ATTENTE_ABONNE_S: Final[float] = 2.0
 INTERVALLE_ARRET_S: Final[float] = 0.1
@@ -25,6 +25,7 @@ MODE_MANUEL: Final[str] = 'manuel'
 NOMBRE_PUBLICATIONS_ARRET: Final[int] = 4
 TOPIC_COMMANDE_MANUELLE: Final[str] = '/robot/commande_moteurs/manuelle'
 TOPIC_MODE_CONDUITE: Final[str] = '/robot/mode_conduite'
+TOPIC_PAGE_SUIVANTE: Final[str] = '/affichage/page_suivante'
 CHEMIN_TERMINAL: Final[str] = '/dev/tty'
 
 
@@ -127,6 +128,11 @@ class TeleopClavier(Node):
             TOPIC_MODE_CONDUITE,
             10,
         )
+        self.page_suivante_pub = self.create_publisher(
+            Empty,
+            TOPIC_PAGE_SUIVANTE,
+            10,
+        )
 
     def attendre_arbitre(self) -> None:
         """Attend brièvement que l'arbitre écoute les commandes clavier."""
@@ -205,6 +211,10 @@ class TeleopClavier(Node):
 
         if touche == '-':
             self._changer_vitesse(-self.pas_vitesse)
+            return False
+
+        if touche == 'p':
+            self.page_suivante_pub.publish(Empty())
             return False
 
         if self.mode != MODE_MANUEL:
@@ -287,7 +297,8 @@ class TeleopClavier(Node):
             '\nTéléopération clavier Devastator\n'
             'Touches : w avancer, s reculer, a gauche, d droite, espace stop\n'
             'Vitesse : = augmenter, - diminuer | Mode : m manuel/autonomie | Quitter : x\n'
-            'En autonomie, seuls m, = et - restent actifs.\n'
+            'Affichage : p page suivante\n'
+            'En autonomie, seuls m, =, - et p restent actifs.\n'
             'Garder les roues dans le vide au premier essai.\n',
             flush=True,
         )

@@ -37,6 +37,7 @@ d'obstacle et annonces audio.
 |---|---|---|---|
 | Sortie | `/robot/commande_moteurs/manuelle` | `commun/msg/ConsigneMoteurs` | Consignes clavier vers l'arbitre |
 | Sortie | `/robot/mode_conduite` | `std_msgs/msg/String` | Bascule `manuel` / `autonomie` |
+| Sortie | `/affichage/page_suivante` | `std_msgs/msg/Empty` | Demande de changement de page pour un futur nœud d'affichage LCD |
 
 ### `evitement_obstacle`
 
@@ -96,8 +97,9 @@ variante silencieuse choisie aléatoirement.
 
 Touches disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,
 `espace` arrête, `=` augmente la vitesse, `-` diminue la vitesse, `m` bascule entre
-`manuel` et `autonomie`, `x` quitte. À la sortie normale ou avec `Ctrl+C`, un arrêt moteur
-explicite est publié.
+`manuel` et `autonomie`, `p` demande la page suivante à l'affichage (actif quel que soit
+le mode, même sans nœud d'affichage démarré), `x` quitte. À la sortie normale ou avec
+`Ctrl+C`, un arrêt moteur explicite est publié.
 
 ### `evitement_obstacle` — `config/autonomie_simple.yaml`
 
