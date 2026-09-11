@@ -75,11 +75,12 @@ Touches (clavier QWERTY, terminal 2 au premier plan) :
 | `espace` | arrêter |
 | `=` / `-` | augmenter / diminuer la vitesse |
 | `m` | basculer manuel ↔ autonomie |
+| `p` | page suivante sur l'affichage (`/affichage/page_suivante`) |
 | `x` | quitter (publie un arrêt moteur) |
 
 Garder les roues dans le vide au premier essai. La vitesse par défaut est `300`, bornée de `300` à
 `1000` (`config/teleop_clavier.yaml`). En mode autonomie, les touches de mouvement sont ignorées ;
-`m`, `=` et `-` restent actives. `Ctrl+C` dans un terminal publie aussi un arrêt moteur.
+`m`, `=`, `-` et `p` restent actives. `Ctrl+C` dans un terminal publie aussi un arrêt moteur.
 
 ### 3. Fin de séance (quotidien)
 
@@ -204,6 +205,8 @@ d'un nœud isolé, jamais à l'exploitation du robot.
 | `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | `odometrie`, outil de diagnostic | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
 | `/pico/etat` | `std_msgs/msg/String` | `interface_pico` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
 | `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle`, `surveillance_alimentation` | `annonces_audio` | Signaler les transitions du comportement autonome et les franchissements de seuil batterie |
+| `/robot/parole_en_cours` | `std_msgs/msg/Bool` | `annonces_audio` | Futur nœud d'affichage LCD | Indiquer si une annonce est en cours de lecture (QoS transient local, profondeur 1) |
+| `/affichage/page_suivante` | `std_msgs/msg/Empty` | `teleop_clavier` | Futur nœud d'affichage LCD | Demander le changement de page à l'affichage, actif quel que soit le mode de conduite |
 | `/odom` | `nav_msgs/msg/Odometry` | `odometrie` | RViz, outil de diagnostic | Publier la pose et la vitesse estimées à partir des encodeurs |
 | `/alimentation/logique` | `sensor_msgs/msg/BatteryState` | `surveillance_alimentation` | Outil de diagnostic | Publier tension et courant du rail logique (pack 7,2 V NiMH) |
 | `/alimentation/moteur` | `sensor_msgs/msg/BatteryState` | `surveillance_alimentation` | Outil de diagnostic | Publier tension et courant du rail moteur (pack 6 V NiMH) |
