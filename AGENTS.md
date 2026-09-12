@@ -354,7 +354,6 @@ Règles :
 - positif = avancer
 - négatif = reculer
 - arrêt explicite et fiable obligatoire
-- ne jamais corriger un mauvais sens moteur en logiciel ; corriger le câblage moteur au MDD3A
 
 Les tests matériels doivent être courts, progressifs et sécuritaires :
 

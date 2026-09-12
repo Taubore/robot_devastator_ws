@@ -8,7 +8,7 @@ valable après plusieurs mois.
 
 ## Décisions techniques
 
-### Correction du sens moteur au câblage, jamais en logiciel
+### Correction du sens moteur au câblage
 
 Le moteur gauche est inversé physiquement au niveau du MDD3A (inversion des
 deux fils d'entrée sur le bornier), plutôt que de compenser son sens de
@@ -16,33 +16,7 @@ rotation dans le code. Objectif : garantir que la même convention logique
 s'applique aux deux moteurs (`avancer()` fait avancer, `reculer()` fait
 reculer des deux côtés), sans code spécial par moteur.
 
-Cette décision découle directement de la règle du projet : ne jamais
-corriger un mauvais sens moteur en logiciel, toujours corriger au niveau du
-câblage (voir `AGENTS.md`, section « Interface Pico, moteurs et sécurité
-matérielle »).
-
 ## Leçons apprises
-
-### Documentation dupliquée et correspondance moteur ↔ GPIO Pico
-
-Deux documents ont longtemps associé différemment les GPIO du Pico WH aux
-moteurs : une ancienne section « Affectation GPIO » de `docs/parametres.md`
-associait GPIO2/GPIO3 au moteur **gauche** et GPIO4/GPIO5 au moteur
-**droit**, à l'inverse de `docs/connexions.md` (fiche MDD3A). Une
-vérification physique du câblage et du firmware du Pico WH
-(`controleur_moteurs.py`) a confirmé la correspondance de
-`docs/connexions.md` : M1 (GP2/GP3) est le moteur **droit**, M2 (GP4/GP5)
-le moteur **gauche**.
-
-Le correctif réel sur le terrain a précédé la mise à jour de la
-documentation de plusieurs mois, car l'information existait alors en
-double dans deux fichiers. Sans document propriétaire unique pour une
-information donnée, une correction faite sur le terrain peut laisser une
-documentation incohérente longtemps après coup, sans qu'aucun des deux
-documents ne soit clairement faux ni clairement à jour. `docs/connexions.md`
-est désormais la seule source pour cette correspondance (voir la règle
-« un seul document propriétaire » dans `AGENTS.md`, section « Architecture
-documentaire »).
 
 ### Blocage de chenilles — mode de défaillance connu
 
@@ -171,10 +145,9 @@ l'ouverture et de la fermeture du flux audio par `aplay`, pas du routage
 GPIO ni de `dtparam=audremap`.
 
 Pistes essayées sans succès : `audremap`, lecture en flux continu,
-tentative via SD/shutdown.
+tentative via SD/shutdown, pré-silence ou fade-in dans les WAV.
 
 Décision : ne pas poursuivre ce chantier pour l'instant. L'audio reste une
 capacité décorative de Devastator — purement informative, jamais requise
 pour la sécurité ou le fonctionnement du robot. Pistes futures possibles si
-le besoin redevient prioritaire : pré-silence ou fade-in dans les WAV,
-lecteur audio persistant, ou solution matérielle anti-pop.
+le besoin redevient prioritaire : lecteur audio persistant ou solution matérielle anti-pop.
