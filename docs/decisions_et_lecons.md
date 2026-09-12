@@ -8,21 +8,6 @@ valable après plusieurs mois.
 
 ## Décisions techniques
 
-### Incohérence gauche/droite non tranchée — moteur ↔ GPIO Pico
-
-Deux documents associent différemment les GPIO du Pico WH aux moteurs :
-
-- `docs/parametres.md` (section « Affectation GPIO ») associait GPIO2/GPIO3
-  au moteur **gauche** et GPIO4/GPIO5 au moteur **droit**.
-- `docs/connexions.md` (fiche MDD3A) associe M1 (GP2/GP3) au moteur
-  **droit** et M2 (GP4/GP5) au moteur **gauche**.
-
-Cette incohérence n'est **pas tranchée** ici : elle doit être vérifiée
-physiquement contre le câblage réel et le firmware du Pico WH avant d'être
-considérée comme résolue. `docs/connexions.md` reste la seule source pour
-ce fait une fois la vérification faite ; c'est là qu'est conservé le
-marqueur « à vérifier ».
-
 ### Correction du sens moteur au câblage, jamais en logiciel
 
 Le moteur gauche est inversé physiquement au niveau du MDD3A (inversion des
@@ -37,6 +22,27 @@ câblage (voir `AGENTS.md`, section « Interface Pico, moteurs et sécurité
 matérielle »).
 
 ## Leçons apprises
+
+### Documentation dupliquée et correspondance moteur ↔ GPIO Pico
+
+Deux documents ont longtemps associé différemment les GPIO du Pico WH aux
+moteurs : une ancienne section « Affectation GPIO » de `docs/parametres.md`
+associait GPIO2/GPIO3 au moteur **gauche** et GPIO4/GPIO5 au moteur
+**droit**, à l'inverse de `docs/connexions.md` (fiche MDD3A). Une
+vérification physique du câblage et du firmware du Pico WH
+(`controleur_moteurs.py`) a confirmé la correspondance de
+`docs/connexions.md` : M1 (GP2/GP3) est le moteur **droit**, M2 (GP4/GP5)
+le moteur **gauche**.
+
+Le correctif réel sur le terrain a précédé la mise à jour de la
+documentation de plusieurs mois, car l'information existait alors en
+double dans deux fichiers. Sans document propriétaire unique pour une
+information donnée, une correction faite sur le terrain peut laisser une
+documentation incohérente longtemps après coup, sans qu'aucun des deux
+documents ne soit clairement faux ni clairement à jour. `docs/connexions.md`
+est désormais la seule source pour cette correspondance (voir la règle
+« un seul document propriétaire » dans `AGENTS.md`, section « Architecture
+documentaire »).
 
 ### Blocage de chenilles — mode de défaillance connu
 
@@ -142,6 +148,20 @@ partir de la géométrie. Les valeurs théoriques ne servent que de repère de
 cohérence, jamais de valeur de calcul. Les valeurs actives sont dans
 `robot_devastator_bringup/config/mecanique.yaml` ; la méthode et le
 contexte de mesure sont documentés dans [parametres.md](parametres.md).
+
+### Une calibration insuffisamment répétée fige du bruit en erreur systématique
+
+Une calibration établie sur un nombre insuffisant de passes risque de figer
+du bruit de mesure en erreur systématique plutôt que de corriger une
+asymétrie réelle : le bruit d'une seule mesure (ou de trop peu de mesures)
+se retrouve inscrit dans une constante de calibration, comme s'il s'agissait
+d'un biais physique reproductible.
+
+Leçon : avant d'inscrire une valeur de calibration dans la configuration,
+vérifier qu'elle repose sur un signal reproductible sur plusieurs passes,
+pas sur une mesure isolée. Voir `src/odometrie/README.md`, section
+« Validation Phase 6 », pour l'exemple concret ayant fait émerger cette
+leçon (calibration des ticks/mètre gauche/droite de l'odométrie).
 
 ### Bruit de démarrage (« clac ») de l'ampli I2S
 
