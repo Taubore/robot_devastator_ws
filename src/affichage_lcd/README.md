@@ -75,11 +75,9 @@ correspondante dépasse `peremption_alimentation_s` sans nouvelle réception.
 
 ## Paramètres ROS 2
 
-| Paramètre | Défaut | Rôle |
-|---|---|---|
-| `peremption_alimentation_s` | `3.0` | Au-delà de ce délai sans réception d'un `BatteryState` pour un rail, ce rail affiche `--` plutôt que sa dernière valeur connue. |
-| `periode_rafraichissement_s` | `0.1` | Période du timer d'affichage (10 Hz par défaut). |
-| `retroeclairage_pourcent` | `80.0` | Intensité du rétroéclairage réglée au démarrage (0 à 100). |
+Paramètres ajustables (péremption d'une mesure d'alimentation, période de rafraîchissement,
+intensité du rétroéclairage) et leur rôle : voir
+`robot_devastator_bringup/config/affichage_lcd.yaml`, chargé par le lancement principal.
 
 ## Topics consommés
 

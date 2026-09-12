@@ -3,132 +3,29 @@
 
 ## Configuration ROS 2 de l'interface Pico
 
-Le nœud `interface_pico` utilise la liaison UART vers le Pico WH. Les paramètres actifs sont
-regroupés dans `src/robot_devastator_bringup/config/interface_pico.yaml` :
-
-- `port` : port UART, actuellement `/dev/ttyS0`
-- `debit` : débit UART, actuellement `115200`
-- `timeout_lecture` : attente maximale d'une lecture UART, actuellement `0.02 s`
-- `periode_maintien_s` : intervalle entre les rappels de la dernière consigne moteur,
-  actuellement `0.25 s`
-- `delai_expiration_consigne_moteurs_s` : délai maximal sans nouvelle consigne ROS avant un arrêt
-  explicite, actuellement `0.5 s`
-- `periode_distance_s` : intervalle entre les demandes de mesure ultrason, actuellement `0.10 s`
-- `periode_encodeurs_s` : intervalle entre les demandes de compteurs encodeurs, actuellement
-  `0.10 s`
-- `delai_attente_reponse_service_s` : délai maximal d'attente des confirmations UART pour les
-  services, actuellement `1.0 s`
+Le nœud `interface_pico` utilise la liaison UART vers le Pico WH. Les paramètres ajustables
+(port, débit, timeouts, périodes de sondage) vivent dans
+`src/robot_devastator_bringup/config/interface_pico.yaml` — s'y référer pour les valeurs actives.
 
 Le comportement d'autonomie simple est configuré dans
-`src/robot_devastator_bringup/config/autonomie_simple.yaml`. Les consignes moteur actives sont :
-
-- avance lente : `500`
-- rotation de recherche : `500`
-- recul de récupération : `300`
-
-Dans le lancement principal, `actif_au_demarrage` vaut `false` : l'autonomie reste au repos tant
-que `teleop_clavier` ne demande pas le mode `autonomie`.
+`src/robot_devastator_bringup/config/autonomie_simple.yaml` (vitesses, angles de tourelle,
+distances de déclenchement, `actif_au_demarrage`).
 
 La téléopération clavier est configurée dans
-`src/robot_devastator_bringup/config/teleop_clavier.yaml` :
-
-- vitesse initiale : `300`
-- vitesse minimale : `300`
-- vitesse maximale : `1000`
-- pas d'incrément : `50`
-- période de lecture et publication : `0.1 s`
-
-`teleop_clavier` est lancé dans un terminal interactif séparé, via
-`ros2 launch robot_devastator_bringup teleop.launch.yaml`, qui charge automatiquement ce fichier.
-Les mêmes valeurs servent aussi de repli dans le nœud si le fichier n'est pas chargé.
+`src/robot_devastator_bringup/config/teleop_clavier.yaml` (vitesses et pas d'incrément).
 
 L'arbitre de commandes moteur est configuré dans
-`src/robot_devastator_bringup/config/arbitre_commande_moteurs.yaml` :
+`src/robot_devastator_bringup/config/arbitre_commande_moteurs.yaml` (mode initial, période de
+publication, délai d'expiration).
 
-- mode initial du lancement principal : `manuel`
-- période de publication vers le Pico : `0.1 s`
-- délai sans commande de la source active avant arrêt : `0.35 s`
+Association d'angles de tourelle validée sur le robot (valeurs actives dans
+`autonomie_simple.yaml`) : l'angle le plus faible oriente la tourelle vers la gauche, le plus
+élevé vers la droite.
 
-Les angles configurés pour la tourelle sont :
-
-- centre : `95°`
-- gauche : `45°`
-- droite : `140°`
-
-Association validée sur le robot :
-
-- `45°` oriente la tourelle vers la gauche ;
-- `140°` oriente la tourelle vers la droite.
-
-## Affectation GPIO (validée)
-
-- Moteur gauche :
-  - Entrée A : GPIO2
-  - Entrée B : GPIO3
-
-- Moteur droit :
-  - Entrée A : GPIO4
-  - Entrée B : GPIO5
-
-## Liaison UART Raspberry Pi 4 ↔ Pico WH (validée)
-
-- Raspberry Pi 4 :
-  - TX : GPIO14
-  - RX : GPIO15
-
-- Pico WH :
-  - TX : GPIO0
-  - RX : GPIO1
-
-- Câblage croisé :
-  - Raspberry Pi TX GPIO14 → résistance série 1 kΩ → Pico RX GPIO1
-  - Raspberry Pi RX GPIO15 ← résistance série 1 kΩ ← Pico TX GPIO0
-  - GND Raspberry Pi ↔ GND Pico
-
-- Convention couleur retenue :
-  - TX : jaune
-  - RX : vert
-  - GND : noir
-
-## Diagnostic validé sur la liaison UART
-
-- Le problème de démarrage observé n'est pas causé par l'USB seul ni par le Pico seul
-- La ligne réellement critique est :
-  - Raspberry Pi TX GPIO14 → Pico RX GPIO1
-- Comportement observé :
-  - Pico seul : démarrage OK
-  - Pico avec fil GP1 seul : démarrage OK
-  - Pico avec Pi4 éteint relié à GP1 : démarrage OK
-  - Pico avec Pi4 allumé relié à GP1 : démarrage KO
-- Conclusion :
-  - la TX du Raspberry Pi 4 perturbe le démarrage du Pico lorsqu'elle est reliée au RX GPIO1 pendant le boot du Pico
-
-## Règle de travail provisoire (obligatoire)
-
-### Mode développement Pico par USB
-
-- USB branché au Pico
-- Déconnecter au minimum la ligne :
-  - Raspberry Pi TX GPIO14 → Pico RX GPIO1
-- La ligne Pico TX GPIO0 → Raspberry Pi RX GPIO15 peut rester en place seulement si elle ne perturbe pas le travail
-- Objectif :
-  - éviter qu'un état actif de la TX du Raspberry Pi bloque le démarrage du Pico
-
-### Mode test avec Raspberry Pi 4
-
-- USB PC débranché du Pico
-- Pico alimenté en autonome via VSYS
-- UART Raspberry Pi ↔ Pico rebranché complètement
-- Tests effectués via le Raspberry Pi 4 sur `/dev/ttyS0`
-
-### Séquence pratique recommandée
-
-- Pour développer sur le Pico :
-  - débrancher la ligne Pi4 TX → Pico RX
-- Pour tester la communication avec le Raspberry Pi 4 :
-  - rebrancher la ligne Pi4 TX → Pico RX
-  - alimenter le Pico via VSYS
-  - tester depuis le Raspberry Pi 4
+L'affectation GPIO des moteurs et le câblage UART Raspberry Pi 4 ↔ Pico WH sont documentés dans
+[docs/connexions.md](connexions.md), seule source pour le câblage. Le piège de démarrage du Pico
+lié à l'état de la TX du Raspberry Pi est documenté dans
+[docs/decisions_et_lecons.md](decisions_et_lecons.md).
 
 ## Convention logique (figée)
 
@@ -144,49 +41,20 @@ Association validée sur le robot :
   - A = 0
   - B = 0
 
-## Convention de câblage moteurs (figée)
-
-- Fil jaune → entrée A (pour les deux moteurs)
-- Fil blanc → entrée B du moteur droit
-- Fil vert → entrée B du moteur gauche
-
-## Correction physique appliquée
-
-- Le moteur gauche est inversé physiquement au niveau du MDD3A
-- Objectif : garantir que la même convention logique s’applique aux deux moteurs
-  - `avancer()` = avance
-  - `reculer()` = recul
+Le câblage des moteurs au MDD3A (couleurs, correspondance entrée A/B) est documenté dans
+[docs/connexions.md](connexions.md). La décision de corriger le sens du moteur gauche au câblage
+plutôt qu'en logiciel est documentée dans
+[docs/decisions_et_lecons.md](decisions_et_lecons.md).
 
 ## Fréquence PWM
 
-- Valeur actuelle : 1000 Hz
+- Valeur actuelle : 1000 Hz, fixée côté firmware Pico (aucun paramètre ROS 2 associé)
 - Ajustable ultérieurement selon bruit / rendement
 
-## Paramètres UART
+## Protocole UART
 
-- Interface : UART matériel
-- Instance retenue : UART0
-- Débit prévu : 115200 bauds
-- Format de commande : texte ASCII terminé par fin de ligne
-
-### Commandes utilisées
-
-Le protocole UART texte courant du Pico est utilisé sans alias vers les anciennes commandes :
-
-- `PING` → `OK PING`
-- `STOP_MOT` → `OK STOP_MOT`
-- `SET_MOT <gauche> <droite>` → `OK SET_MOT <gauche> <droite>`
-- `STATUS` → `OK STATUS <gauche> <droite> <actif>`
-- `SONAR` → `OK SONAR <distance_mm>`
-- `SET_SERVO <angle>` → `OK SET_SERVO <angle>`
-- `ENC` → `OK ENC <gauche_ticks> <droite_ticks>`
-- `RESET_ENC` → `OK RESET_ENC`
-
-Les lignes spontanées `READY` et `AVERT TIMEOUT` peuvent aussi être reçues. Elles sont publiées
-sur `/pico/etat`, mais ne remplacent pas les confirmations attendues par les services.
-
-Le service ROS 2 `/pico/ping` réussit seulement si la réponse `OK PING` est reçue dans le délai
-configuré par `delai_attente_reponse_service_s`.
+Le format de commande (texte ASCII terminé par fin de ligne) et la plage de consigne moteur sont
+des invariants du contrat d'interface :
 
 ### Convention de consigne
 
@@ -197,27 +65,18 @@ configuré par `delai_attente_reponse_service_s`.
 - valeur absolue = intensité PWM
 - `0` = arrêt
 
-### Sécurité
-
-- arrêt automatique par le Pico si aucune commande UART valide n'est reçue depuis plus de `500 ms`
-- arrêt explicite par `interface_pico` si aucune nouvelle consigne moteur ROS n'est reçue
-  depuis plus de `500 ms`
-- neutralisation de l'ancienne consigne moteur après une erreur ou une reconnexion UART
-- tentative d'envoi de `STOP_MOT` par `interface_pico` avant la fermeture de la liaison UART
-
-## Règles de conception
-
-- Ne jamais compenser un mauvais sens moteur en logiciel
-- Toujours corriger au niveau du câblage
-- Conserver une symétrie stricte gauche / droite
-- Toute modification doit être répercutée ici
-- La masse UART doit toujours être commune entre Raspberry Pi et Pico
-- Les résistances série UART 1 kΩ font partie du montage courant
-- La ligne Raspberry Pi TX → Pico RX doit être considérée comme ligne sensible au démarrage du Pico
+Le détail des commandes UART, des services ROS 2 et de la sécurité (arrêts automatiques,
+timeouts) est documenté dans [docs/contrat_pico_ros2.md](contrat_pico_ros2.md), seule source pour
+le protocole Pico.
 
 ## Paramètres mécaniques
 
-Mesures réalisées en Phase 3 sur le robot réel.
+Méthode et contexte de calibration : mesures réalisées en Phase 3 (2026-06-24) sur sol dur, par
+déplacement en ligne droite sur 1 m et comptage des ticks encodeurs. Ces mesures physiques et
+intermédiaires sont conservées ici à titre de référence et d'historique de calibration ; les
+valeurs actives utilisées par le nœud `odometrie` (ticks par tour, ticks par mètre moyen, entraxe)
+vivent dans `robot_devastator_bringup/config/mecanique.yaml`, déjà chargé par le lancement
+principal — ne pas les recopier ici.
 
 | Paramètre            | Valeur    | Unité      | Note                                    |
 |----------------------|-----------|------------|-----------------------------------------|
@@ -225,26 +84,13 @@ Mesures réalisées en Phase 3 sur le robot réel.
 | Pas chenille         | 9,5       | mm         | Centre à centre d'un maillon            |
 | Diamètre extérieur (pointe à pointe) | 42,90 | mm | Mesuré au pied à coulisse, 2026-09-01 |
 | Diamètre primitif    | 39,32     | mm         | Calculé : N × p / π                    |
-| Ticks par tour       | 1 447     | ticks/tour | Mesuré empiriquement                    |
 | Ticks/m théorique    | 11 715    | ticks/m    | Calculé à partir du diamètre primitif   |
-| Ticks/m gauche       | 10 492    | ticks/m    | Mesuré empiriquement sur 1 m, mais remplacé par 10 432 le 2026-08-23 car l'étalonnage ne semble pas adéquat |
-| Ticks/m droite       | 10 373    | ticks/m    | Mesuré empiriquement sur 1 m, mais remplacé par 10 432 le 2026-08-23 car l'étalonnage ne semble pas adéquat |
-| Ticks/m moyen        | 10 432    | ticks/m    | Moyenne gauche/droite                   |
-| Entraxe effectif     | 197       | mm         | Centre chenille gauche à centre droite  |
+| Ticks/m gauche       | 10 492    | ticks/m    | Mesuré empiriquement sur 1 m, mais remplacé par la valeur moyenne le 2026-08-23 car l'étalonnage ne semble pas adéquat |
+| Ticks/m droite       | 10 373    | ticks/m    | Mesuré empiriquement sur 1 m, mais remplacé par la valeur moyenne le 2026-08-23 car l'étalonnage ne semble pas adéquat |
 
-### Notes
-
-- **Écart théorie/empirique (~11 %)** : l'écart entre la valeur théorique (11 715 ticks/m) et la
-  valeur empirique moyenne (10 432 ticks/m) est attribuable au glissement des chenilles plastique
-  sur sol dur. Ce glissement est inhérent au type de terrain et ne représente pas une erreur de
-  mesure.
-
-- **Primauté des valeurs empiriques** : les valeurs mesurées sur le robot réel priment sur les
-  valeurs théoriques pour tout calcul d'odométrie. Les valeurs théoriques sont conservées ici à
-  titre de référence uniquement.
-
-- **Usage prévu** : ces valeurs seront chargées par le nœud `odometrie` lors de la Phase 6 via
-  le fichier `robot_devastator_bringup/config/mecanique.yaml`.
+L'écart entre la valeur théorique et la valeur empirique moyenne, et la raison de privilégier les
+valeurs empiriques pour l'odométrie, sont documentés dans
+[docs/decisions_et_lecons.md](decisions_et_lecons.md).
 
 # Affichage LCD — ST7789V
 
@@ -252,19 +98,16 @@ Mesures réalisées en Phase 3 sur le robot réel.
 
 # Surveillance de l'alimentation — INA260
 
-Nœud `surveillance_alimentation`, paramètres dans
-`robot_devastator_bringup/config/surveillance_alimentation.yaml`. Le package est réutilisable :
-aucune valeur propre à Devastator n'est codée en Python.
-
-## Bus I2C et cadence
-
-- Bus : `1` (`/dev/i2c-1`, GPIO2/GPIO3), activé par `dtparam=i2c_arm=on`
-- Utilisateur dans le groupe `i2c` ; paquet système `python3-smbus2` (apt)
-- Publication et évaluation des seuils : 1 Hz
-- Moyennage matériel INA260 : 64 échantillons (lisse le bruit sans retard perceptible)
-- Adresses : `0x40` rail logique, `0x41` rail moteur
+Nœud `surveillance_alimentation`, paramètres ajustables (bus I2C, cadence, moyennage, adresses,
+signe du courant, seuils, hystérésis, temporisation, rappels) dans
+`robot_devastator_bringup/config/surveillance_alimentation.yaml` — s'y référer pour les valeurs
+actives. Le package est réutilisable : aucune valeur propre à Devastator n'est codée en Python.
+Le câblage I2C et les adresses physiques des deux capteurs sont documentés dans
+[docs/connexions.md](connexions.md).
 
 ## Conversion INA260 (datasheet TI SBOS656C)
+
+Invariants du capteur, indépendants de toute configuration ROS 2 :
 
 - Registres : `0x00` config, `0x01` courant, `0x02` tension bus, `0xFE`/`0xFF` identification
 - LSB courant : 1,25 mA/bit, valeur en complément à deux sur 16 bits
@@ -277,34 +120,26 @@ aucune valeur propre à Devastator n'est codée en Python.
 deux INA260 de Devastator donne des lectures positives alors que les deux rails sont en décharge
 permanente. Le paramètre `rail.<nom>.signe_courant` (`1` ou `-1`, rejeté au démarrage sinon)
 multiplie la lecture avant publication ; il est propre à chaque rail, car rien ne garantit que
-deux capteurs soient câblés dans le même sens sur un autre robot.
+deux capteurs soient câblés dans le même sens sur un autre robot. Valeur active des deux rails :
+voir `surveillance_alimentation.yaml`.
 
-- `rail.logique.signe_courant : -1`
-- `rail.moteur.signe_courant : -1`
+## Seuils d'alerte
 
-Après correction, les deux topics publient du courant négatif au repos. La logique d'alerte
-utilise `abs(courant)` et n'est pas affectée.
+Les seuils sont exprimés en volts absolus, jamais dérivés du nombre de cellules en code. Valeurs
+actives par rail : voir `surveillance_alimentation.yaml`.
 
-## Seuils d'alerte (volts absolus, jamais dérivés du nombre de cellules en code)
-
-| Rail | Cellules NiMH | Avertissement | Critique | Hystérésis réarmement | Porte de courant | Temporisation |
-|---|---|---|---|---|---|---|
-| Logique | 6 | 6,30 V (1,05 V/cell) | 6,00 V (1,00 V/cell) | +0,20 V | < 0,90 A | 20 s |
-| Moteur | 5 | 5,25 V (1,05 V/cell) | 5,00 V (1,00 V/cell) | +0,20 V | < 0,30 A | 20 s |
-
-- **Porte de courant** : un seuil n'est évalué que si `abs(courant)` est sous la valeur indiquée ;
+- **Porte de courant** : un seuil n'est évalué que si `abs(courant)` est sous la valeur configurée ;
   sous charge la tension chute par la résistance interne et ne renseigne pas l'état de charge.
-- **Temporisation** : la condition doit être maintenue ce délai avant l'émission de l'événement.
-  Le délai est suivi par un accumulateur de durée. Porte de courant fermée = condition
+- **Temporisation** : la condition doit être maintenue le délai configuré avant l'émission de
+  l'événement. Le délai est suivi par un accumulateur de durée. Porte de courant fermée = condition
   *inconnue* : l'accumulateur est laissé intact sans rien accumuler, donc une conduite qui
   alterne accélérations et courts arrêts ne remet jamais la temporisation à zéro. Il ne repart
   de zéro que sur une mesure valide au-dessus du seuil.
 - **Hystérésis** : un seuil armé ne se désarme que si la tension repasse au-dessus de
   `seuil + hystérésis`, à courant faible.
 - **Rappel périodique** : tant qu'un seuil reste armé, l'événement est réémis toutes les
-  `rail.<nom>.periode_rappel_<niveau>_s` secondes. Devastator : 180 s pour l'avertissement,
-  30 s pour le critique, sur les deux rails (`0` = émission unique). Le rappel suit l'armement
-  (il continue porte fermée) et son compteur se réinitialise au désarmement.
+  `rail.<nom>.periode_rappel_<niveau>_s` secondes (`0` = émission unique). Le rappel suit
+  l'armement (il continue porte fermée) et son compteur se réinitialise au désarmement.
 
 ## Événements publiés sur `/robot/evenement`
 
@@ -321,7 +156,7 @@ courant du rail moteur sous charge, veille hors séance) sont regroupés dans la
 
 Rappel utile pour le réglage des seuils : la surveillance de batterie se fait sur la **tension**,
 jamais sur le courant. Le courant sert seulement à fermer la porte de courant quand le robot
-consomme. Le signe publié est `signe_courant = -1` sur les deux rails (courant négatif au repos).
+consomme.
 
 ## Protection — fusible du rail moteur
 

@@ -396,8 +396,39 @@ Tenir à jour les documents spécialisés si la modification les concerne :
 - `docs/connexions.md`
 - `docs/parametres.md`
 - `docs/inventaire_composantes.md`
+- `docs/decisions_et_lecons.md`
 
 Respecter le style et le cadre déjà documentés.
+
+## Architecture documentaire
+
+Chaque type d'information a un seul document propriétaire. En cas de doute sur où écrire une
+information, ou où la trouver, utiliser ce tableau :
+
+| Information | Document propriétaire |
+|---|---|
+| Interfaces ROS 2 d'un nœud (topics, services, paramètres) | `README.md` du package concerné |
+| Protocole UART Pico WH (commandes, réponses, sécurité) | `docs/contrat_pico_ros2.md` |
+| Câblage et brochage matériel | `docs/connexions.md` |
+| Paramètres ROS 2 ajustables | fichier YAML du nœud, dans `robot_devastator_bringup/config/` |
+| Architecture cible et sous-systèmes futurs | `docs/architecture_cible.md` |
+| Choix ou statut des composantes matérielles | `docs/inventaire_composantes.md` |
+| Décisions techniques et leçons apprises durables | `docs/decisions_et_lecons.md` |
+| État d'avancement, lancement, usage courant | `README.md` racine |
+
+Règle anti-prolifération : créer un nouveau fichier sous `/docs` seulement si l'information est
+transversale à plusieurs packages ou dépôts **et** qu'aucun document existant ne la couvre déjà.
+Sinon, ajouter une section à un document existant ou au `README.md` du package concerné.
+
+Règle valeurs-jamais-en-documentation : une valeur de paramètre ROS 2 ajustable ne s'écrit jamais
+dans un fichier `.md`, seulement dans son fichier YAML. Un `.md` peut renvoyer au YAML et décrire
+le rôle du paramètre, jamais recopier sa valeur active. Exception : les invariants du contrat
+d'interface qui ne sont pas des réglages (ex. plage moteur `-1000` à `1000`, format des commandes
+UART) peuvent rester documentés en texte, car ils ne vivent dans aucun YAML.
+
+Exception : `docs/aide-memoire.md` est un aide-mémoire personnel d'apprentissage (ROS 2, Python,
+robotique, VSCode, bash), destiné à terme à un usage Obsidian. Il n'est pas soumis aux règles
+ci-dessus et n'est pas référencé dans l'index de documentation du `README.md`.
 
 ## Git
 

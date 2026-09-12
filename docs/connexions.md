@@ -58,9 +58,8 @@ Raspberry Pi 4 (GPIO BCM, broche J8) et la colonne GP du Pico WH.
 | Pico TX → RPi4 RX | GPIO15 (RXD) | 10 | GP0 | Vert | Via résistance série 1 kΩ. |
 | Masse commune | GND | GND | GND | Noir | Masse commune UART, obligatoire. |
 
-> Voir aussi `docs/parametres.md`, sections « Diagnostic validé sur la liaison UART » et « Règle
-> de travail provisoire », pour les lignes sensibles au démarrage et les modes de travail
-> USB / autonome.
+> Voir aussi [docs/decisions_et_lecons.md](decisions_et_lecons.md), section « Leçons apprises »,
+> pour les lignes sensibles au démarrage et les modes de travail USB / autonome.
 
 ### INA260 ×2 (capteurs d'alimentation)
 
@@ -115,11 +114,8 @@ détecté comme carte ALSA. Test fonctionnel Devastator :
 aplay -D default ~/.cache/robot_devastator/audio/demarrage_01.wav
 ```
 
-Diagnostic du « clac » à la lecture : le bruit observé à chaque lecture séparée vient probablement
-de l'ouverture et de la fermeture du flux audio par `aplay` avec l'ampli I2S. Ce diagnostic ne
-pointe pas vers le routage GPIO ni vers `dtparam=audremap`. Pistes futures : un pré-silence ou un
-fade-in dans les WAV, un lecteur audio persistant, ou une solution matérielle anti-pop si le
-besoin reste présent.
+Diagnostic et décision au sujet du « clac » à la lecture : voir
+[docs/decisions_et_lecons.md](decisions_et_lecons.md), section « Leçons apprises ».
 
 ### CLAV_X8 (mini clavier USB sans-fil Rii X8)
 
@@ -197,10 +193,12 @@ Le Pico WH utilise la numérotation GP0–GP28 (pas de BCM) : la colonne « GP �
 
 Sorties M1/M2 vers les moteurs FIT0521 (voir fiches FIT0521_G / FIT0521_D).
 
-> **À vérifier — correspondance moteur** : `docs/parametres.md` (« Affectation GPIO (validée) »)
-> associe GPIO2/GPIO3 au **moteur gauche** et GPIO4/GPIO5 au **moteur droit**, soit l'inverse de la
-> colonne « Commentaire » ci-dessus (reprise de l'état antérieur de ce fichier). La correspondance
-> M1 ↔ droite / M2 ↔ gauche est à confirmer contre le firmware du Pico WH.
+> **À vérifier — correspondance moteur** : une version antérieure de la documentation associait
+> GPIO2/GPIO3 au **moteur gauche** et GPIO4/GPIO5 au **moteur droit**, soit l'inverse de la colonne
+> « Commentaire » ci-dessus. La correspondance M1 ↔ droite / M2 ↔ gauche est à confirmer
+> physiquement contre le câblage réel et le firmware du Pico WH ; ce fichier reste la seule source
+> une fois la vérification faite. Incohérence suivie comme décision ouverte dans
+> [docs/decisions_et_lecons.md](decisions_et_lecons.md).
 
 ### FIT0521_G (DFRobot FIT0521 gauche) — encodeur
 
