@@ -193,13 +193,6 @@ Le Pico WH utilise la numérotation GP0–GP28 (pas de BCM) : la colonne « GP �
 
 Sorties M1/M2 vers les moteurs FIT0521 (voir fiches FIT0521_G / FIT0521_D).
 
-> **À vérifier — correspondance moteur** : une version antérieure de la documentation associait
-> GPIO2/GPIO3 au **moteur gauche** et GPIO4/GPIO5 au **moteur droit**, soit l'inverse de la colonne
-> « Commentaire » ci-dessus. La correspondance M1 ↔ droite / M2 ↔ gauche est à confirmer
-> physiquement contre le câblage réel et le firmware du Pico WH ; ce fichier reste la seule source
-> une fois la vérification faite. Incohérence suivie comme décision ouverte dans
-> [docs/decisions_et_lecons.md](decisions_et_lecons.md).
-
 ### FIT0521_G (DFRobot FIT0521 gauche) — encodeur
 
 - **Contrôleur hôte** : Pico WH (signaux d'encodeur)
