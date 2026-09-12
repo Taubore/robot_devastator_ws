@@ -107,9 +107,8 @@ droite de 1,5 m produisait un cap fantôme de 0,10 rad (5,7°) alors que le robo
 
 Après égalisation des deux facteurs à 10 432, la même ligne droite donne 0,016 rad (0,9°).
 
-Leçon retenue : une calibration établie sur un nombre insuffisant de passes fige du bruit de
-mesure en erreur systématique. Vérifier qu'une correction repose sur un signal reproductible
-avant de l'inscrire dans la configuration.
+Leçon générique tirée de cet écart : voir
+[docs/decisions_et_lecons.md](../../docs/decisions_et_lecons.md), section « Leçons apprises ».
 
 ## Limites connues
 

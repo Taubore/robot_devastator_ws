@@ -390,13 +390,8 @@ Mettre à jour `README.md` si une modification change :
 - la structure
 - une procédure de test
 
-Tenir à jour les documents spécialisés si la modification les concerne :
-
-- `docs/architecture_cible.md`
-- `docs/connexions.md`
-- `docs/parametres.md`
-- `docs/inventaire_composantes.md`
-- `docs/decisions_et_lecons.md`
+Tenir à jour le document propriétaire concerné (voir Architecture documentaire ci-dessous) si
+une modification touche l'information qu'il couvre.
 
 Respecter le style et le cadre déjà documentés.
 
@@ -419,6 +414,12 @@ information, ou où la trouver, utiliser ce tableau :
 Règle anti-prolifération : créer un nouveau fichier sous `/docs` seulement si l'information est
 transversale à plusieurs packages ou dépôts **et** qu'aucun document existant ne la couvre déjà.
 Sinon, ajouter une section à un document existant ou au `README.md` du package concerné.
+
+Règle de capture des leçons : si un travail sur un package (code, essai, diagnostic) fait
+émerger un piège, une correction ou une leçon durable et réutilisable, la signaler pour ajout à
+`docs/decisions_et_lecons.md` — même si la tâche en cours ne portait pas sur la documentation.
+Une leçon générique vit dans `docs/decisions_et_lecons.md` ; les détails techniques propres au
+package concerné (valeurs, mesures, contexte) restent dans son `README.md`.
 
 Règle valeurs-jamais-en-documentation : une valeur de paramètre ROS 2 ajustable ne s'écrit jamais
 dans un fichier `.md`, seulement dans son fichier YAML. Un `.md` peut renvoyer au YAML et décrire
