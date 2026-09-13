@@ -246,10 +246,10 @@ du robot.
 - [x] Page 0 : bouche animée de style dessin animé, animée pendant les annonces vocales
 - [x] Pages 1 à N : statuts du robot (mode actif, tensions des deux rails, consignes moteurs)
 - [x] Navigation entre pages par une touche du clavier, bouclage vers l'avant uniquement
-- [-] Le passage du mode manuel au mode autonomie force la page 0, sur la transition et non en continu ; le retour au mode manuel ne change pas la page
+- [x] Le passage du mode manuel au mode autonomie force la page 0, sur la transition et non en continu ; le retour au mode manuel ne change pas la page
 - [x] Boucle de rendu à cadence fixe (10 Hz) comparant l'état courant au dernier état affiché : aucun envoi vers l'écran si l'état est inchangé
 - [x] Rafraîchissement limité à la zone modifiée via la fenêtre d'adressage du ST7789V ; plein écran réservé au changement de page
-- [-] Lecture : documentation Waveshare du ST7789V (aucun chapitre de livre dédié)
+- [x] Lecture : documentation Waveshare du ST7789V (aucun chapitre de livre dédié)
 
 **Validation minimale :** basculer manuel/autonomie, l'affichage change.
 **Livre :** aucun chapitre dédié dans les livres disponibles — utiliser
@@ -267,11 +267,11 @@ Cobaye : `surveillance_alimentation`, phase 7 fermée et stable.
 Notion à acquérir : séparer la logique métier de l'accès matériel. Aujourd'hui `from smbus2 import SMBus` en tête de module empêche le nœud de démarrer hors du Pi. Le principe à comprendre est l'injection de dépendance — la logique reçoit ses mesures au lieu d'aller les chercher elle-même.
 
 Critères de complétion :
-- [ ] `colcon test --packages-select surveillance_alimentation` passe sur Legion-Linux, sans matériel
-- [ ] un test rejoue le scénario de conduite hachée (accélérations et arrêts alternés) et vérifie que l'alerte finit par être armée
-- [ ] un test vérifie qu'une porte de courant fermée n'arme jamais un seuil à elle seule
-- [ ] un test vérifie le désarmement par hystérésis et la réinitialisation du rappel
-- [ ] un test vérifie la conversion complément à deux du registre de courant sur une valeur négative
+- [x] `colcon test --packages-select surveillance_alimentation` passe sur Legion-Linux, sans matériel
+- [x] un test rejoue le scénario de conduite hachée (accélérations et arrêts alternés) et vérifie que l'alerte finit par être armée
+- [x] un test vérifie qu'une porte de courant fermée n'arme jamais un seuil à elle seule
+- [x] un test vérifie le désarmement par hystérésis et la réinitialisation du rappel
+- [x] un test vérifie la conversion complément à deux du registre de courant sur une valeur négative
 
 Leçon à nommer et transférer : un test qui reproduit un bogue déjà rencontré vaut plus qu'un test écrit dans le vide. Les quatre premiers critères ci-dessus décrivent des défauts réellement trouvés en phase 7.
 
@@ -439,6 +439,10 @@ Ce que Devastator m'a appris que je ferais différemment dès la conception.
   symétrique (mire de couleurs) ne révèle pas une inversion de rotation — seul du texte
   ou une image asymétrique la révèle. Toujours valider une orientation avec du contenu
   asymétrique avant de la considérer acquise.
+- Capteur numérique : un test unitaire valide le calcul, jamais la plausibilité de
+  l'entrée. Une masse intermittente produit des valeurs bien formées et fausses
+  (I2C flottant = 0xFFFF = -1,25 mA sur le registre de courant, crédible). Borner
+  chaque lecture par sa limite physique connue, dès la conception.
 
 ---
 
