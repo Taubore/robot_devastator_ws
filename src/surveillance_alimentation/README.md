@@ -25,13 +25,23 @@ puis rouvrir la session) et le bus I2C doit être activé (`dtparam=i2c_arm=on`)
 ## Rôle des fichiers principaux
 
 - `surveillance_alimentation/ina260.py` : pilote pur du circuit INA260 (`LecteurINA260`).
-  Ne connaît que le protocole : il reçoit un `SMBus` déjà ouvert, lit la tension bus et le
-  courant, vérifie l'identité du circuit et programme le moyennage matériel. Registres et
-  facteurs de conversion vérifiés contre le datasheet TI **SBOS656C** (voir l'en-tête du
-  fichier pour les références de section). Réutilisable hors ROS 2.
+  Ne connaît que le protocole : il reçoit un objet `SMBus`-compatible déjà ouvert, lit la
+  tension bus et le courant, vérifie l'identité du circuit et programme le moyennage matériel.
+  Registres et facteurs de conversion vérifiés contre le datasheet TI **SBOS656C** (voir
+  l'en-tête du fichier pour les références de section). N'importe `smbus2` que pour une
+  annotation de type (`if TYPE_CHECKING`) : le module est importable sans `smbus2` installé,
+  et donc testable sur Legion-Linux sans matériel. Réutilisable hors ROS 2.
+- `surveillance_alimentation/logique_alerte.py` : fonction pure `evaluer_seuils` et dataclasses
+  `SeuilAlerte`, `ConfigurationAlerte`, `ResultatAlerte`. Aucun import de `rclpy` ni de
+  `smbus2`, aucune journalisation : reçoit seuils, configuration et mesures, retourne la liste
+  des résultats (armement, rappel, rétablissement) à journaliser et à publier. C'est ici que
+  vivent la porte de courant, la temporisation et l'hystérésis ; testable sans matériel ni
+  contexte ROS 2.
 - `surveillance_alimentation/surveillance_alimentation.py` : nœud ROS 2
-  `surveillance_alimentation`. Ouvre un bus I2C partagé, instancie un `LecteurINA260` par rail,
-  publie les `BatteryState` à cadence fixe et applique la logique d'alerte.
+  `surveillance_alimentation`, adaptateur mince. Ouvre un bus I2C partagé, instancie un
+  `LecteurINA260` par rail, publie les `BatteryState` à cadence fixe, puis délègue l'évaluation
+  des seuils à `evaluer_seuils` et se contente de journaliser les messages reçus et de publier
+  les libellés d'événement non vides.
 
 ## Interfaces ROS 2
 

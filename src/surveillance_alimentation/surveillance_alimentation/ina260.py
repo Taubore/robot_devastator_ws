@@ -29,9 +29,10 @@ datasheet officiel :
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, TYPE_CHECKING
 
-from smbus2 import SMBus
+if TYPE_CHECKING:
+    from smbus2 import SMBus
 
 # --- Cartographie des registres (datasheet SBOS656C, Table 4) ---
 REG_CONFIGURATION: Final[int] = 0x00
