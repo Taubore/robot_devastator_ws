@@ -282,7 +282,7 @@ class AnnoncesAudio(Node):
             commande.extend(['--config', self.piper_config])
 
         try:
-            self.get_logger().info(f'Génération Piper demandée...')
+            self.get_logger().info('Génération Piper demandée...')
             self._executer_commande_externe(
                 commande,
                 entree=variante.texte,

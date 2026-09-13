@@ -1,6 +1,40 @@
 {
     "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "package",
+            "type": "promptString",
+            "description": "Nom du package à tester",
+            "default": "surveillance_alimentation"
+        }
+    ],
     "tasks": [
+        {
+            "label": "ROS 2 - Tester le workspace",
+            "detail": "Build complet, puis tous les tests du workspace avec le détail des échecs",
+            "type": "shell",
+            "command": "source /opt/ros/jazzy/setup.bash && colcon build --symlink-install && source install/setup.bash && colcon test --return-code-on-test-failure ; colcon test-result --verbose",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "shell": { "executable": "/bin/bash", "args": ["-c"] }
+        },
+            "group": { "kind": "test", "isDefault": true },
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "ROS 2 - Tester un package (sortie directe)",
+            "detail": "Tests d'un seul package, sortie affichée en direct",
+            "type": "shell",
+            "command": "source /opt/ros/jazzy/setup.bash && source install/setup.bash && colcon test --packages-select ${input:package} --event-handlers console_direct+ ; colcon test-result --verbose --test-result-base build/${input:package}",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "shell": { "executable": "/bin/bash", "args": ["-c"] }
+        },
+            "group": "test",
+            "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+            "problemMatcher": []
+        },
         {
             "label": "ROS 2 - Build Devastator",
             "type": "shell",
