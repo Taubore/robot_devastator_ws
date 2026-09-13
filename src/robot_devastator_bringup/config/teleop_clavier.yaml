@@ -5,6 +5,7 @@ teleop_clavier:
     # Bornes de vitesse manuelle ajustables au clavier avec = et -.
     vitesse_min: 300
     vitesse_max: 1000
+    # Incrément de vitesse appliqué à chaque pression sur = ou -.
     pas_vitesse: 50
     # Période de lecture clavier et de publication de la consigne manuelle.
     periode_publication_s: 0.1

@@ -52,22 +52,13 @@ d'obstacle et annonces audio.
 
 ### `arbitre_commande_moteurs` — `config/arbitre_commande_moteurs.yaml`
 
-| Paramètre | Valeur par défaut | Effet |
-|---|---|---|
-| `mode_initial` | `manuel` | Source active au démarrage ; le clavier garde la main |
-| `periode_publication_s` | `0.1` | Intervalle de publication vers `/pico/commande_moteurs` |
-| `delai_expiration_source_s` | `0.35` | Délai sans commande de la source active avant arrêt forcé |
+Paramètres ajustables (mode initial, période de publication vers `/pico/commande_moteurs`, délai
+d'expiration de la source active) et leur effet : voir ce fichier YAML.
 
 ### `annonces_audio` — `config/annonces_audio.yaml`
 
-| Paramètre | Valeur par défaut | Effet |
-|---|---|---|
-| `delai_min_repetition_s` | `3.0` | Empêche une même annonce de se répéter trop rapidement |
-| `preparer_audio_au_demarrage` | `true` | Génère les WAV manquants avec Piper avant d'écouter les événements |
-| `jouer_annonce_demarrage` | `true` | Joue une annonce après la préparation initiale |
-| `piper_executable` | `/usr/local/bin/piper` | Chemin de l'exécutable Piper sur le Raspberry Pi 4 |
-| `piper_model` | `/opt/piper/voix/fr_FR-siwis-low.onnx` | Modèle vocal français utilisé pour la synthèse |
-| `command_timeout_s` | `15.0` | Durée maximale accordée à Piper et à `aplay` avant échec |
+Paramètres ajustables (délai minimal de répétition, préparation Piper au démarrage, annonce de
+démarrage, chemins Piper, timeout des commandes) et leur effet : voir ce fichier YAML.
 
 Les annonces sont définies par événement dans `annonces_audio.yaml` sous la clé
 `annonces.<evenement>`. Chaque entrée est une liste de variantes ; une chaîne vide représente une
@@ -87,13 +78,8 @@ variante silencieuse choisie aléatoirement.
 
 ### `teleop_clavier` — `config/teleop_clavier.yaml`
 
-| Paramètre | Valeur par défaut | Effet |
-|---|---|---|
-| `vitesse_initiale` | `300` | Vitesse appliquée au démarrage |
-| `vitesse_min` | `300` | Borne basse de vitesse ajustable au clavier |
-| `vitesse_max` | `1000` | Borne haute de vitesse ajustable au clavier |
-| `pas_vitesse` | `50` | Incrément appliqué par `=` et `-` |
-| `periode_publication_s` | `0.1` | Période de lecture clavier et de publication |
+Paramètres ajustables (vitesse initiale, bornes et pas de vitesse, période de publication) et
+leur effet : voir ce fichier YAML.
 
 Touches disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,
 `espace` arrête, `=` augmente la vitesse, `-` diminue la vitesse, `m` bascule entre
@@ -103,15 +89,8 @@ le mode, même sans nœud d'affichage démarré), `x` quitte. À la sortie norma
 
 ### `evitement_obstacle` — `config/autonomie_simple.yaml`
 
-| Paramètre | Valeur par défaut | Effet |
-|---|---|---|
-| `actif_au_demarrage` | `false` | Démarre en attente ; attend la bascule `m` du clavier |
-| `distance_arret_mm` | `350` | Distance avant déclenchant l'arrêt et le balayage |
-| `vitesse_avance` | `500` | Consigne moteur pendant l'avance lente |
-| `distance_degagement_mm` | `600` | Distance requise pour considérer une voie dégagée |
-| `mesures_degagement_requises` | `3` | Mesures dégagées consécutives avant d'arrêter la rotation |
-| `duree_rotation_recherche_max_s` | `3.0` | Durée maximale de recherche avant recul |
-| `duree_recul_s` | `2.0` | Durée du recul de récupération |
+Paramètres ajustables (activation au démarrage, distances de déclenchement et de dégagement,
+vitesses, durées de rotation et de recul) et leur effet : voir ce fichier YAML.
 
 ## Notes
 

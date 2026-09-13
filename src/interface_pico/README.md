@@ -30,21 +30,9 @@
 ## Protocole UART utilisé
 
 Le nœud utilise directement le protocole texte courant du firmware Pico, sans alias vers les
-anciennes commandes :
-
-| Action ROS 2 | Commande UART | Réponse attendue |
-|---|---|---|
-| Ping | `PING` | `OK PING` |
-| Arrêt moteur | `STOP_MOT` | `OK STOP_MOT` |
-| Consigne moteur | `SET_MOT <gauche> <droite>` | `OK SET_MOT <gauche> <droite>` |
-| Servo tourelle | `SET_SERVO <angle>` | `OK SET_SERVO <angle>` |
-| Sonar | `SONAR` | `OK SONAR <distance_mm>` |
-| Encodeurs | `ENC` | `OK ENC <gauche_ticks> <droite_ticks>` |
-| Reset encodeurs | `RESET_ENC` | `OK RESET_ENC` |
-| État Pico | `STATUS` | `OK STATUS <gauche> <droite> <actif>` |
-
-Les lignes spontanées `READY` et `AVERT TIMEOUT` sont publiées sur `/pico/etat` et journalisées,
-mais elles ne sont pas confondues avec les confirmations attendues par les services.
+anciennes commandes. Le détail des commandes, réponses attendues et règles de sécurité est
+documenté dans [docs/contrat_pico_ros2.md](../../docs/contrat_pico_ros2.md), seule source pour ce
+protocole.
 
 ## Paramètres
 
@@ -59,9 +47,8 @@ mais elles ne sont pas confondues avec les confirmations attendues par les servi
 - `delai_attente_reponse_service_s` : délai maximal d'attente des confirmations de services,
   par défaut `1.0`
 
-Le lancement Devastator charge `config/interface_pico.yaml` depuis `robot_devastator_bringup`.
-Les valeurs actives sont `0.02 s`, `0.25 s`, `0.5 s`, `0.10 s`, `0.10 s` et `1.0 s` pour les
-paramètres temporels ci-dessus.
+Le lancement Devastator charge `config/interface_pico.yaml` depuis `robot_devastator_bringup` ;
+s'y référer pour les valeurs actives des paramètres temporels ci-dessus.
 
 Le nœud répète temporairement la dernière consigne moteur afin de respecter le timeout du Pico.
 Si aucune nouvelle consigne ROS n'arrive avant le délai d'expiration, il transmet et mémorise

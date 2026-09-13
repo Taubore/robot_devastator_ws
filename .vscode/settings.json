@@ -24,5 +24,6 @@
     "files.exclude": {
         "**/__pycache__": true,
         "**/*.pyc": true
-    }
+    },
+    "markdown.validate.enabled": true
 }

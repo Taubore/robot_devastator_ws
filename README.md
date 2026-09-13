@@ -108,7 +108,8 @@ Justification chiffrée de ces consignes : section « Consommation du robot » c
   nouvelle consigne, après une erreur UART ou à la reconnexion, il force et mémorise un arrêt.
 - **Audio.** `annonces_audio` joue des annonces vocales (Piper) sur les événements du robot.
   Purement décoratif : si Piper ou `aplay` sont absents, l'erreur est journalisée et les autres
-  nœuds continuent normalement.
+  nœuds continuent normalement. Limitation connue du bruit de démarrage de l'ampli I2S : voir
+  [docs/decisions_et_lecons.md](docs/decisions_et_lecons.md).
 - **Surveillance d'alimentation.** `surveillance_alimentation` lit deux INA260 sur I2C, publie
   `/alimentation/logique` et `/alimentation/moteur` (`sensor_msgs/BatteryState`) et émet un
   événement batterie sur `/robot/evenement` quand une tension reste basse assez longtemps, à
@@ -146,7 +147,7 @@ Valeurs approximatives, même consigne envoyée aux deux chenilles :
 
 Tension typique au repos : ~5,8–6,4 V. Le blocage des deux chenilles produit le courant maximal
 du robot — mode de défaillance connu de la plateforme, voir
-[docs/blocage_chenilles.md](docs/blocage_chenilles.md). Un fusible rapide 10 A protège le rail
+[docs/decisions_et_lecons.md](docs/decisions_et_lecons.md). Un fusible rapide 10 A protège le rail
 moteur (voir [docs/parametres.md](docs/parametres.md)).
 
 ### Veille hors séance
@@ -193,33 +194,86 @@ d'un nœud isolé, jamais à l'exploitation du robot.
 
 ## Référence
 
-### Interfaces ROS 2 — topics
+### Interfaces ROS 2 — index alphabétique
 
-| Topic | Type | Producteur | Consommateur | Rôle |
-|---|---|---|---|---|
-| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | `arbitre_commande_moteurs` | `interface_pico` | Envoyer la commande moteur active vers le Pico |
-| `/robot/commande_moteurs/manuelle` | `commun/msg/ConsigneMoteurs` | `teleop_clavier` | `arbitre_commande_moteurs` | Porter les consignes issues du clavier |
-| `/robot/commande_moteurs/autonomie` | `commun/msg/ConsigneMoteurs` | `evitement_obstacle` | `arbitre_commande_moteurs` | Porter les consignes issues de l'autonomie simple |
-| `/robot/mode_conduite` | `std_msgs/msg/String` | `teleop_clavier` | `arbitre_commande_moteurs` | Choisir `manuel` ou `autonomie` comme source moteur active |
-| `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Outil de test ou `evitement_obstacle` | `interface_pico` | Commander l'angle du servo de tourelle en degrés |
-| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | `interface_pico` | `evitement_obstacle` | Publier la distance ultrason mesurée en millimètres |
-| `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | `interface_pico` | `odometrie`, outil de diagnostic | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
-| `/pico/etat` | `std_msgs/msg/String` | `interface_pico` | Outil de diagnostic | Publier les lignes d'état reçues côté Pico |
-| `/robot/evenement` | `std_msgs/msg/String` | `evitement_obstacle`, `surveillance_alimentation` | `annonces_audio` | Signaler les transitions du comportement autonome et les franchissements de seuil batterie |
-| `/robot/parole_en_cours` | `std_msgs/msg/Bool` | `annonces_audio` | `affichage_lcd` | Indiquer si une annonce est en cours de lecture (QoS transient local, profondeur 1) |
-| `/affichage/page_suivante` | `std_msgs/msg/Empty` | `teleop_clavier` | `affichage_lcd` | Demander le changement de page à l'affichage, actif quel que soit le mode de conduite |
-| `/odom` | `nav_msgs/msg/Odometry` | `odometrie` | RViz, outil de diagnostic | Publier la pose et la vitesse estimées à partir des encodeurs |
-| `/alimentation/logique` | `sensor_msgs/msg/BatteryState` | `surveillance_alimentation` | Outil de diagnostic | Publier tension et courant du rail logique (pack 7,2 V NiMH) |
-| `/alimentation/moteur` | `sensor_msgs/msg/BatteryState` | `surveillance_alimentation` | Outil de diagnostic | Publier tension et courant du rail moteur (pack 6 V NiMH) |
+Le producteur et le consommateur de chaque interface ne sont pas repris ici : ce flux est
+documenté dans le README du package concerné, ou dans
+[docs/contrat_pico_ros2.md](docs/contrat_pico_ros2.md) pour l'interface Pico.
 
-### Interfaces ROS 2 — services
+| Nom | Sous-section |
+|---|---|
+| `/affichage/page_suivante` | [Affichage LCD](#affichage-lcd) |
+| `/alimentation/logique` | [Alimentation](#alimentation) |
+| `/alimentation/moteur` | [Alimentation](#alimentation) |
+| `/odom` | [Odométrie](#odométrie) |
+| `/odometrie/reset` | [Odométrie](#odométrie) |
+| `/pico/commande_moteurs` | [Pico / moteurs](#pico--moteurs) |
+| `/pico/commande_tourelle_deg` | [Pico / moteurs](#pico--moteurs) |
+| `/pico/distance_ultrason_mm` | [Pico / moteurs](#pico--moteurs) |
+| `/pico/encodeurs` | [Pico / moteurs](#pico--moteurs) |
+| `/pico/etat` | [Pico / moteurs](#pico--moteurs) |
+| `/pico/ping` | [Pico / moteurs](#pico--moteurs) |
+| `/pico/reset_encodeurs` | [Pico / moteurs](#pico--moteurs) |
+| `/pico/stop_moteurs` | [Pico / moteurs](#pico--moteurs) |
+| `/robot/commande_moteurs/autonomie` | [Pico / moteurs](#pico--moteurs) |
+| `/robot/commande_moteurs/manuelle` | [Pico / moteurs](#pico--moteurs) |
+| `/robot/evenement` | [Audio](#audio) |
+| `/robot/mode_conduite` | [Téléopération / mode](#téléopération--mode) |
+| `/robot/parole_en_cours` | [Audio](#audio) |
 
-| Service | Type | Serveur | Client connu | Rôle |
-|---|---|---|---|---|
-| `/pico/ping` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Envoyer `PING` et réussir seulement si le Pico répond `OK PING` dans le délai |
-| `/pico/stop_moteurs` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Demander un arrêt explicite des moteurs au Pico avec `STOP_MOT` |
-| `/pico/reset_encodeurs` | `std_srvs/srv/Trigger` | `interface_pico` | Outil de diagnostic | Remettre à zéro les compteurs d'encodeurs avec `RESET_ENC` |
-| `/odometrie/reset` | `std_srvs/srv/Trigger` | `odometrie` | Outil de diagnostic | Remettre x, y, theta à zéro sans toucher aux ticks du Pico |
+### Pico / moteurs
+
+| Topic | Type | Rôle |
+|---|---|---|
+| `/pico/commande_moteurs` | `commun/msg/ConsigneMoteurs` | Envoyer la commande moteur active vers le Pico |
+| `/robot/commande_moteurs/manuelle` | `commun/msg/ConsigneMoteurs` | Porter les consignes issues du clavier |
+| `/robot/commande_moteurs/autonomie` | `commun/msg/ConsigneMoteurs` | Porter les consignes issues de l'autonomie simple |
+| `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Commander l'angle du servo de tourelle en degrés |
+| `/pico/distance_ultrason_mm` | `std_msgs/msg/Int32` | Publier la distance ultrason mesurée en millimètres |
+| `/pico/encodeurs` | `commun/msg/EtatEncodeurs` | Publier les ticks des encodeurs gauche et droit lus sur le Pico |
+| `/pico/etat` | `std_msgs/msg/String` | Publier les lignes d'état reçues côté Pico |
+
+| Service | Type | Rôle |
+|---|---|---|
+| `/pico/ping` | `std_srvs/srv/Trigger` | Envoyer `PING` et réussir seulement si le Pico répond `OK PING` dans le délai |
+| `/pico/stop_moteurs` | `std_srvs/srv/Trigger` | Demander un arrêt explicite des moteurs au Pico avec `STOP_MOT` |
+| `/pico/reset_encodeurs` | `std_srvs/srv/Trigger` | Remettre à zéro les compteurs d'encodeurs avec `RESET_ENC` |
+
+### Téléopération / mode
+
+| Topic | Type | Rôle |
+|---|---|---|
+| `/robot/mode_conduite` | `std_msgs/msg/String` | Choisir `manuel` ou `autonomie` comme source moteur active |
+
+### Audio
+
+| Topic | Type | Rôle |
+|---|---|---|
+| `/robot/evenement` | `std_msgs/msg/String` | Signaler les transitions du comportement autonome et les franchissements de seuil batterie, prononcés par `annonces_audio` |
+| `/robot/parole_en_cours` | `std_msgs/msg/Bool` | Indiquer si une annonce est en cours de lecture (QoS transient local, profondeur 1) |
+
+### Affichage LCD
+
+| Topic | Type | Rôle |
+|---|---|---|
+| `/affichage/page_suivante` | `std_msgs/msg/Empty` | Demander le changement de page à l'affichage, actif quel que soit le mode de conduite |
+
+### Alimentation
+
+| Topic | Type | Rôle |
+|---|---|---|
+| `/alimentation/logique` | `sensor_msgs/msg/BatteryState` | Publier tension et courant du rail logique (pack 7,2 V NiMH) |
+| `/alimentation/moteur` | `sensor_msgs/msg/BatteryState` | Publier tension et courant du rail moteur (pack 6 V NiMH) |
+
+### Odométrie
+
+| Topic | Type | Rôle |
+|---|---|---|
+| `/odom` | `nav_msgs/msg/Odometry` | Publier la pose et la vitesse estimées à partir des encodeurs |
+
+| Service | Type | Rôle |
+|---|---|---|
+| `/odometrie/reset` | `std_srvs/srv/Trigger` | Remettre x, y, theta à zéro sans toucher aux ticks du Pico |
 
 Aucune action ROS 2 n'est implémentée actuellement.
 
@@ -305,16 +359,14 @@ aplay -D default ~/.cache/robot_devastator/audio/demarrage_01.wav
 démarrage, puis les réutilise aux lancements suivants. Une annonce peut proposer plusieurs
 variantes ; une chaîne vide représente une variante silencieuse.
 
-Limitation connue : l'ampli I2S produit un clac au début de chaque lecture. Pistes essayées sans
-succès : audremap, lecture en stream, tentative via SD/shutdown. Décision : ne pas poursuivre ce
-chantier maintenant, conserver l'audio comme capacité décorative.
+Limitation connue du bruit de démarrage (« clac ») de l'ampli I2S : voir
+[docs/decisions_et_lecons.md](docs/decisions_et_lecons.md).
 
 ## Documentation détaillée
 
-- [Carte ROS 2 pour l'apprentissage](docs/carte_ros_apprentissage.md)
-- [Journal des essais](docs/journal_essais.md)
 - [Architecture cible](docs/architecture_cible.md)
 - [Paramètres techniques](docs/parametres.md)
 - [Connexions des composantes matérielles](docs/connexions.md)
 - [Inventaire des composantes matérielles principales](docs/inventaire_composantes.md)
-- [Blocage de chenilles — mode de défaillance connu](docs/blocage_chenilles.md)
+- [Contrat Pico WH ↔ ROS 2](docs/contrat_pico_ros2.md)
+- [Décisions et leçons](docs/decisions_et_lecons.md)
