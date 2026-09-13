@@ -15,8 +15,6 @@ setup(
         ),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name, ['README.md']),
-        ('share/' + package_name, ['essai_pilote.py']),
-        ('share/' + package_name, ['essai_rendu_texte.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
