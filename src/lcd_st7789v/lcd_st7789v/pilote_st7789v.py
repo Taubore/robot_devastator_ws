@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Pilote bas niveau de l'écran LCD Waveshare 2 pouces (contrôleur ST7789V, 240x320,
-RGB565, SPI, écriture seule).
+Pilote bas niveau de l'écran LCD Waveshare 2 pouces (contrôleur ST7789V).
+
+Écran 240x320, en RGB565, sur bus SPI, en écriture seule.
 
 Ce module ne dépend d'aucun élément propre à un robot ni à ROS 2 : il reçoit ses
 broches et son bus SPI en paramètres et ne connaît que le protocole du contrôleur.
@@ -32,8 +33,8 @@ from typing import Final
 
 import lgpio
 import numpy as np
-import spidev
 from PIL import Image
+import spidev
 
 # --- Codes de commande du contrôleur ST7789V utilisés par ce pilote ---
 _CMD_MADCTL: Final[int] = 0x36        # Contrôle d'accès mémoire (orientation, ordre RVB)
@@ -56,13 +57,13 @@ _CMD_NVGAMCTRL: Final[int] = 0xE1     # Réglages gamma négatifs
 _CMD_SLPOUT: Final[int] = 0x11        # Sortie du mode veille
 _CMD_DISPON: Final[int] = 0x29        # Allumage de l'affichage
 
-## Orientation logique : MADCTL réglé une seule fois à l'initialisation, jamais
-# recalculé par image. 
+# Orientation logique : MADCTL réglé une seule fois à l'initialisation, jamais
+# recalculé par image.
 _MADCTL_PORTRAIT: Final[int] = 0x00   # Orientation native du panneau (240 x 320)
-_MADCTL_PAYSAGE: Final[int] = 0xA0    # Rotation 90 degrés (320 x 240) - valeur déterminée
-                                      # empiriquement sur le matériel réel. 0x70,
-                                      # repris tel quel du code Waveshare, produisait
-                                      # une image tête en bas sur ce panneau.
+# Rotation 90 degrés (320 x 240) - valeur déterminée empiriquement sur le matériel
+# réel. 0x70, repris tel quel du code Waveshare, produisait une image tête en bas
+# sur ce panneau.
+_MADCTL_PAYSAGE: Final[int] = 0xA0
 
 # Limite habituelle d'un transfert spidev sur Raspberry Pi sans reconfiguration du
 # tampon noyau (voir contrainte de conception « découpage des transferts SPI »).
@@ -101,8 +102,8 @@ class EcranSt7789v:
         """
         Ouvre le bus SPI, réclame les broches GPIO puis initialise le contrôleur.
 
-        `frequence_spi_hz` : 32 MHz par défaut. J'ai dû l'augmenter pour aler chercher une 
-        performance d'affichage correcte (53 ms). En effet, à 8 MHz, le temps d'affichage était 
+        `frequence_spi_hz` : 32 MHz par défaut. J'ai dû l'augmenter pour aler chercher une
+        performance d'affichage correcte (53 ms). En effet, à 8 MHz, le temps d'affichage était
         vraiment lent, soit de 172 ms.
 
 
@@ -170,8 +171,10 @@ class EcranSt7789v:
 
     def afficher_image_region(self, image: Image.Image, x: int, y: int) -> None:
         """
-        Affiche une image Pillow dans un rectangle dont le coin supérieur gauche
-        est (x, y) et dont la taille est celle de l'image reçue.
+        Affiche une image Pillow dans un rectangle.
+
+        Le coin supérieur gauche du rectangle est (x, y) et sa taille est celle de
+        l'image reçue.
 
         Lève `ValueError` si la région déborde de l'écran : le pilote échoue
         bruyamment plutôt que d'afficher une image décalée.
@@ -216,8 +219,9 @@ class EcranSt7789v:
 
     def _reinitialiser_materiel(self) -> None:
         """
-        Séquence de réinitialisation matérielle du contrôleur, reprise telle
-        quelle du code Waveshare (impulsion et temporisations de 10 ms).
+        Séquence de réinitialisation matérielle du contrôleur.
+
+        Reprise telle quelle du code Waveshare (impulsion et temporisations de 10 ms).
         """
         lgpio.gpio_write(self._poignee_gpio, self._broche_rst, 1)
         time.sleep(0.01)
@@ -228,10 +232,11 @@ class EcranSt7789v:
 
     def _initialiser_controleur(self) -> None:
         """
-        Séquence d'initialisation du ST7789V, reprise telle quelle du code de
-        démonstration Waveshare (registres et réglages gamma compris). Seul
-        l'octet de MADCTL diffère de la référence : il encode ici l'orientation
-        choisie à la construction plutôt qu'une valeur fixe.
+        Séquence d'initialisation du ST7789V, reprise telle quelle du code Waveshare.
+
+        Registres et réglages gamma compris. Seul l'octet de MADCTL diffère de la
+        référence : il encode ici l'orientation choisie à la construction plutôt
+        qu'une valeur fixe.
         """
         self._reinitialiser_materiel()
 
@@ -349,7 +354,7 @@ class EcranSt7789v:
 
         lgpio.gpio_write(self._poignee_gpio, self._broche_dc, 1)
         for debut in range(0, len(octets), self._taille_bloc_spi):
-            self._spi.writebytes2(octets[debut:debut + self._taille_bloc_spi])    
+            self._spi.writebytes2(octets[debut:debut + self._taille_bloc_spi])
 
     # --- Cycle de vie ---
 

@@ -22,7 +22,7 @@ setup(
     maintainer_email='louis.st-hilaire@hotmail.com',
     description=(
         'Pilote bas niveau et rendu de texte en grille, sans dépendance ROS 2, '
-        'pour l\'écran LCD Waveshare 2 pouces (contrôleur ST7789V) sur bus SPI'
+        "pour l'écran LCD Waveshare 2 pouces (contrôleur ST7789V) sur bus SPI"
     ),
     license='MIT',
     tests_require=['pytest'],

@@ -22,10 +22,10 @@ Dépendances : Pillow seulement (police, mesure et tracé des caractères).
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import math
 import os
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final
+from typing import Final, TYPE_CHECKING
 
 from PIL import Image, ImageDraw, ImageFont
 
