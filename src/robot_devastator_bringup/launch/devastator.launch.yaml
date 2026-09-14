@@ -48,3 +48,13 @@ launch:
     output: screen
     param:
     - from: $(find-pkg-share robot_devastator_bringup)/config/autonomie_simple.yaml
+- node:
+    pkg: rplidar_ros
+    exec: rplidar_composition
+    name: rplidar_composition
+    output: screen
+    param:
+    - name: serial_port
+      value: /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
+    - name: frame_id
+      value: laser_link

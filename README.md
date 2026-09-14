@@ -62,7 +62,8 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 ```
 
 `devastator.launch.yaml` démarre la surveillance d'alimentation, l'interface Pico, l'odométrie,
-l'arbitre moteur, l'affichage LCD, l'autonomie (en attente) et les annonces audio, en mode manuel.
+l'arbitre moteur, l'affichage LCD, l'autonomie (en attente), les annonces audio et le pilote
+RPLIDAR (`/scan`), en mode manuel.
 `teleop.launch.yaml` se lance à part parce que
 `teleop_clavier` lit les touches du terminal courant : c'est la seule exception au lancement
 unique.
@@ -220,6 +221,7 @@ documenté dans le README du package concerné, ou dans
 | `/robot/evenement` | [Audio](#audio) |
 | `/robot/mode_conduite` | [Téléopération / mode](#téléopération--mode) |
 | `/robot/parole_en_cours` | [Audio](#audio) |
+| `/scan` | [Lidar](#lidar) |
 
 ### Pico / moteurs
 
@@ -275,6 +277,12 @@ documenté dans le README du package concerné, ou dans
 |---|---|---|
 | `/odometrie/reset` | `std_srvs/srv/Trigger` | Remettre x, y, theta à zéro sans toucher aux ticks du Pico |
 
+### Lidar
+
+| Topic | Type | Rôle |
+|---|---|---|
+| `/scan` | `sensor_msgs/msg/LaserScan` | Publier le balayage 360° du RPLIDAR A1M8, dans le repère `laser_link` |
+
 Aucune action ROS 2 n'est implémentée actuellement.
 
 ### Nœuds ROS 2
@@ -292,6 +300,7 @@ clés racines des fichiers YAML de paramètres reprennent le nom exact du nœud 
 | `odometrie` | `odometrie` | `odometrie` / `odometrie.odometrie` | Actif | Calculer x, y, theta depuis `/pico/encodeurs` et publier `/odom` et la TF `odom → base_footprint` |
 | `surveillance_alimentation` | `surveillance_alimentation` | `surveillance_alimentation` / `surveillance_alimentation.surveillance_alimentation` | Actif | Lire deux INA260 sur I2C, publier `sensor_msgs/BatteryState` par rail et alerter sur tension basse maintenue |
 | `affichage_lcd` | `affichage_lcd` | `affichage_lcd` / `affichage_lcd.affichage_lcd` | Actif | Afficher mode, alimentation et consignes moteur sur l'écran LCD, avec page visage pendant la parole |
+| `rplidar_composition` | `rplidar_ros` (paquet externe, apt `ros-jazzy-rplidar-ros`) | `rplidar_composition` | Actif | Piloter le RPLIDAR A1M8 par UART et publier `/scan` |
 
 ### Interfaces personnalisées
 
@@ -320,6 +329,10 @@ ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ros2 topic echo /pico/distance_ultrason_mm
 ros2 topic echo /pico/encodeurs
 ros2 service call /pico/reset_encodeurs std_srvs/srv/Trigger
+
+# Lidar (démarré par devastator.launch.yaml, pas de lancement diag séparé)
+ros2 topic echo /scan --once
+ros2 topic hz /scan
 
 # Surveillance de l'alimentation seule (INA260 sur I2C)
 ros2 launch robot_devastator_bringup diag_surveillance_alimentation.launch.yaml

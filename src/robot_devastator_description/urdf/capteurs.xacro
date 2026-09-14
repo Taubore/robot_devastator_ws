@@ -9,6 +9,10 @@
   <!-- tourelle_z = sommet châssis (12,0 cm) + moitié hauteur tourelle (1,0 cm) - base_link_hauteur_sol -->
   <xacro:property name="tourelle_x"   value="0.0845"/>
   <xacro:property name="tourelle_z"   value="0.048"/>
+  <!-- Position mesurée du RPLIDAR A1M8, relative à base_link -->
+  <xacro:property name="laser_x"      value="-0.075"/>
+  <xacro:property name="laser_y"      value="-0.010"/>
+  <xacro:property name="laser_z"      value="0.101"/>
 
   <xacro:property name="masse_sonar"  value="0.010"/>
 
@@ -20,6 +24,8 @@
   <material name="bleu_pale">
     <color rgba="0.0 0.5 1.0 1.0"/>
   </material>
+
+  <!-- "gris" est déjà défini dans corps.xacro : réutilisé tel quel pour laser_link -->
 
   <!-- Sonar HC-SR04 : petite boîte bleue à l'avant -->
   <!-- Dimensions : 40 mm x 56 mm x 30 mm (p x l x h) -->
@@ -68,6 +74,24 @@
     <parent link="base_link"/>
     <child  link="tourelle_link"/>
     <origin xyz="${tourelle_x} 0 ${tourelle_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- RPLIDAR A1M8 : cylindre gris sur le dessus du châssis -->
+  <!-- Dimensions approximatives (pas de fiche technique précise sous la main) :
+       rayon 38 mm (diamètre ~76 mm), hauteur 40 mm -->
+  <link name="laser_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.038" length="0.040"/>
+      </geometry>
+      <material name="gris"/>
+    </visual>
+  </link>
+
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="laser_link"/>
+    <origin xyz="${laser_x} ${laser_y} ${laser_z}" rpy="0 0 0"/>
   </joint>
 
 </robot>

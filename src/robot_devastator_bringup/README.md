@@ -22,7 +22,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 
 | Fichier | Nœuds lancés | Cas d'usage |
 |---|---|---|
-| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `affichage_lcd`, `annonces_audio`, `evitement_obstacle` | Lancement complet du robot en mode manuel, autonomie en attente |
+| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `affichage_lcd`, `annonces_audio`, `evitement_obstacle`, `rplidar_composition` | Lancement complet du robot en mode manuel, autonomie en attente |
 | `teleop.launch.yaml` | `teleop_clavier` | Téléopération clavier, dans un terminal interactif séparé (production, exception documentée) |
 | `diag_interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
 | `diag_surveillance_alimentation.launch.yaml` | `surveillance_alimentation` | Isole le sous-système INA260 pour une mise au point (le nœud tourne en production dans `devastator.launch.yaml`) |
@@ -41,11 +41,17 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 | `teleop_clavier.yaml` | `teleop_clavier` | Vitesse initiale, bornes de vitesse, pas, période de publication |
 | `surveillance_alimentation.yaml` | `surveillance_alimentation` | Bus I2C, adresses INA260, seuils de tension par rail, porte de courant, temporisation, libellés d'événement |
 
+`rplidar_composition` (pilote RPLIDAR A1M8, paquet externe `rplidar_ros`) fait exception : ses deux
+seuls paramètres utiles à Devastator (`serial_port`, `frame_id`) sont déclarés directement dans
+`devastator.launch.yaml`, sans fichier YAML dédié — un seul nœud externe avec si peu de paramètres
+ne justifie pas un fichier séparé.
+
 ## Lancement sur Raspberry Pi 4 via SSH
 
 Build initial ou après modification :
 
 ```bash
+sudo apt install ros-jazzy-rplidar-ros   # une seule fois, pilote du RPLIDAR A1M8
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select commun interface_pico odometrie robot_devastator surveillance_alimentation robot_devastator_bringup
 source install/setup.bash
