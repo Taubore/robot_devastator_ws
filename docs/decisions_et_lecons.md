@@ -151,3 +151,63 @@ Décision : ne pas poursuivre ce chantier pour l'instant. L'audio reste une
 capacité décorative de Devastator — purement informative, jamais requise
 pour la sécurité ou le fonctionnement du robot. Pistes futures possibles si
 le besoin redevient prioritaire : lecteur audio persistant ou solution matérielle anti-pop.
+
+Contexte : Devastator, docs/decisions_et_lecons.md, section « Leçons apprises ».
+Ajouter une nouvelle sous-section, suivant le format déjà en place (description,
+conséquences observées, impact sur les phases futures si applicable) :
+
+### Résolution du device audio ALSA « default » — instabilité entre redémarrages
+
+Description : le device ALSA `default`, utilisé par `annonces_audio` (paramètre
+`aplay -D default`), n'est pas garanti stable dans le temps : sa résolution dépend
+de l'ordre d'énumération des cartes son au démarrage du noyau. Après un reboot du
+Pi 4, `default` a basculé vers la carte HDMI (`vc4hdmi0`, sans device audio réel à
+l'écoute) plutôt que la carte HifiBerry DAC (`sndrpihifiberry`, carte 1), provoquant
+un échec systématique de lecture (`aplay: audio open error: Unknown error 524`)
+alors qu'aucun câblage ni code n'avait changé.
+
+Conséquences observées : `annonces_audio` échoue silencieusement au niveau ALSA,
+message d'erreur peu explicite (524) qui ne pointe pas vers la cause réelle
+(mauvaise carte résolue, pas un device absent). Un test manuel `aplay -D plughw:1,0`
+reste fonctionnel pendant que `aplay -D default` échoue — signe que le matériel et
+le pilote sont sains, seule la résolution du device par défaut est en cause.
+
+Correction appliquée : fixer explicitement la carte par défaut au niveau système
+plutôt que de dépendre de l'ordre d'énumération, via /etc/asound.conf :
+
+defaults.pcm.card 1
+defaults.ctl.card 1
+
+Impact sur les phases futures : toute nouvelle intégration audio ou tout ajout de
+périphérique USB/HDMI sur le Pi 4 peut à nouveau perturber l'ordre d'énumération des
+cartes ALSA. Revérifier `aplay -l` et `/etc/asound.conf` après tout changement matériel
+touchant les entrées/sorties du Pi, avant de conclure à un problème logiciel côté
+`annonces_audio`.
+
+Ne toucher à aucune autre section du fichier. Indiquer le diff proposé avant de l'appliquer.
+
+### Un nœud validé manuellement en test peut rester absent du lancement de production sans le signaler
+
+Description : `robot_state_publisher` a été lancé manuellement en test depuis la Phase 8
+(package `robot_devastator_description`, fichiers `affichage.launch.py` /
+`simulation.launch.py`) sans jamais être intégré à `devastator.launch.yaml`, le lancement
+primaire de production. Rien dans le fonctionnement courant du robot ne signalait cet oubli :
+aucun nœud de production ne dépendait de `/tf_static`, donc son absence passait inaperçue.
+
+Conséquences observées : au démarrage normal du robot (`ros2 launch robot_devastator_bringup
+devastator.launch.yaml`), `/tf_static` n'était jamais publié. Le problème n'est devenu visible
+qu'en Phase 9, avec l'ajout du RPLIDAR A1M8 et du frame `laser_link` : RViz ne pouvait pas
+résoudre les frames fixes du robot en usage normal, alors que la visualisation manuelle
+(`simulation.launch.py` / `affichage.launch.py`) fonctionnait correctement puisqu'elle lance
+`robot_state_publisher` elle-même.
+
+Correction appliquée : ajout de `robot_state_publisher` à `devastator.launch.yaml`, en suivant
+le patron YAML `$(command 'xacro ...')` pour charger `devastator.urdf.xacro` (voir
+`robot_devastator_bringup/README.md`).
+
+Impact sur les phases futures : un nœud fondamental (TF, description du robot, etc.) validé en
+lancement de diagnostic ou manuel doit être ajouté à `devastator.launch.yaml` dès que son usage
+devient permanent, même si aucun autre nœud de production n'en dépend encore. Une absence de ce
+type ne se manifeste souvent qu'au moment où un sous-système qui en dépend réellement (ici
+RViz/lidar) est ajouté, bien plus tard — vérifier explicitement la couverture du lancement de
+production à chaque nouvelle intégration de capteur ou de frame TF.
