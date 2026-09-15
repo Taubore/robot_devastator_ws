@@ -211,3 +211,33 @@ devient permanent, même si aucun autre nœud de production n'en dépend encore.
 type ne se manifeste souvent qu'au moment où un sous-système qui en dépend réellement (ici
 RViz/lidar) est ajouté, bien plus tard — vérifier explicitement la couverture du lancement de
 production à chaque nouvelle intégration de capteur ou de frame TF.
+
+### La typographie française « mot : mot » dans un xacro casse l'inférence de type YAML de launch_yaml
+
+Description : charger un `robot_description` via `$(command 'xacro ...')` directement comme
+`value:` d'un `param` dans un fichier `*.launch.yaml` échoue si le xacro généré contient, dans un
+commentaire XML, la typographie française du deux-points (espace avant `:`), par exemple
+`<!-- Matériaux : définis une seule fois... -->` dans `corps.xacro`. Le frontend `launch_yaml` fait
+passer le résultat de la substitution par `yaml.safe_load()` pour déduire le type du paramètre ; ce
+motif « mot espace deux-points espace mot » est alors interprété à tort comme une clé de mapping
+YAML.
+
+Conséquences observées : `ros2 launch` échoue au chargement du launch file avec l'erreur
+`Failed to convert '<contenu XML>' using yaml rules: yaml.safe_load() failed — mapping values are
+not allowed here`, pointant vers la ligne du commentaire français fautif dans le XML généré, pas
+vers une erreur de syntaxe réelle du xacro.
+
+Correction appliquée : sortir le nœud `robot_state_publisher` de `devastator.launch.yaml` vers un
+fichier `robot_state_publisher.launch.py` dédié, qui traite le xacro en Python
+(`xacro.process_file(...).toxml()`) et le passe directement dans le dictionnaire de paramètres du
+`Node` — cela évite complètement l'inférence de type YAML, puisque Python n'a pas besoin de deviner
+le type d'une valeur déjà typée `str`. Le fichier est inclus depuis `devastator.launch.yaml` via une
+action `include`, ce qui préserve un point d'entrée de production unique. Voir
+`robot_devastator_bringup/README.md`.
+
+Impact sur les phases futures : tout futur `param` chargé dynamiquement via `$(command ...)` dans un
+`*.launch.yaml` (ou `*.launch.xml`) est à risque si le contenu généré peut contenir du texte français
+avec espace avant deux-points — commentaires XML, chaînes de configuration, messages générés,
+etc. Si YAML ne suffit pas pour cette raison précise, isoler le nœud concerné dans un `*.launch.py`
+minimal et l'inclure, plutôt que de reformuler la typographie des commentaires sources pour
+contourner un détail d'implémentation de `launch_yaml`.

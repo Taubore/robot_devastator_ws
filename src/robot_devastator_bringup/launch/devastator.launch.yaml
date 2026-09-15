@@ -58,11 +58,5 @@ launch:
       value: /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
     - name: frame_id
       value: laser_link
-- node:
-    pkg: robot_state_publisher
-    exec: robot_state_publisher
-    name: robot_state_publisher
-    output: screen
-    param:
-    - name: robot_description
-      value: $(command 'xacro $(find-pkg-share robot_devastator_description)/urdf/devastator.urdf.xacro')
+- include:
+    file: $(find-pkg-share robot_devastator_bringup)/launch/robot_state_publisher.launch.py

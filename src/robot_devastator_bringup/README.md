@@ -22,7 +22,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 
 | Fichier | Nœuds lancés | Cas d'usage |
 |---|---|---|
-| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `affichage_lcd`, `annonces_audio`, `evitement_obstacle`, `rplidar_composition`, `robot_state_publisher` | Lancement complet du robot en mode manuel, autonomie en attente |
+| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `affichage_lcd`, `annonces_audio`, `evitement_obstacle`, `rplidar_composition`, `robot_state_publisher` (inclus via `robot_state_publisher.launch.py`) | Lancement complet du robot en mode manuel, autonomie en attente |
 | `teleop.launch.yaml` | `teleop_clavier` | Téléopération clavier, dans un terminal interactif séparé (production, exception documentée) |
 | `diag_interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
 | `diag_surveillance_alimentation.launch.yaml` | `surveillance_alimentation` | Isole le sous-système INA260 pour une mise au point (le nœud tourne en production dans `devastator.launch.yaml`) |
@@ -46,12 +46,22 @@ seuls paramètres utiles à Devastator (`serial_port`, `frame_id`) sont déclar�
 `devastator.launch.yaml`, sans fichier YAML dédié — un seul nœud externe avec si peu de paramètres
 ne justifie pas un fichier séparé.
 
+`robot_state_publisher` fait aussi exception : il est démarré par un sous-launch Python
+(`launch/robot_state_publisher.launch.py`, package `robot_devastator_bringup`) inclus par
+`devastator.launch.yaml` via une action `include`, plutôt que déclaré en `node:` direct. Ce n'est
+pas un deuxième point d'entrée de production — `devastator.launch.yaml` reste l'unique commande à
+lancer, ce sous-launch n'est qu'un détail d'implémentation. Raison : charger le xacro Devastator via
+`$(command 'xacro ...')` en YAML fait planter l'inférence de type de `launch_yaml` (`yaml.safe_load`
+interprète à tort la typographie française « mot : mot » des commentaires du xacro comme une clé de
+mapping). Voir `docs/decisions_et_lecons.md` pour le détail du piège.
+
 ## Lancement sur Raspberry Pi 4 via SSH
 
 Build initial ou après modification :
 
 ```bash
 sudo apt install ros-jazzy-rplidar-ros   # une seule fois, pilote du RPLIDAR A1M8
+sudo apt install ros-jazzy-xacro         # une seule fois, requis par robot_state_publisher
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install --packages-select commun interface_pico odometrie robot_devastator surveillance_alimentation robot_devastator_bringup
 source install/setup.bash
