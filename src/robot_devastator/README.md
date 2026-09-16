@@ -58,19 +58,17 @@ d'obstacle, annonces audio et gestion du RPLIDAR.
 | Service client | `/start_motor` | `std_srvs/srv/Empty` | Fourni par `rplidar_composition` (paquet externe, non modifié) |
 | Service client | `/stop_motor` | `std_srvs/srv/Empty` | Fourni par `rplidar_composition` (paquet externe, non modifié) |
 
-`lidar_actif` (bool, interne) est initialisé à `false`. Au démarrage, `gestion_lidar` répète
-l'appel à `/stop_motor` (4 tentatives espacées de 0.5 s) pour forcer la dormance : un seul appel
-peut arriver avant la propre commande de démarrage interne de `rplidar_composition` (envoyée plus
-tard dans son initialisation) et se faire écraser par elle. Voir `docs/decisions_et_lecons.md`
-pour le détail de cette course de démarrage.
+`lidar_actif` (bool, interne) est initialisé à `false`. Au démarrage, `gestion_lidar` appelle
+`/stop_motor` une fois pour forcer la dormance, quel que soit l'état initial du driver
+`rplidar_composition` (qui démarre son moteur lui-même en fin d'initialisation, bien avant que ce
+nœud Python soit prêt).
 
-À la fermeture de son propre nœud (`Ctrl+C` ou SIGTERM), `gestion_lidar` appelle `/stop_motor` une
-dernière fois, peu importe l'état courant. Cet appel est du mieux-effort : `ros2 launch` envoie
-SIGINT à tous les nœuds en parallèle, et `rplidar_composition` (nœud C++) peut détruire son
-service avant que `gestion_lidar` (Python) n'ait le temps de réagir. Il est aussi possible que le
-RPLIDAR redémarre de lui-même à la fermeture du port série par `rplidar_composition`, peu importe
-la rapidité de `gestion_lidar` — comportement matériel non confirmé, à valider sur le Raspberry Pi
-4. Voir `docs/decisions_et_lecons.md`.
+À la fermeture, `gestion_lidar` ne tente **aucun** arrêt du RPLIDAR. **Limite connue, mesurée** :
+sur le A1, le moteur est commandé par la ligne DTR de l'adaptateur USB-série, que Linux relâche
+dès que `rplidar_composition` ferme le port en quittant — le moteur repart alors quoi qu'il
+arrive. Un `/stop_motor` final serait donc annulé par cette fermeture et ne produirait qu'un log
+faussement rassurant. Seule une coupure d'alimentation (relais) arrêterait réellement le RPLIDAR
+après la fin du lancement. Voir `docs/decisions_et_lecons.md`.
 
 `gestion_lidar` est la seule source de vérité de l'état du RPLIDAR. Toute source de commande
 (actuellement `teleop_clavier` en mode manuel, éventuellement un mode automatique ou Nav2 plus
@@ -155,8 +153,6 @@ observer `ros2 topic echo /robot/parole_en_cours` pendant qu'une annonce est dé
 puis `teleop.launch.yaml`) — `ros2 topic hz /scan` ne doit rien afficher au démarrage malgré le
 démarrage automatique du moteur par `rplidar_composition` (dormance forcée) ; appuyer sur `l` dans
 `teleop_clavier` doit faire apparaître une fréquence sur `/scan` ; réappuyer sur `l` doit l'arrêter ;
-`Ctrl+C` sur `devastator.launch.yaml` (ou arrêt de `gestion_lidar` seul) devrait laisser le RPLIDAR
-arrêté, peu importe l'état courant au moment de la fermeture — à confirmer sur le Raspberry Pi 4 :
-l'appel `/stop_motor` final est du mieux-effort (voir section `gestion_lidar` ci-dessus), et un
-redémarrage bref au moment même de la fermeture du port série par `rplidar_composition` est
-possible indépendamment de ce filet de sécurité.
+après `Ctrl+C` sur `devastator.launch.yaml`, le moteur du RPLIDAR se remet à tourner : limite
+matérielle connue et documentée (voir section `gestion_lidar` ci-dessus), pas un défaut de ce
+nœud, et rien n'est tenté pour la contourner.

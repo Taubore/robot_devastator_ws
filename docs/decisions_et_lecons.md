@@ -297,48 +297,64 @@ partagent potentiellement ce même risque de démarrage non supervisé.
 
 Dette technique notée : le patron standard ROS 2 pour piloter le cycle de vie d'un nœud est l'interface `rclcpp_lifecycle` (nœuds à cycle de vie gérés, `configure`/`activate`/ `deactivate`), pas un nœud pont avec services custom. Le paquet `rplidar_ros` utilisé ici (officiel Slamtec, via apt) n'implémente pas cette interface — seulement des services propriétaires (`/stop_motor`, `/start_motor`). `gestion_lidar` est donc une solution pragmatique adaptée à ce paquet, pas le patron ROS 2 canonique. Si un driver RPLIDAR lifecycle-natif devient une alternative mûre, réévaluer si `gestion_lidar` peut être simplifié ou remplacé par des transitions lifecycle standards.
 
-### Course de démarrage et de fermeture entre gestion_lidar et rplidar_composition
+### Arrêt du RPLIDAR à la fermeture : le moteur repart à la fermeture du port série
 
-Description : deux courses de timing distinctes ont été observées entre `gestion_lidar`
-(Python/rclpy) et `rplidar_composition` (nœud C++, paquet externe `rplidar_ros`, jamais modifié).
+Description : à `Ctrl+C` sur `devastator.launch.yaml`, le RPLIDAR s'arrête brièvement puis
+repart, et reste en rotation après la fin complète du lancement.
 
-**Course de démarrage** : `gestion_lidar` appelait `/stop_motor` une seule fois, dès que le
-service répondait présent, pour forcer la dormance initiale. Observé sur le Raspberry Pi 4 : le
-log confirmait la dormance, mais le RPLIDAR restait actif physiquement. Cause probable :
-`rplidar_composition` annonce ses services tôt dans son initialisation, mais envoie sa propre
-commande de démarrage interne plus tard (log `rplidar_composition: Start`). Un seul appel de
-`gestion_lidar`, arrivé trop tôt, se fait donc écraser par cette commande interne ultérieure.
-Symptôme additionnel : `teleop_clavier` désynchronisé de l'état réel (touche `l` sans effet
-visible au premier appui, effective seulement au second), parce que l'état réel du RPLIDAR avait
-changé sans que `gestion_lidar` — ni donc `teleop_clavier` — en soit informé. Correction retenue :
-`gestion_lidar` répète l'appel `/stop_motor` (4 tentatives espacées de 0.5 s) au lieu d'un appel
-unique, pour couvrir la fenêtre de temps où la commande de démarrage interne peut survenir.
+Piste écartée #1 — course de signaux. `ros2 launch` envoie SIGINT à tous les nœuds à peu près en
+parallèle, et `rplidar_composition` (C++) détruit ses services beaucoup plus vite que
+`gestion_lidar` (Python/rclpy) ne remarque le signal. Premier log observé : l'appel final
+`/stop_motor` échouait après le délai maximal complet, le service ayant déjà disparu. Une
+correction par séquencement explicite (gestionnaire `OnShutdown` dans un `.launch.py` dédié,
+appelant `/desactiver_lidar` de façon bloquante avant la propagation du SIGINT) a été essayée puis
+**retirée** : complexité réelle (fichier de lancement supplémentaire, `ros2 service call` en
+sous-processus dans un gestionnaire d'événement) sans bénéfice observé. Le simple fait de réduire
+le délai de réveil du spin de `gestion_lidar` à 0.05 s suffit à gagner la course : log confirmé,
+l'appel `/stop_motor` final aboutit en ~16 ms, avant la disparition du service.
 
-**Course de fermeture** : à `Ctrl+C`, `ros2 launch` envoie SIGINT à tous les nœuds gérés à peu
-près en parallèle. `rplidar_composition` détruit ses services quasiment immédiatement, alors que
-`gestion_lidar` met un temps non négligeable à seulement remarquer le signal, largement suffisant
-pour que le service externe ait déjà disparu au moment de l'appel final de fermeture. Une première
-correction a tenté de séquencer explicitement l'arrêt via un gestionnaire `OnShutdown` en
-`.launch.py` (`rplidar_gestion_lidar.launch.py`), bloquant la séquence de fermeture du launch le
-temps d'appeler `/desactiver_lidar` avant d'envoyer SIGINT à `rplidar_composition`. **Cette
-correction a été retirée** : testée sur le Raspberry Pi 4, elle a coïncidé avec une régression de
-la course de démarrage ci-dessus (dormance initiale non tenue) sans résoudre de façon confirmée le
-problème de fermeture, pour une complexité ajoutée (fichier `.launch.py` supplémentaire, appel
-`ros2 service call` en sous-processus dans un gestionnaire d'événement) jugée disproportionnée
-sans bénéfice net démontré. `gestion_lidar` réagit maintenant au signal le plus vite possible
-(délai de réveil du spin réduit à 0.05 s) et appelle `/stop_motor` une dernière fois en mieux-effort
-à sa propre fermeture, sans garantie forte.
+Piste écartée #2 — commande de redémarrage du driver. Le log de fermeture ne montre **aucun**
+`rplidar_composition: Start` après l'arrêt : le driver ne redémarre pas le moteur par une commande
+ROS ni par son destructeur.
 
-Hypothèse non confirmée : le RPLIDAR pourrait redémarrer de lui-même à la fermeture du port série
-par `rplidar_composition` (comportement fréquent des adaptateurs USB-série qui togglent DTR à la
-fermeture, pouvant réinitialiser le microcontrôleur du RPLIDAR vers son défaut matériel
-« alimenté = actif »), auquel cas aucun séquencement logiciel ne pourrait empêcher un redémarrage
-bref après `Ctrl+C`. À valider sur le Raspberry Pi 4 avant d'investir davantage dans une solution
-logicielle à ce problème précis.
+Cause retenue (matérielle), **confirmée par test** : sur le RPLIDAR A1, le moteur n'est pas
+commandé par le protocole série mais par la ligne **DTR** de l'adaptateur USB-série CP2102
+(`MOTOCTL`). Dans le SDK Slamtec, `stopMotor()` asserte DTR et `startMotor()` le relâche. Or Linux
+abaisse DTR et RTS à la dernière fermeture du port : la simple sortie du processus
+`rplidar_composition`, qui ferme le port série, relâche donc DTR et **remet le moteur en marche**.
+Aucune commande ROS ne peut l'empêcher, puisque le phénomène se produit précisément quand le
+driver n'existe plus.
 
-Impact sur les phases futures : pour tout futur nœud pont vers un driver externe à comportement
-matériel autonome (RealSense, ReSpeaker, Phases 11-12), valider la course de *démarrage* (appel
-répété plutôt qu'unique) en priorité — c'est un problème purement logiciel, résolu simplement. Pour
-la course de *fermeture*, ne pas supposer qu'un séquencement `.launch.py` suffit sans l'avoir
-testé sur le matériel réel : la cause peut être matérielle (reset sur fermeture du port), pas
-seulement une question d'ordre de signaux.
+Test de confirmation (robot arrêté, aucun processus ne tenant le port) : ouvrir le port en Python,
+asserter DTR (`serial.Serial(PORT, 115200).dtr = True`), observer, puis désactiver `HUPCL` via
+`termios` avant de fermer le port. Résultats obtenus sur le Raspberry Pi 4 :
+
+1. DTR asserté → le moteur s'arrête immédiatement et reste arrêté **tant que le port est tenu
+   ouvert**. La commande moteur passe donc bien par DTR, pas par le protocole série.
+2. Port fermé, même avec `HUPCL` désactivé → le moteur **repart aussitôt**. Désactiver `HUPCL` ne
+   suffit pas : le pilote `cp210x` désactive l'interface UART du CP2102 à la fermeture
+   (`CP210X_IFC_ENABLE`/`UART_DISABLE`), ce qui réinitialise les lignes de contrôle quoi qu'en
+   dise termios.
+
+Piste écartée #3, donc : « asserter DTR puis fermer proprement le port » ne fonctionne pas sur ce
+montage — testé, invalidé, ne pas y revenir. Le moteur ne peut rester arrêté que si un processus
+**garde le port ouvert**.
+
+Correction retenue : accepter la limite et **retirer** l'appel `/stop_motor` de fermeture de
+`gestion_lidar`. Il n'apportait rien — la fermeture du port l'annule — et loguait « RPLIDAR arrêté
+avant fermeture » alors que le moteur repartait juste après : un log faussement rassurant est pire
+que pas de log du tout. Le RPLIDAR tourne donc entre deux sessions, jusqu'à la coupure
+d'alimentation. Deux voies resteraient possibles si cela devenait gênant : un processus
+« garde-port » qui survit au lancement en tenant le port avec DTR asserté (fonctionnerait, mais il
+faudrait le tuer avant chaque relance puisqu'il occupe le périphérique — complexité jugée
+disproportionnée ici), ou couper l'alimentation du RPLIDAR par relais commandé, seule solution
+réellement propre.
+
+Impact sur les phases futures : avant de soupçonner l'ordre des signaux ou le code d'un driver,
+vérifier *quelle couche* commande réellement l'actionneur. Ici ce n'était ni ROS ni le protocole
+série, mais une broche du convertisseur USB — et un état porté par une ligne de contrôle modem ne
+survit pas à la fermeture du port, quoi qu'on règle dans termios. Corollaire général : un
+actionneur dont l'état dépend d'un processus vivant ne peut pas être garanti après l'arrêt de ce
+processus ; si la garantie compte, elle doit venir du matériel (relais, rail commutable). Pertinent
+pour RealSense et ReSpeaker (Phases 11-12) seulement s'ils exposent un actionneur piloté hors
+protocole.

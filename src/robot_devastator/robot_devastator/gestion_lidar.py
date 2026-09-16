@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import signal
-import time
 from types import FrameType
 from typing import Final
 
@@ -15,10 +14,7 @@ from rclpy.signals import SignalHandlerOptions
 from std_srvs.srv import Empty as ServiceVide
 from std_srvs.srv import Trigger
 
-DELAI_ATTENTE_ARRET_FINAL_S: Final[float] = 3.0
-DELAI_REVEIL_EXECUTEUR_S: Final[float] = 0.05
-INTERVALLE_TENTATIVE_DORMANCE_S: Final[float] = 0.5
-NOMBRE_TENTATIVES_DORMANCE_DEMARRAGE: Final[int] = 4
+DELAI_REVEIL_EXECUTEUR_S: Final[float] = 0.2
 SERVICE_ACTIVER_LIDAR: Final[str] = '/activer_lidar'
 SERVICE_DESACTIVER_LIDAR: Final[str] = '/desactiver_lidar'
 SERVICE_DEMARRAGE_LIDAR: Final[str] = '/start_motor'
@@ -60,23 +56,6 @@ class GestionLidar(Node):
         self.get_logger().info(
             f"Prêt ; services '{SERVICE_ACTIVER_LIDAR}' et '{SERVICE_DESACTIVER_LIDAR}' ouverts."
         )
-
-    def arreter_lidar_systematique(self) -> None:
-        """Force l'arrêt du RPLIDAR à la fermeture, peu importe l'état courant de lidar_actif."""
-        self.get_logger().info(
-            f"Arrêt garanti du RPLIDAR via '{SERVICE_ARRET_LIDAR}' avant fermeture."
-        )
-        if not self._appeler_service_bloquant(
-            self.client_arret,
-            timeout_sec=DELAI_ATTENTE_ARRET_FINAL_S,
-        ):
-            self.get_logger().error(
-                f"Service '{SERVICE_ARRET_LIDAR}' indisponible : arrêt final non confirmé."
-            )
-            return
-
-        self.lidar_actif = False
-        self.get_logger().info('RPLIDAR arrêté avant fermeture.')
 
     # --- Callbacks des services ---
 
@@ -132,41 +111,31 @@ class GestionLidar(Node):
         return reponse
 
     def _forcer_dormance_au_demarrage(self) -> None:
-        """
-        Répète /stop_motor pour gagner la course contre l'auto-démarrage de rplidar_composition.
-
-        Le service /stop_motor est annoncé dès la création des services par rplidar_composition,
-        mais celui-ci envoie sa propre commande de démarrage plus tard dans son initialisation
-        (log observé : « rplidar_composition: Start »). Un seul appel, dès que le service répond
-        présent, peut donc arriver avant cette commande interne et être écrasé par elle. Répéter
-        l'appel sur une fenêtre de temps couvre ce délai sans dépendre d'un ordre garanti.
-        """
+        """Appelle /stop_motor une fois, peu importe l'état initial de rplidar_composition."""
         self.get_logger().info(
             f"Attente du service '{SERVICE_ARRET_LIDAR}' pour forcer la dormance initiale..."
         )
         # Attente bloquante et sans délai : le lancement ordonne gestion_lidar après
         # rplidar_composition, et le robot ne doit jamais démarrer avec le lidar actif.
+        # Un seul appel suffit : rplidar_composition envoie sa commande de démarrage interne
+        # à la fin de son initialisation, bien avant que ce nœud Python soit prêt.
         self.client_arret.wait_for_service()
-        for _tentative in range(NOMBRE_TENTATIVES_DORMANCE_DEMARRAGE):
-            futur = self.client_arret.call_async(ServiceVide.Request())
-            rclpy.spin_until_future_complete(self, futur)
-            time.sleep(INTERVALLE_TENTATIVE_DORMANCE_S)
+        futur = self.client_arret.call_async(ServiceVide.Request())
+        rclpy.spin_until_future_complete(self, futur)
 
         self.lidar_actif = False
         self.get_logger().info('RPLIDAR mis en dormance au démarrage.')
 
-    def _appeler_service_bloquant(self, client: Client, *, timeout_sec: float) -> bool:
-        """Attend le service puis attend sa réponse, avec un délai maximal total."""
-        if not client.wait_for_service(timeout_sec=timeout_sec):
-            return False
-
-        futur = client.call_async(ServiceVide.Request())
-        rclpy.spin_until_future_complete(self, futur, timeout_sec=timeout_sec)
-        return futur.done()
-
 
 def main(args: list[str] | None = None) -> None:
-    """Lance gestion_lidar et garantit une mise en dormance du RPLIDAR à la sortie."""
+    """
+    Lance gestion_lidar jusqu'à la demande d'arrêt.
+
+    Aucun /stop_motor final n'est tenté : le moteur du A1 est commandé par la ligne DTR du
+    convertisseur USB-série, que Linux relâche quand rplidar_composition ferme le port en
+    quittant. L'appel serait donc annulé et son log faussement rassurant, comme mesuré sur le
+    Raspberry Pi 4 (voir docs/decisions_et_lecons.md).
+    """
     rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     signal.signal(signal.SIGINT, _interrompre_execution)
     signal.signal(signal.SIGTERM, _interrompre_execution)
@@ -182,7 +151,6 @@ def main(args: list[str] | None = None) -> None:
     finally:
         try:
             if noeud is not None:
-                noeud.arreter_lidar_systematique()
                 noeud.destroy_node()
         finally:
             if rclpy.ok():
