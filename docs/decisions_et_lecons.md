@@ -160,31 +160,47 @@ conséquences observées, impact sur les phases futures si applicable) :
 
 Description : le device ALSA `default`, utilisé par `annonces_audio` (paramètre
 `aplay -D default`), n'est pas garanti stable dans le temps : sa résolution dépend
-de l'ordre d'énumération des cartes son au démarrage du noyau. Après un reboot du
-Pi 4, `default` a basculé vers la carte HDMI (`vc4hdmi0`, sans device audio réel à
-l'écoute) plutôt que la carte HifiBerry DAC (`sndrpihifiberry`, carte 1), provoquant
-un échec systématique de lecture (`aplay: audio open error: Unknown error 524`)
-alors qu'aucun câblage ni code n'avait changé.
+de l'ordre d'énumération des cartes son au démarrage du noyau. Un changement dans
+les périphériques USB présents au démarrage (notamment le branchement/débranchement
+du RPLIDAR, lui-même une interface série USB) peut décaler cet ordre et faire
+basculer `default` vers une autre carte (par exemple la sortie HDMI `vc4hdmi0`,
+sans device réel à l'écoute), provoquant un échec de lecture
+(`aplay: audio open error`) alors qu'aucun câblage ni code audio n'a changé.
 
-Conséquences observées : `annonces_audio` échoue silencieusement au niveau ALSA,
-message d'erreur peu explicite (524) qui ne pointe pas vers la cause réelle
-(mauvaise carte résolue, pas un device absent). Un test manuel `aplay -D plughw:1,0`
-reste fonctionnel pendant que `aplay -D default` échoue — signe que le matériel et
-le pilote sont sains, seule la résolution du device par défaut est en cause.
+Correction par index de carte — insuffisante, abandonnée : une première correction
+avait fixé `default` sur l'index numérique de la carte HifiBerry
+(`defaults.pcm.card 1`). Cette approche s'est révélée **elle-même instable** : le
+même mécanisme d'énumération qui déplace `default` déplace aussi l'index attribué
+à `sndrpihifiberry`, reproduisant le bris quelques jours plus tard sans changement
+apparent.
 
-Correction appliquée : fixer explicitement la carte par défaut au niveau système
-plutôt que de dépendre de l'ordre d'énumération, via /etc/asound.conf :
+Correction retenue — résolution par nom de carte : cibler la carte par son nom
+stable (`sndrpihifiberry`, dérivé du pilote, indépendant de l'ordre d'énumération)
+plutôt que par index, via `/etc/asound.conf` :
 
-defaults.pcm.card 1
-defaults.ctl.card 1
+``` bash
+pcm.!default {
+    type plug
+    slave.pcm {
+        type hw
+        card sndrpihifiberry
+    }
+}
+ctl.!default {
+    type hw
+    card sndrpihifiberry
+}
+```
 
-Impact sur les phases futures : toute nouvelle intégration audio ou tout ajout de
-périphérique USB/HDMI sur le Pi 4 peut à nouveau perturber l'ordre d'énumération des
-cartes ALSA. Revérifier `aplay -l` et `/etc/asound.conf` après tout changement matériel
-touchant les entrées/sorties du Pi, avant de conclure à un problème logiciel côté
+Le bloc `type plug` est nécessaire : un accès direct (`type hw`) sur le device par
+nom a échoué avec `Channels count non available`, faute de conversion automatique
+de format/canaux que `plug` fournit.
+
+Impact sur les phases futures : ne plus utiliser d'index numérique de carte dans
+aucune configuration ALSA sur ce Pi — toujours résoudre par nom (`cat /proc/asound/cards`
+pour le confirmer). Revérifier `aplay -l` et `/etc/asound.conf` après tout ajout ou
+retrait de périphérique USB, avant de conclure à un problème logiciel côté
 `annonces_audio`.
-
-Ne toucher à aucune autre section du fichier. Indiquer le diff proposé avant de l'appliquer.
 
 ### Un nœud validé manuellement en test peut rester absent du lancement de production sans le signaler
 
@@ -241,3 +257,13 @@ avec espace avant deux-points — commentaires XML, chaînes de configuration, m
 etc. Si YAML ne suffit pas pour cette raison précise, isoler le nœud concerné dans un `*.launch.py`
 minimal et l'inclure, plutôt que de reformuler la typographie des commentaires sources pour
 contourner un détail d'implémentation de `launch_yaml`.
+
+### Qualité du scan RPLIDAR A1M8 — zones mortes environnementales, pas capteur
+
+Description : à fréquence stable (~6,8 Hz), le scan publié sur /scan présente des trous persistants même après cumul de plusieurs tours complets (RViz, Decay Time élevé). Test décisif : déplacer le robot dans la pièce et comparer les trous par rapport à l'angle du robot vs par rapport à la géométrie de la pièce.
+
+Constat : la plupart des trous restent liés à des points fixes de la pièce (angles de mur rasants, surfaces peu réfléchissantes probablement), pas à un secteur angulaire fixe du robot. 
+
+Conclusion : pas d'obstacle physique sur le châssis masquant le lidar — comportement normal d'un capteur bas de gamme (A1M8) en environnement réel, pas un défaut d'intégration.
+
+Impact sur les phases futures : ne pas interpréter des trous de scan comme un problème de câblage ou de positionnement TF sans d'abord faire ce test de déplacement. Pertinent pour SLAM (Phase 10) : ces trous environnementaux persisteront, slam_toolbox devra les tolérer via la fusion multi-scans plutôt que de les traiter comme des erreurs de mesure.

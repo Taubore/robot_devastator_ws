@@ -22,12 +22,12 @@
 | HP_BF37 | Visaton BF 37 | Audio | Sortie sonore du robot | Actif | Haut-parleur 8 Ω prévu pour la voix du robot et les retours sonores via la chaîne audio I2S. |
 | CLAV_X8 | Mini clavier USB sans-fil Rii X8| Interface opérateur | Téléopération | Actif | Pour téléopératio très simple pour tests manuels. |
 | LCD2 | Waveshare LCD 2 pouces ST7789V | Affichage | Bouche / état robot | Actif | Écran intégré (phase 8), démarré par `devastator.launch.yaml`, pour afficher l'état du robot. |
+| RPLIDAR | Slamtec RPLIDAR A1M8 | Lidar | Cartographie et navigation | Actif | Publie /scan à ~6,8 Hz, intégré au TF (laser_link). Voir docs/decisions_et_lecons.md pour la qualité du scan. |
 
 # Composantes acquises mais non utilisées ou mises de côté temporairement
 
 | ID | Nom | Catégorie | Rôle | État | Description |
 |---|---|---|---|---|---|
-| RPLIDAR | Slamtec RPLIDAR A1M8 | Lidar | Cartographie et navigation | Gelé | Capteur réservé pour une étape ROS 2 plus avancée. |
 | REALSENSE | Intel RealSense D435IF | Caméra profondeur | Perception 3D | Futur | Caméra de profondeur prévue pour étapes avancées. |
 | MIC_ARRAY | ReSpeaker Mic Array v3.0 | Audio entrée | Commandes vocales | Futur | Microphone prévu pour interaction vocale avec le robot. |
 

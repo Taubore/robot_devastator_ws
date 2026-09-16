@@ -288,12 +288,12 @@ de nuage de points 2D (`LaserScan`). C'est le capteur principal de la cartograph
 de la navigation. Cette phase valide uniquement la chaîne de données et le placement
 dans l'arbre TF — pas encore la navigation.
 
-- [ ] RPLIDAR dégelé, pilote ROS 2 installé
-- [ ] Scan publié sur `/scan` (`sensor_msgs/LaserScan`)
-- [ ] Transform `base_link → laser` ajoutée à l'URDF
-- [ ] Scan visible et stable dans RViz (le mur en face est reconnaissable)
-- [ ] Qualité documentée : portée effective, zones mortes
-- [ ] Lecture : chapitre 8, section "Robot prerequisites for Nav2"
+- [x] RPLIDAR dégelé, pilote ROS 2 installé
+- [x] Scan publié sur `/scan` (`sensor_msgs/LaserScan`)
+- [x] Transform `base_link → laser` ajoutée à l'URDF
+- [x] Scan visible et stable dans RViz (le mur en face est reconnaissable)
+- [x] Qualité documentée : portée effective, zones mortes
+- [x] Lecture : chapitre 8, section "Robot prerequisites for Nav2"
       (~p. 292) de _Mastering ROS 2 4e_
 
 **Validation minimale :** faire tourner le robot ; les objets fixes restent stables
