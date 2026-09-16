@@ -58,19 +58,19 @@ d'obstacle, annonces audio et gestion du RPLIDAR.
 | Service client | `/start_motor` | `std_srvs/srv/Empty` | Fourni par `rplidar_composition` (paquet externe, non modifié) |
 | Service client | `/stop_motor` | `std_srvs/srv/Empty` | Fourni par `rplidar_composition` (paquet externe, non modifié) |
 
-`lidar_actif` (bool, interne) est initialisé à `false`. Au démarrage, `gestion_lidar` appelle
-`/stop_motor` une fois pour forcer la dormance, quel que soit l'état initial du driver
-`rplidar_composition` (qui démarre son moteur lui-même). À la fermeture de son propre nœud
-(`Ctrl+C` ou SIGTERM), `gestion_lidar` appelle systématiquement `/stop_motor`, peu importe l'état
-courant, pour garantir que le RPLIDAR ne reste jamais actif après la fermeture du programme.
+`lidar_actif` (bool, interne) est initialisé à `false`. Au démarrage, `gestion_lidar` répète
+l'appel à `/stop_motor` (4 tentatives espacées de 0.5 s) pour forcer la dormance : un seul appel
+peut arriver avant la propre commande de démarrage interne de `rplidar_composition` (envoyée plus
+tard dans son initialisation) et se faire écraser par elle. Voir `docs/decisions_et_lecons.md`
+pour le détail de cette course de démarrage.
 
-Dans `devastator.launch.yaml`, ce réflexe interne sert de filet de sécurité seulement : la
-fermeture normale du robot passe par un séquencement d'arrêt géré au niveau du launch
-(`launch/rplidar_gestion_lidar.launch.py`, package `robot_devastator_bringup`), qui appelle
-`/desactiver_lidar` avant même d'envoyer SIGINT aux nœuds — nécessaire car `rplidar_composition`
-(nœud C++) détruit son service `/stop_motor` plus vite que `gestion_lidar` ne pourrait réagir à
-son propre SIGINT. Voir le `README.md` de `robot_devastator_bringup` et
-`docs/decisions_et_lecons.md` pour le détail de ce piège.
+À la fermeture de son propre nœud (`Ctrl+C` ou SIGTERM), `gestion_lidar` appelle `/stop_motor` une
+dernière fois, peu importe l'état courant. Cet appel est du mieux-effort : `ros2 launch` envoie
+SIGINT à tous les nœuds en parallèle, et `rplidar_composition` (nœud C++) peut détruire son
+service avant que `gestion_lidar` (Python) n'ait le temps de réagir. Il est aussi possible que le
+RPLIDAR redémarre de lui-même à la fermeture du port série par `rplidar_composition`, peu importe
+la rapidité de `gestion_lidar` — comportement matériel non confirmé, à valider sur le Raspberry Pi
+4. Voir `docs/decisions_et_lecons.md`.
 
 `gestion_lidar` est la seule source de vérité de l'état du RPLIDAR. Toute source de commande
 (actuellement `teleop_clavier` en mode manuel, éventuellement un mode automatique ou Nav2 plus
@@ -155,5 +155,8 @@ observer `ros2 topic echo /robot/parole_en_cours` pendant qu'une annonce est dé
 puis `teleop.launch.yaml`) — `ros2 topic hz /scan` ne doit rien afficher au démarrage malgré le
 démarrage automatique du moteur par `rplidar_composition` (dormance forcée) ; appuyer sur `l` dans
 `teleop_clavier` doit faire apparaître une fréquence sur `/scan` ; réappuyer sur `l` doit l'arrêter ;
-`Ctrl+C` sur `devastator.launch.yaml` (ou arrêt de `gestion_lidar` seul) doit laisser le RPLIDAR
-arrêté, peu importe l'état courant au moment de la fermeture.
+`Ctrl+C` sur `devastator.launch.yaml` (ou arrêt de `gestion_lidar` seul) devrait laisser le RPLIDAR
+arrêté, peu importe l'état courant au moment de la fermeture — à confirmer sur le Raspberry Pi 4 :
+l'appel `/stop_motor` final est du mieux-effort (voir section `gestion_lidar` ci-dessus), et un
+redémarrage bref au moment même de la fermeture du port série par `rplidar_composition` est
+possible indépendamment de ce filet de sécurité.

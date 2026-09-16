@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import signal
+import time
 from types import FrameType
 from typing import Final
 
@@ -15,7 +16,9 @@ from std_srvs.srv import Empty as ServiceVide
 from std_srvs.srv import Trigger
 
 DELAI_ATTENTE_ARRET_FINAL_S: Final[float] = 3.0
-DELAI_REVEIL_EXECUTEUR_S: Final[float] = 0.2
+DELAI_REVEIL_EXECUTEUR_S: Final[float] = 0.05
+INTERVALLE_TENTATIVE_DORMANCE_S: Final[float] = 0.5
+NOMBRE_TENTATIVES_DORMANCE_DEMARRAGE: Final[int] = 4
 SERVICE_ACTIVER_LIDAR: Final[str] = '/activer_lidar'
 SERVICE_DESACTIVER_LIDAR: Final[str] = '/desactiver_lidar'
 SERVICE_DEMARRAGE_LIDAR: Final[str] = '/start_motor'
@@ -129,15 +132,26 @@ class GestionLidar(Node):
         return reponse
 
     def _forcer_dormance_au_demarrage(self) -> None:
-        """Appelle /stop_motor une fois, peu importe l'état initial de rplidar_composition."""
+        """
+        Répète /stop_motor pour gagner la course contre l'auto-démarrage de rplidar_composition.
+
+        Le service /stop_motor est annoncé dès la création des services par rplidar_composition,
+        mais celui-ci envoie sa propre commande de démarrage plus tard dans son initialisation
+        (log observé : « rplidar_composition: Start »). Un seul appel, dès que le service répond
+        présent, peut donc arriver avant cette commande interne et être écrasé par elle. Répéter
+        l'appel sur une fenêtre de temps couvre ce délai sans dépendre d'un ordre garanti.
+        """
         self.get_logger().info(
             f"Attente du service '{SERVICE_ARRET_LIDAR}' pour forcer la dormance initiale..."
         )
         # Attente bloquante et sans délai : le lancement ordonne gestion_lidar après
         # rplidar_composition, et le robot ne doit jamais démarrer avec le lidar actif.
         self.client_arret.wait_for_service()
-        futur = self.client_arret.call_async(ServiceVide.Request())
-        rclpy.spin_until_future_complete(self, futur)
+        for _tentative in range(NOMBRE_TENTATIVES_DORMANCE_DEMARRAGE):
+            futur = self.client_arret.call_async(ServiceVide.Request())
+            rclpy.spin_until_future_complete(self, futur)
+            time.sleep(INTERVALLE_TENTATIVE_DORMANCE_S)
+
         self.lidar_actif = False
         self.get_logger().info('RPLIDAR mis en dormance au démarrage.')
 

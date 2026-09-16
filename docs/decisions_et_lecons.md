@@ -297,31 +297,48 @@ partagent potentiellement ce même risque de démarrage non supervisé.
 
 Dette technique notée : le patron standard ROS 2 pour piloter le cycle de vie d'un nœud est l'interface `rclcpp_lifecycle` (nœuds à cycle de vie gérés, `configure`/`activate`/ `deactivate`), pas un nœud pont avec services custom. Le paquet `rplidar_ros` utilisé ici (officiel Slamtec, via apt) n'implémente pas cette interface — seulement des services propriétaires (`/stop_motor`, `/start_motor`). `gestion_lidar` est donc une solution pragmatique adaptée à ce paquet, pas le patron ROS 2 canonique. Si un driver RPLIDAR lifecycle-natif devient une alternative mûre, réévaluer si `gestion_lidar` peut être simplifié ou remplacé par des transitions lifecycle standards.
 
-### Course de fermeture entre un nœud C++ et un nœud Python sur SIGINT
+### Course de démarrage et de fermeture entre gestion_lidar et rplidar_composition
 
-Description : à la fermeture de `devastator.launch.yaml` (`Ctrl+C`), `gestion_lidar` tentait
-d'appeler `/stop_motor` sur son propre SIGINT, dans le `finally` de `main()`. Log observé : le
-service répondait indisponible après le délai maximal complet, alors qu'il avait fonctionné à
-chaque appel pendant l'exécution normale.
+Description : deux courses de timing distinctes ont été observées entre `gestion_lidar`
+(Python/rclpy) et `rplidar_composition` (nœud C++, paquet externe `rplidar_ros`, jamais modifié).
 
-Cause : `ros2 launch` envoie SIGINT à tous les nœuds gérés à peu près en parallèle. Un nœud C++
-(`rplidar_composition`, composition rclcpp) détruit ses services quasiment immédiatement après
-avoir reçu le signal. Un nœud Python/rclpy (`gestion_lidar`) met un temps non négligeable
-(dizaines à ~150 ms observées) à seulement remarquer le signal et amorcer sa propre séquence
-d'arrêt, largement suffisant pour que le service externe ait déjà disparu. Réagir plus vite côté
-Python (réduire un délai de spin) réduit la fenêtre de course sans la fermer : un nœud C++ reste
-structurellement plus rapide à se terminer.
+**Course de démarrage** : `gestion_lidar` appelait `/stop_motor` une seule fois, dès que le
+service répondait présent, pour forcer la dormance initiale. Observé sur le Raspberry Pi 4 : le
+log confirmait la dormance, mais le RPLIDAR restait actif physiquement. Cause probable :
+`rplidar_composition` annonce ses services tôt dans son initialisation, mais envoie sa propre
+commande de démarrage interne plus tard (log `rplidar_composition: Start`). Un seul appel de
+`gestion_lidar`, arrivé trop tôt, se fait donc écraser par cette commande interne ultérieure.
+Symptôme additionnel : `teleop_clavier` désynchronisé de l'état réel (touche `l` sans effet
+visible au premier appui, effective seulement au second), parce que l'état réel du RPLIDAR avait
+changé sans que `gestion_lidar` — ni donc `teleop_clavier` — en soit informé. Correction retenue :
+`gestion_lidar` répète l'appel `/stop_motor` (4 tentatives espacées de 0.5 s) au lieu d'un appel
+unique, pour couvrir la fenêtre de temps où la commande de démarrage interne peut survenir.
 
-Correction retenue : ne pas dépendre du SIGINT du nœud pont pour synchroniser l'ordre de
-fermeture. `launch/rplidar_gestion_lidar.launch.py` (package `robot_devastator_bringup`)
-enregistre un gestionnaire `OnShutdown` qui appelle `/desactiver_lidar` de façon bloquante *avant*
-de laisser `ros2 launch` poursuivre sa séquence normale d'arrêt (donc avant que
-`rplidar_composition` ne reçoive son propre SIGINT). Le réflexe d'arrêt sur SIGINT interne à
-`gestion_lidar` reste en place comme filet de sécurité pour un lancement hors de ce launch
-(`ros2 run` direct, futur diagnostic isolé).
+**Course de fermeture** : à `Ctrl+C`, `ros2 launch` envoie SIGINT à tous les nœuds gérés à peu
+près en parallèle. `rplidar_composition` détruit ses services quasiment immédiatement, alors que
+`gestion_lidar` met un temps non négligeable à seulement remarquer le signal, largement suffisant
+pour que le service externe ait déjà disparu au moment de l'appel final de fermeture. Une première
+correction a tenté de séquencer explicitement l'arrêt via un gestionnaire `OnShutdown` en
+`.launch.py` (`rplidar_gestion_lidar.launch.py`), bloquant la séquence de fermeture du launch le
+temps d'appeler `/desactiver_lidar` avant d'envoyer SIGINT à `rplidar_composition`. **Cette
+correction a été retirée** : testée sur le Raspberry Pi 4, elle a coïncidé avec une régression de
+la course de démarrage ci-dessus (dormance initiale non tenue) sans résoudre de façon confirmée le
+problème de fermeture, pour une complexité ajoutée (fichier `.launch.py` supplémentaire, appel
+`ros2 service call` en sous-processus dans un gestionnaire d'événement) jugée disproportionnée
+sans bénéfice net démontré. `gestion_lidar` réagit maintenant au signal le plus vite possible
+(délai de réveil du spin réduit à 0.05 s) et appelle `/stop_motor` une dernière fois en mieux-effort
+à sa propre fermeture, sans garantie forte.
 
-Impact sur les phases futures : ce patron (séquencer l'arrêt d'un pont vers un composant externe
-avant l'arrêt du composant lui-même, via un gestionnaire `OnShutdown` en `.launch.py`) est à
-réutiliser pour tout futur nœud pont dont l'arrêt propre dépend d'un service fourni par un autre
-nœud du même lancement — RealSense et ReSpeaker (Phases 11-12) partagent ce risque si leurs
-pilotes respectifs sont eux aussi en C++.
+Hypothèse non confirmée : le RPLIDAR pourrait redémarrer de lui-même à la fermeture du port série
+par `rplidar_composition` (comportement fréquent des adaptateurs USB-série qui togglent DTR à la
+fermeture, pouvant réinitialiser le microcontrôleur du RPLIDAR vers son défaut matériel
+« alimenté = actif »), auquel cas aucun séquencement logiciel ne pourrait empêcher un redémarrage
+bref après `Ctrl+C`. À valider sur le Raspberry Pi 4 avant d'investir davantage dans une solution
+logicielle à ce problème précis.
+
+Impact sur les phases futures : pour tout futur nœud pont vers un driver externe à comportement
+matériel autonome (RealSense, ReSpeaker, Phases 11-12), valider la course de *démarrage* (appel
+répété plutôt qu'unique) en priorité — c'est un problème purement logiciel, résolu simplement. Pour
+la course de *fermeture*, ne pas supposer qu'un séquencement `.launch.py` suffit sans l'avoir
+testé sur le matériel réel : la cause peut être matérielle (reset sur fermeture du port), pas
+seulement une question d'ordre de signaux.

@@ -48,11 +48,23 @@ launch:
     output: screen
     param:
     - from: $(find-pkg-share robot_devastator_bringup)/config/autonomie_simple.yaml
-- include:
-    # rplidar_composition et gestion_lidar, avec arrêt de fermeture ordonné (gestion_lidar met
-    # le RPLIDAR en dormance avant que rplidar_composition ne reçoive son SIGINT). Isolé en
-    # .launch.py : YAML ne permet pas d'accrocher une action au Shutdown global. Voir
-    # docs/decisions_et_lecons.md.
-    file: $(find-pkg-share robot_devastator_bringup)/launch/rplidar_gestion_lidar.launch.py
+- node:
+    pkg: rplidar_ros
+    exec: rplidar_composition
+    name: rplidar_composition
+    output: screen
+    param:
+    - name: serial_port
+      value: /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
+    - name: frame_id
+      value: laser_link
+- node:
+    # Lancé après rplidar_composition : gestion_lidar répète l'appel à /stop_motor au démarrage
+    # pour forcer la dormance malgré l'auto-démarrage interne du driver (course de timing, voir
+    # docs/decisions_et_lecons.md).
+    pkg: robot_devastator
+    exec: gestion_lidar
+    name: gestion_lidar
+    output: screen
 - include:
     file: $(find-pkg-share robot_devastator_bringup)/launch/robot_state_publisher.launch.py
