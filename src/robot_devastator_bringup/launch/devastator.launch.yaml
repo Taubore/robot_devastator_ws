@@ -58,5 +58,11 @@ launch:
       value: /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0
     - name: frame_id
       value: laser_link
+- executable:
+    # Met le RPLIDAR en dormance par défaut. `ros2 service call` attend que le service soit
+    # annoncé avant d'appeler, donc pas de condition de course avec le démarrage du nœud.
+    cmd: ros2 service call /stop_motor std_srvs/srv/Empty
+    name: mise_en_dormance_lidar
+    output: screen
 - include:
     file: $(find-pkg-share robot_devastator_bringup)/launch/robot_state_publisher.launch.py

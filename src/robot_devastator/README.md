@@ -84,8 +84,13 @@ leur effet : voir ce fichier YAML.
 Touches disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne à droite,
 `espace` arrête, `=` augmente la vitesse, `-` diminue la vitesse, `m` bascule entre
 `manuel` et `autonomie`, `p` demande la page suivante à l'affichage (actif quel que soit
-le mode, même sans nœud d'affichage démarré), `x` quitte. À la sortie normale ou avec
-`Ctrl+C`, un arrêt moteur explicite est publié.
+le mode, même sans nœud d'affichage démarré), `l` bascule le RPLIDAR entre veille et
+fonctionnement (mode manuel seulement, sans effet en autonomie), `x` quitte. À la sortie
+normale ou avec `Ctrl+C`, un arrêt moteur explicite est publié.
+
+Le RPLIDAR démarre en dormance (moteur et laser coupés, voir `devastator.launch.yaml`
+dans `robot_devastator_bringup`) : `/scan` ne publie rien tant que `l` n'a pas été
+utilisé en mode manuel.
 
 ### `evitement_obstacle` — `config/autonomie_simple.yaml`
 

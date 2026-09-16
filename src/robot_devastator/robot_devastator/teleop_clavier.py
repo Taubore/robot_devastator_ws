@@ -17,6 +17,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 from std_msgs.msg import Empty, String
+from std_srvs.srv import Empty as ServiceVide
 
 DELAI_ATTENTE_ABONNE_S: Final[float] = 2.0
 INTERVALLE_ARRET_S: Final[float] = 0.1
@@ -27,6 +28,8 @@ TOPIC_COMMANDE_MANUELLE: Final[str] = '/robot/commande_moteurs/manuelle'
 TOPIC_MODE_CONDUITE: Final[str] = '/robot/mode_conduite'
 TOPIC_PAGE_SUIVANTE: Final[str] = '/affichage/page_suivante'
 CHEMIN_TERMINAL: Final[str] = '/dev/tty'
+SERVICE_DEMARRAGE_LIDAR: Final[str] = '/start_motor'
+SERVICE_ARRET_LIDAR: Final[str] = '/stop_motor'
 
 
 def _interrompre_execution(
@@ -117,6 +120,8 @@ class TeleopClavier(Node):
         self.mode = MODE_MANUEL
         self.consigne_gauche = 0
         self.consigne_droite = 0
+        # Le RPLIDAR démarre en dormance (voir devastator.launch.yaml) : cohérent avec ce défaut.
+        self.lidar_actif = False
 
         self.consigne_manuelle_pub = self.create_publisher(
             ConsigneMoteurs,
@@ -133,6 +138,8 @@ class TeleopClavier(Node):
             TOPIC_PAGE_SUIVANTE,
             10,
         )
+        self.demarrage_lidar_client = self.create_client(ServiceVide, SERVICE_DEMARRAGE_LIDAR)
+        self.arret_lidar_client = self.create_client(ServiceVide, SERVICE_ARRET_LIDAR)
 
     def attendre_arbitre(self) -> None:
         """Attend brièvement que l'arbitre écoute les commandes clavier."""
@@ -220,6 +227,10 @@ class TeleopClavier(Node):
         if self.mode != MODE_MANUEL:
             return False
 
+        if touche == 'l':
+            self._basculer_lidar()
+            return False
+
         if touche in (' ', '\n', '\r'):
             self.consigne_gauche = 0
             self.consigne_droite = 0
@@ -251,6 +262,22 @@ class TeleopClavier(Node):
             self.mode = MODE_MANUEL
 
         self._publier_mode()
+        self._afficher_etat()
+
+    def _basculer_lidar(self) -> None:
+        """Bascule le RPLIDAR entre veille et fonctionnement (mode manuel seulement)."""
+        prochain_etat = not self.lidar_actif
+        client = self.demarrage_lidar_client if prochain_etat else self.arret_lidar_client
+
+        # Appel non bloquant : un wait_for_service ici figerait la lecture du clavier.
+        if not client.service_is_ready():
+            self.get_logger().warning(
+                f'Service {client.srv_name} indisponible, état du lidar inchangé.'
+            )
+            return
+
+        client.call_async(ServiceVide.Request())
+        self.lidar_actif = prochain_etat
         self._afficher_etat()
 
     def _changer_vitesse(self, variation: int) -> None:
@@ -297,7 +324,7 @@ class TeleopClavier(Node):
             '\nTéléopération clavier Devastator\n'
             'Touches : w avancer, s reculer, a gauche, d droite, espace stop\n'
             'Vitesse : = augmenter, - diminuer | Mode : m manuel/autonomie | Quitter : x\n'
-            'Affichage : p page suivante\n'
+            'Affichage : p page suivante | Lidar : l veille/actif (mode manuel seulement)\n'
             'En autonomie, seuls m, =, - et p restent actifs.\n'
             'Garder les roues dans le vide au premier essai.\n',
             flush=True,
@@ -305,9 +332,11 @@ class TeleopClavier(Node):
 
     def _afficher_etat(self) -> None:
         """Affiche le mode et la vitesse courants."""
+        etat_lidar = 'actif' if self.lidar_actif else 'veille'
         print(
             f'Mode : {self.mode} | vitesse : {self.vitesse} '
-            f'| consigne manuelle : {self.consigne_gauche}, {self.consigne_droite}',
+            f'| consigne manuelle : {self.consigne_gauche}, {self.consigne_droite} '
+            f'| lidar : {etat_lidar}',
             flush=True,
         )
 
