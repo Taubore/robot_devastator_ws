@@ -285,6 +285,22 @@ documenté dans le README du package concerné, ou dans
 
 Aucune action ROS 2 n'est implémentée actuellement.
 
+#### RPLIDAR A1M8 — contribution au rail logique
+
+Mesures approximatives, robot alimenté par sources de laboratoire, RPLIDAR branché en USB :
+
+| État du RPLIDAR | Courant mesuré | Observé le |
+|---|---|---|
+| Débranché (USB retiré) | ~440 mA | 2026-09-16 |
+| En dormance (`/stop_motor` — moteur et laser arrêtés) | ~620 mA | 2026-09-16 |
+| Actif (moteur en rotation, laser en mesure) | ~800 mA | 2026-09-16 |
+
+Le delta dormance/débranché (~180 mA) correspond à l'électronique de veille du RPLIDAR
+(contrôleur USB-série, microcontrôleur), qui reste alimentée tant que l'USB est branché même
+lidar arrêté. Le delta actif/dormance (~180 mA) correspond au moteur et au système de mesure
+laser. Voir [docs/decisions_et_lecons.md](docs/decisions_et_lecons.md) pour le comportement de
+démarrage automatique du RPLIDAR et la gestion de sa dormance (nœud `gestion_lidar`).
+
 ### Nœuds ROS 2
 
 Convention : noms de nœuds et d'exécutables en `snake_case`, sans suffixe `_node` systématique. Les

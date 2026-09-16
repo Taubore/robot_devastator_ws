@@ -267,3 +267,32 @@ Constat : la plupart des trous restent liés à des points fixes de la pièce (a
 Conclusion : pas d'obstacle physique sur le châssis masquant le lidar — comportement normal d'un capteur bas de gamme (A1M8) en environnement réel, pas un défaut d'intégration.
 
 Impact sur les phases futures : ne pas interpréter des trous de scan comme un problème de câblage ou de positionnement TF sans d'abord faire ce test de déplacement. Pertinent pour SLAM (Phase 10) : ces trous environnementaux persisteront, slam_toolbox devra les tolérer via la fusion multi-scans plutôt que de les traiter comme des erreurs de mesure.
+
+### Démarrage automatique du RPLIDAR — comportement matériel non configurable
+
+Description : le RPLIDAR A1M8 démarre en rotation et mesure dès qu'il reçoit son alimentation
+(comportement documenté dans le datasheet Slamtec, section « System connection » : « After power
+on each sub-system, RPLIDAR A1 start rotating and scanning »). Ce n'est pas un défaut du driver
+`rplidar_ros` : le nœud `rplidar_composition` envoie même sa propre commande de démarrage à son
+lancement (log observé : `rplidar_composition: Start`), donc le lidar tourne à la fois par défaut
+matériel et par action explicite du driver.
+
+Conséquences observées : le lidar tourne dès l'alimentation du robot, avant même le lancement de
+ROS 2, et redémarre après un `Ctrl+C` puisque `rplidar_composition` cesse d'envoyer des commandes
+mais le matériel retombe sur son comportement natif « alimenté = actif ». Aucun paramètre du
+protocole RPLIDAR (datasheet, protocole d'interface) ne permet de changer cette valeur par défaut
+à la source.
+
+Correction retenue : ne jamais modifier le paquet externe `rplidar_ros` (comme `annonces_audio`
+ne modifie jamais Piper). Un nœud pont dédié, `gestion_lidar`, encapsule le cycle de vie du lidar :
+force la dormance (`/stop_motor`, qui coupe le moteur ET le laser, confirmé par l'absence totale
+de publication sur `/scan` en dormance) au démarrage du programme, expose une interface simple
+(`activer_lidar`/`desactiver_lidar`) pour toute source de commande (clavier aujourd'hui, mode
+automatique ou Nav2 plus tard), et force à nouveau la dormance à son propre arrêt propre.
+
+Impact sur les phases futures : ce patron (nœud pont dédié au cycle de vie d'un composant externe,
+plutôt que de loger cette logique dans le premier nœud consommateur) est à réutiliser pour tout
+futur composant à comportement matériel autonome — RealSense et ReSpeaker (Phases 11-12)
+partagent potentiellement ce même risque de démarrage non supervisé.
+
+Dette technique notée : le patron standard ROS 2 pour piloter le cycle de vie d'un nœud est l'interface `rclcpp_lifecycle` (nœuds à cycle de vie gérés, `configure`/`activate`/ `deactivate`), pas un nœud pont avec services custom. Le paquet `rplidar_ros` utilisé ici (officiel Slamtec, via apt) n'implémente pas cette interface — seulement des services propriétaires (`/stop_motor`, `/start_motor`). `gestion_lidar` est donc une solution pragmatique adaptée à ce paquet, pas le patron ROS 2 canonique. Si un driver RPLIDAR lifecycle-natif devient une alternative mûre, réévaluer si `gestion_lidar` peut être simplifié ou remplacé par des transitions lifecycle standards.

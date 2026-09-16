@@ -2,7 +2,7 @@
 
 `robot_devastator` est le package ROS 2 Python qui contient la logique applicative du robot
 Devastator : conduite manuelle, arbitrage des commandes moteurs, comportement d'évitement
-d'obstacle et annonces audio.
+d'obstacle, annonces audio et gestion du RPLIDAR.
 
 ## Nœuds
 
@@ -12,6 +12,7 @@ d'obstacle et annonces audio.
 | `annonces_audio` | `annonces_audio` | Actif | Préparer les WAV avec Piper et jouer les annonces selon les événements du robot |
 | `teleop_clavier` | `teleop_clavier` | Actif | Conduire le robot au clavier et basculer entre mode manuel et autonomie |
 | `evitement_obstacle` | `evitement_obstacle` | Expérimental | Avancer, détecter un obstacle, balayer la tourelle et tourner vers le dégagement |
+| `gestion_lidar` | `gestion_lidar` | Actif | Pont vers `rplidar_composition` : centralise l'état veille/actif du RPLIDAR pour toutes les sources |
 
 ## Interfaces ROS 2
 
@@ -47,6 +48,26 @@ d'obstacle et annonces audio.
 | Sortie | `/robot/commande_moteurs/autonomie` | `commun/msg/ConsigneMoteurs` | Consignes moteur de l'autonomie |
 | Sortie | `/pico/commande_tourelle_deg` | `std_msgs/msg/Int32` | Angle servo de tourelle en degrés |
 | Sortie | `/robot/evenement` | `std_msgs/msg/String` | Transitions significatives du comportement |
+
+### `gestion_lidar`
+
+| Type | Service | Interface | Rôle |
+|---|---|---|---|
+| Service exposé | `/activer_lidar` | `std_srvs/srv/Trigger` | Démarre le RPLIDAR (`/start_motor`) et marque `lidar_actif = true` |
+| Service exposé | `/desactiver_lidar` | `std_srvs/srv/Trigger` | Arrête le RPLIDAR (`/stop_motor`) et marque `lidar_actif = false` |
+| Service client | `/start_motor` | `std_srvs/srv/Empty` | Fourni par `rplidar_composition` (paquet externe, non modifié) |
+| Service client | `/stop_motor` | `std_srvs/srv/Empty` | Fourni par `rplidar_composition` (paquet externe, non modifié) |
+
+`lidar_actif` (bool, interne) est initialisé à `false`. Au démarrage, `gestion_lidar` appelle
+`/stop_motor` une fois pour forcer la dormance, quel que soit l'état initial du driver
+`rplidar_composition` (qui démarre son moteur lui-même). À la fermeture (`Ctrl+C` ou arrêt du
+lancement), `gestion_lidar` appelle systématiquement `/stop_motor`, peu importe l'état courant,
+pour garantir que le RPLIDAR ne reste jamais actif après la fermeture du programme.
+
+`gestion_lidar` est la seule source de vérité de l'état du RPLIDAR. Toute source de commande
+(actuellement `teleop_clavier` en mode manuel, éventuellement un mode automatique ou Nav2 plus
+tard) doit passer par `/activer_lidar` et `/desactiver_lidar` plutôt que d'appeler
+`rplidar_composition` directement.
 
 ## Paramètres YAML importants
 
@@ -85,17 +106,26 @@ Touches disponibles : `w` avance, `s` recule, `a` tourne à gauche, `d` tourne �
 `espace` arrête, `=` augmente la vitesse, `-` diminue la vitesse, `m` bascule entre
 `manuel` et `autonomie`, `p` demande la page suivante à l'affichage (actif quel que soit
 le mode, même sans nœud d'affichage démarré), `l` bascule le RPLIDAR entre veille et
-fonctionnement (mode manuel seulement, sans effet en autonomie), `x` quitte. À la sortie
-normale ou avec `Ctrl+C`, un arrêt moteur explicite est publié.
+fonctionnement en appelant `/activer_lidar` ou `/desactiver_lidar` de `gestion_lidar`
+(mode manuel seulement, sans effet en autonomie), `x` quitte. À la sortie normale ou avec
+`Ctrl+C`, un arrêt moteur explicite est publié.
 
-Le RPLIDAR démarre en dormance (moteur et laser coupés, voir `devastator.launch.yaml`
-dans `robot_devastator_bringup`) : `/scan` ne publie rien tant que `l` n'a pas été
-utilisé en mode manuel.
+`teleop_clavier` ne garde qu'un état local minimal (`lidar_actif`) pour savoir quel service
+appeler ensuite ; `gestion_lidar` reste la seule source de vérité de l'état réel du RPLIDAR
+(voir sa section ci-dessus). Le RPLIDAR démarre en dormance : `/scan` ne publie rien tant que
+`l` n'a pas été utilisé en mode manuel.
 
 ### `evitement_obstacle` — `config/autonomie_simple.yaml`
 
 Paramètres ajustables (activation au démarrage, distances de déclenchement et de dégagement,
 vitesses, durées de rotation et de recul) et leur effet : voir ce fichier YAML.
+
+### `gestion_lidar`
+
+Aucun paramètre YAML : les noms de service (`/activer_lidar`, `/desactiver_lidar`,
+`/start_motor`, `/stop_motor`) sont des invariants d'interface, pas des réglages, et rien
+d'autre n'est configurable. Même exception que `rplidar_composition` (voir le `README.md`
+de `robot_devastator_bringup`).
 
 ## Notes
 
@@ -112,3 +142,10 @@ observer `ros2 topic echo /robot/parole_en_cours` pendant qu'une annonce est dé
 `/robot/evenement`, et confirmer que le signal passe à `true` juste avant la lecture puis revient
 à `false` juste après. Une variante silencieuse ne doit déclencher aucune publication, puisque
 `aplay` n'est jamais appelé dans ce cas.
+
+**`gestion_lidar`** : test sur le Raspberry Pi 4 avec le robot complet lancé (`devastator.launch.yaml`
+puis `teleop.launch.yaml`) — `ros2 topic hz /scan` ne doit rien afficher au démarrage malgré le
+démarrage automatique du moteur par `rplidar_composition` (dormance forcée) ; appuyer sur `l` dans
+`teleop_clavier` doit faire apparaître une fréquence sur `/scan` ; réappuyer sur `l` doit l'arrêter ;
+`Ctrl+C` sur `devastator.launch.yaml` (ou arrêt de `gestion_lidar` seul) doit laisser le RPLIDAR
+arrêté, peu importe l'état courant au moment de la fermeture.

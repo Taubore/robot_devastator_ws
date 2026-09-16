@@ -17,7 +17,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 from std_msgs.msg import Empty, String
-from std_srvs.srv import Empty as ServiceVide
+from std_srvs.srv import Trigger
 
 DELAI_ATTENTE_ABONNE_S: Final[float] = 2.0
 INTERVALLE_ARRET_S: Final[float] = 0.1
@@ -28,8 +28,8 @@ TOPIC_COMMANDE_MANUELLE: Final[str] = '/robot/commande_moteurs/manuelle'
 TOPIC_MODE_CONDUITE: Final[str] = '/robot/mode_conduite'
 TOPIC_PAGE_SUIVANTE: Final[str] = '/affichage/page_suivante'
 CHEMIN_TERMINAL: Final[str] = '/dev/tty'
-SERVICE_DEMARRAGE_LIDAR: Final[str] = '/start_motor'
-SERVICE_ARRET_LIDAR: Final[str] = '/stop_motor'
+SERVICE_ACTIVER_LIDAR: Final[str] = '/activer_lidar'
+SERVICE_DESACTIVER_LIDAR: Final[str] = '/desactiver_lidar'
 
 
 def _interrompre_execution(
@@ -120,7 +120,9 @@ class TeleopClavier(Node):
         self.mode = MODE_MANUEL
         self.consigne_gauche = 0
         self.consigne_droite = 0
-        # Le RPLIDAR démarre en dormance (voir devastator.launch.yaml) : cohérent avec ce défaut.
+        # Suivi local de la dernière action demandée à gestion_lidar, pour savoir quel
+        # service appeler ensuite. gestion_lidar reste la source de vérité de l'état réel,
+        # qui démarre en dormance (voir gestion_lidar.py) : cohérent avec ce défaut local.
         self.lidar_actif = False
 
         self.consigne_manuelle_pub = self.create_publisher(
@@ -138,8 +140,8 @@ class TeleopClavier(Node):
             TOPIC_PAGE_SUIVANTE,
             10,
         )
-        self.demarrage_lidar_client = self.create_client(ServiceVide, SERVICE_DEMARRAGE_LIDAR)
-        self.arret_lidar_client = self.create_client(ServiceVide, SERVICE_ARRET_LIDAR)
+        self.activer_lidar_client = self.create_client(Trigger, SERVICE_ACTIVER_LIDAR)
+        self.desactiver_lidar_client = self.create_client(Trigger, SERVICE_DESACTIVER_LIDAR)
 
     def attendre_arbitre(self) -> None:
         """Attend brièvement que l'arbitre écoute les commandes clavier."""
@@ -265,9 +267,9 @@ class TeleopClavier(Node):
         self._afficher_etat()
 
     def _basculer_lidar(self) -> None:
-        """Bascule le RPLIDAR entre veille et fonctionnement (mode manuel seulement)."""
+        """Demande à gestion_lidar de basculer le RPLIDAR (mode manuel seulement)."""
         prochain_etat = not self.lidar_actif
-        client = self.demarrage_lidar_client if prochain_etat else self.arret_lidar_client
+        client = self.activer_lidar_client if prochain_etat else self.desactiver_lidar_client
 
         # Appel non bloquant : un wait_for_service ici figerait la lecture du clavier.
         if not client.service_is_ready():
@@ -276,7 +278,7 @@ class TeleopClavier(Node):
             )
             return
 
-        client.call_async(ServiceVide.Request())
+        client.call_async(Trigger.Request())
         self.lidar_actif = prochain_etat
         self._afficher_etat()
 

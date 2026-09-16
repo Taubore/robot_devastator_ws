@@ -29,6 +29,7 @@ setup(
             'evitement_obstacle = robot_devastator.evitement_obstacle:main',
             'teleop_clavier = robot_devastator.teleop_clavier:main',
             'annonces_audio = robot_devastator.annonces_audio:main',
+            'gestion_lidar = robot_devastator.gestion_lidar:main',
         ],
     },
 )

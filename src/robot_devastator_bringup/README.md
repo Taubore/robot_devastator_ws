@@ -22,7 +22,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 
 | Fichier | Nœuds lancés | Cas d'usage |
 |---|---|---|
-| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `affichage_lcd`, `annonces_audio`, `evitement_obstacle`, `rplidar_composition`, `robot_state_publisher` (inclus via `robot_state_publisher.launch.py`) | Lancement complet du robot en mode manuel, autonomie en attente |
+| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `affichage_lcd`, `annonces_audio`, `evitement_obstacle`, `rplidar_composition`, `gestion_lidar`, `robot_state_publisher` (inclus via `robot_state_publisher.launch.py`) | Lancement complet du robot en mode manuel, autonomie en attente |
 | `teleop.launch.yaml` | `teleop_clavier` | Téléopération clavier, dans un terminal interactif séparé (production, exception documentée) |
 | `diag_interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
 | `diag_surveillance_alimentation.launch.yaml` | `surveillance_alimentation` | Isole le sous-système INA260 pour une mise au point (le nœud tourne en production dans `devastator.launch.yaml`) |
@@ -45,6 +45,11 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 seuls paramètres utiles à Devastator (`serial_port`, `frame_id`) sont déclarés directement dans
 `devastator.launch.yaml`, sans fichier YAML dédié — un seul nœud externe avec si peu de paramètres
 ne justifie pas un fichier séparé.
+
+`gestion_lidar` (package `robot_devastator`) fait exception aussi : c'est un pont vers
+`rplidar_composition`, sans aucun paramètre ajustable — les noms de service qu'il utilise sont des
+invariants d'interface, pas des réglages. Il est donc déclaré sans `param:` dans
+`devastator.launch.yaml`.
 
 `robot_state_publisher` fait aussi exception : il est démarré par un sous-launch Python
 (`launch/robot_state_publisher.launch.py`, package `robot_devastator_bringup`) inclus par
