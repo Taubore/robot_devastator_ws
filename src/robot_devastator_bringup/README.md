@@ -22,7 +22,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 
 | Fichier | Nœuds lancés | Cas d'usage |
 |---|---|---|
-| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `affichage_lcd`, `annonces_audio`, `evitement_obstacle`, `rplidar_composition`, `gestion_lidar`, `robot_state_publisher` (inclus via `robot_state_publisher.launch.py`) | Lancement complet du robot en mode manuel, autonomie en attente |
+| `devastator.launch.yaml` | `surveillance_alimentation`, `interface_pico`, `odometrie`, `arbitre_commande_moteurs`, `affichage_lcd`, `annonces_audio`, `evitement_obstacle`, `rplidar_composition` et `gestion_lidar` (inclus via `rplidar_gestion_lidar.launch.py`), `robot_state_publisher` (inclus via `robot_state_publisher.launch.py`) | Lancement complet du robot en mode manuel, autonomie en attente |
 | `teleop.launch.yaml` | `teleop_clavier` | Téléopération clavier, dans un terminal interactif séparé (production, exception documentée) |
 | `diag_interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
 | `diag_surveillance_alimentation.launch.yaml` | `surveillance_alimentation` | Isole le sous-système INA260 pour une mise au point (le nœud tourne en production dans `devastator.launch.yaml`) |
@@ -59,6 +59,16 @@ lancer, ce sous-launch n'est qu'un détail d'implémentation. Raison : charger l
 `$(command 'xacro ...')` en YAML fait planter l'inférence de type de `launch_yaml` (`yaml.safe_load`
 interprète à tort la typographie française « mot : mot » des commentaires du xacro comme une clé de
 mapping). Voir `docs/decisions_et_lecons.md` pour le détail du piège.
+
+`rplidar_composition` et `gestion_lidar` font aussi exception, pour la même raison de principe
+(détail d'implémentation, pas un deuxième point d'entrée) : ils sont démarrés par
+`launch/rplidar_gestion_lidar.launch.py`, inclus par `devastator.launch.yaml`. Raison différente :
+`ros2 launch` envoie SIGINT à tous les nœuds en parallèle à la fermeture, et `rplidar_composition`
+(nœud C++) détruit son service `/stop_motor` plus vite que `gestion_lidar` ne peut réagir en
+Python — l'appel de fermeture de `gestion_lidar` arrivait donc systématiquement trop tard, RPLIDAR
+laissé actif. Ce sous-launch enregistre un gestionnaire `OnShutdown` qui appelle `/desactiver_lidar`
+de façon bloquante avant de laisser `ros2 launch` poursuivre sa séquence normale d'arrêt, ce que
+YAML ne permet pas d'exprimer. Voir `docs/decisions_et_lecons.md` pour le détail du piège.
 
 ## Lancement sur Raspberry Pi 4 via SSH
 

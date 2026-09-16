@@ -296,3 +296,32 @@ futur composant à comportement matériel autonome — RealSense et ReSpeaker (P
 partagent potentiellement ce même risque de démarrage non supervisé.
 
 Dette technique notée : le patron standard ROS 2 pour piloter le cycle de vie d'un nœud est l'interface `rclcpp_lifecycle` (nœuds à cycle de vie gérés, `configure`/`activate`/ `deactivate`), pas un nœud pont avec services custom. Le paquet `rplidar_ros` utilisé ici (officiel Slamtec, via apt) n'implémente pas cette interface — seulement des services propriétaires (`/stop_motor`, `/start_motor`). `gestion_lidar` est donc une solution pragmatique adaptée à ce paquet, pas le patron ROS 2 canonique. Si un driver RPLIDAR lifecycle-natif devient une alternative mûre, réévaluer si `gestion_lidar` peut être simplifié ou remplacé par des transitions lifecycle standards.
+
+### Course de fermeture entre un nœud C++ et un nœud Python sur SIGINT
+
+Description : à la fermeture de `devastator.launch.yaml` (`Ctrl+C`), `gestion_lidar` tentait
+d'appeler `/stop_motor` sur son propre SIGINT, dans le `finally` de `main()`. Log observé : le
+service répondait indisponible après le délai maximal complet, alors qu'il avait fonctionné à
+chaque appel pendant l'exécution normale.
+
+Cause : `ros2 launch` envoie SIGINT à tous les nœuds gérés à peu près en parallèle. Un nœud C++
+(`rplidar_composition`, composition rclcpp) détruit ses services quasiment immédiatement après
+avoir reçu le signal. Un nœud Python/rclpy (`gestion_lidar`) met un temps non négligeable
+(dizaines à ~150 ms observées) à seulement remarquer le signal et amorcer sa propre séquence
+d'arrêt, largement suffisant pour que le service externe ait déjà disparu. Réagir plus vite côté
+Python (réduire un délai de spin) réduit la fenêtre de course sans la fermer : un nœud C++ reste
+structurellement plus rapide à se terminer.
+
+Correction retenue : ne pas dépendre du SIGINT du nœud pont pour synchroniser l'ordre de
+fermeture. `launch/rplidar_gestion_lidar.launch.py` (package `robot_devastator_bringup`)
+enregistre un gestionnaire `OnShutdown` qui appelle `/desactiver_lidar` de façon bloquante *avant*
+de laisser `ros2 launch` poursuivre sa séquence normale d'arrêt (donc avant que
+`rplidar_composition` ne reçoive son propre SIGINT). Le réflexe d'arrêt sur SIGINT interne à
+`gestion_lidar` reste en place comme filet de sécurité pour un lancement hors de ce launch
+(`ros2 run` direct, futur diagnostic isolé).
+
+Impact sur les phases futures : ce patron (séquencer l'arrêt d'un pont vers un composant externe
+avant l'arrêt du composant lui-même, via un gestionnaire `OnShutdown` en `.launch.py`) est à
+réutiliser pour tout futur nœud pont dont l'arrêt propre dépend d'un service fourni par un autre
+nœud du même lancement — RealSense et ReSpeaker (Phases 11-12) partagent ce risque si leurs
+pilotes respectifs sont eux aussi en C++.

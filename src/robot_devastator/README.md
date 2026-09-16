@@ -60,9 +60,17 @@ d'obstacle, annonces audio et gestion du RPLIDAR.
 
 `lidar_actif` (bool, interne) est initialisé à `false`. Au démarrage, `gestion_lidar` appelle
 `/stop_motor` une fois pour forcer la dormance, quel que soit l'état initial du driver
-`rplidar_composition` (qui démarre son moteur lui-même). À la fermeture (`Ctrl+C` ou arrêt du
-lancement), `gestion_lidar` appelle systématiquement `/stop_motor`, peu importe l'état courant,
-pour garantir que le RPLIDAR ne reste jamais actif après la fermeture du programme.
+`rplidar_composition` (qui démarre son moteur lui-même). À la fermeture de son propre nœud
+(`Ctrl+C` ou SIGTERM), `gestion_lidar` appelle systématiquement `/stop_motor`, peu importe l'état
+courant, pour garantir que le RPLIDAR ne reste jamais actif après la fermeture du programme.
+
+Dans `devastator.launch.yaml`, ce réflexe interne sert de filet de sécurité seulement : la
+fermeture normale du robot passe par un séquencement d'arrêt géré au niveau du launch
+(`launch/rplidar_gestion_lidar.launch.py`, package `robot_devastator_bringup`), qui appelle
+`/desactiver_lidar` avant même d'envoyer SIGINT aux nœuds — nécessaire car `rplidar_composition`
+(nœud C++) détruit son service `/stop_motor` plus vite que `gestion_lidar` ne pourrait réagir à
+son propre SIGINT. Voir le `README.md` de `robot_devastator_bringup` et
+`docs/decisions_et_lecons.md` pour le détail de ce piège.
 
 `gestion_lidar` est la seule source de vérité de l'état du RPLIDAR. Toute source de commande
 (actuellement `teleop_clavier` en mode manuel, éventuellement un mode automatique ou Nav2 plus
