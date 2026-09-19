@@ -1,0 +1,159 @@
+<?xml version="1.0" ?>
+<!--
+  Monde de simulation pour la Phase 10 (SLAM + Nav2) : pièce fermée avec obstacles
+  asymétriques, pour donner au lidar simulé (voir devastator_gazebo.xacro) un environnement
+  réaliste à scanner. Une pièce symétrique piégerait le scan matching de slam_toolbox
+  (plusieurs poses expliqueraient également bien le scan) : les murs ~4 m x 5 m et les
+  obstacles sont volontairement disposés de façon asymétrique.
+
+  Plugins repris de gz-sim8/worlds/empty.sdf (jeu minimal requis pour la physique, les
+  commandes utilisateur, la diffusion de scène et les contacts).
+-->
+<sdf version="1.6">
+  <world name="piece_test">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"></plugin>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"></plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"></plugin>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"></plugin>
+
+    <light type="directional" name="soleil">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="sol">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>6 7</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>6 7</size></plane></geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.8 0.8 0.8 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pièce ~4 m (x) x 5 m (y), murs de 0,1 m d'épaisseur et 0,5 m de haut, centrés sur
+         l'origine. Le lidar (laser_z = 0,101 m, voir capteurs.xacro) reste bien sous le
+         sommet des murs. -->
+    <model name="mur_nord">
+      <static>true</static>
+      <pose>0 2.55 0.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>4.2 0.1 0.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>4.2 0.1 0.5</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="mur_sud">
+      <static>true</static>
+      <pose>0 -2.55 0.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>4.2 0.1 0.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>4.2 0.1 0.5</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="mur_est">
+      <static>true</static>
+      <pose>2.05 0 0.25 0 0 1.5708</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>5.0 0.1 0.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>5.0 0.1 0.5</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="mur_ouest">
+      <static>true</static>
+      <pose>-2.05 0 0.25 0 0 1.5708</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>5.0 0.1 0.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>5.0 0.1 0.5</size></box></geometry>
+          <material><ambient>0.6 0.6 0.6 1</ambient><diffuse>0.6 0.6 0.6 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Obstacles asymétriques : tailles et positions distinctes pour qu'aucune symétrie
+         (miroir ou rotation) de la pièce ne rende deux poses indiscernables au scan matching. -->
+    <model name="obstacle_boite">
+      <static>true</static>
+      <pose>1.2 1.0 0.2 0 0 0.3</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.4 0.3 0.4</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.4 0.3 0.4</size></box></geometry>
+          <material><ambient>0.7 0.3 0.1 1</ambient><diffuse>0.7 0.3 0.1 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle_cylindre">
+      <static>true</static>
+      <pose>-1.3 -0.6 0.3 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.15</radius><length>0.6</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.15</radius><length>0.6</length></cylinder></geometry>
+          <material><ambient>0.1 0.4 0.7 1</ambient><diffuse>0.1 0.4 0.7 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="obstacle_mur_court">
+      <static>true</static>
+      <pose>-0.3 1.6 0.2 0 0 0.9</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.9 0.1 0.4</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.9 0.1 0.4</size></box></geometry>
+          <material><ambient>0.3 0.6 0.2 1</ambient><diffuse>0.3 0.6 0.2 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

@@ -181,7 +181,12 @@ d'un nœud isolé, jamais à l'exploitation du robot.
 
 ### Simulation et visualisation (Legion-Linux, sans matériel)
 
-- **Gazebo** : tâche `ROS 2 - Lancer simulation Gazebo` (seule tâche VSCode d'exécution).
+- **Gazebo** : tâche `ROS 2 - Lancer simulation Gazebo` (seule tâche VSCode d'exécution). Monde
+  utilisé : `robot_devastator_description/worlds/piece_test.sdf`, une pièce fermée avec obstacles
+  asymétriques (voir le README de `robot_devastator_description`). Le lidar simulé publie `/scan`
+  dans le repère `laser_link`, `/clock` est ponté et `use_sim_time` est actif — préparation pour
+  `slam_toolbox` (Phase 10). Dans RViz : fixer le **Fixed Frame** à `odom` pour voir le scan
+  s'aligner correctement pendant un déplacement.
 - **RViz / URDF** :
 
   ```bash
@@ -281,7 +286,7 @@ documenté dans le README du package concerné, ou dans
 
 | Topic | Type | Rôle |
 |---|---|---|
-| `/scan` | `sensor_msgs/msg/LaserScan` | Publier le balayage 360° du RPLIDAR A1M8, dans le repère `laser_link` |
+| `/scan` | `sensor_msgs/msg/LaserScan` | Publier le balayage 360° du RPLIDAR A1M8, dans le repère `laser_link` (réel) ou du lidar simulé (Gazebo, voir README de `robot_devastator_description`) |
 
 Aucune action ROS 2 n'est implémentée actuellement.
 

@@ -6,7 +6,7 @@ launch:
     file: $(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py
     arg:
     - name: gz_args
-      value: "empty.sdf -r"
+      value: "$(find-pkg-share robot_devastator_description)/worlds/piece_test.sdf -r"
 
 - node:
     pkg: ros_gz_sim

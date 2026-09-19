@@ -292,7 +292,7 @@ dans l'arbre TF — pas encore la navigation.
 - [x] Scan publié sur `/scan` (`sensor_msgs/LaserScan`)
 - [x] Transform `base_link → laser` ajoutée à l'URDF
 - [x] Scan visible et stable dans RViz (le mur en face est reconnaissable)
-- [x] Qualité documentée : portée effective, zones mortes
+- [ ] Qualité documentée : portée effective, zones mortes
 - [x] Lecture : chapitre 8, section "Robot prerequisites for Nav2"
       (~p. 292) de _Mastering ROS 2 4e_
 
@@ -306,7 +306,8 @@ capteurs lidar.
 
 ## Phase 10 — Navigation autonome (Nav2)
 
->Jalon J1.5 - SLAM et Navigation autonome (critère de sortie de phase)
+>Jalon J1.5 - SLAM 
+>Jalon J1.6 - Navigation autonome 
 
 **Concept :** Nav2 est le « GPS intérieur » du robot. Il combine une carte, une position
 estimée (odométrie) et un capteur (lidar) pour planifier un chemin et guider le robot
@@ -332,6 +333,7 @@ Stack: Nav2 — architecture, Slam Toolbox, démo TurtleBot3).
 
 ## Phase 11 — Perception 3D (RealSense D435IF) — exploratoire
 
+>J1.4a - Intégration de la caméra de profondeur
 >J1.4b - Perception : la donnée devient une décision
 
 **Concept :** la caméra de profondeur voit les obstacles en hauteur (bords de table,
@@ -450,6 +452,12 @@ Ce que Devastator m'a appris que je ferais différemment dès la conception.
 
 Format : `YYYY-MM-DD — décision ou observation clé (une ligne)`
 
+- 2026-09-19 — Phase 10 (SLAM) amorcée en simulation : lidar `gpu_lidar` simulé sur `laser_link`
+  (calqué sur le RPLIDAR A1M8, `gz_frame_id` forcé pour éviter le nom composé par défaut de
+  Gazebo Harmonic), monde `piece_test.sdf` (pièce asymétrique) créé dans
+  `robot_devastator_description/worlds/`, `/scan` et `/clock` pontés, `use_sim_time` activé sur
+  `robot_state_publisher` et RViz. Portée du lidar simulé non mesurée sur ce robot (défauts
+  `rplidar_ros`) — voir README de `robot_devastator_description`.
 - 2026-09-11 — `affichage_lcd` intégré à `devastator.launch.yaml`, placé avant `annonces_audio`
   pour que l'écran soit déjà actif pendant la génération synchrone des WAV Piper au démarrage.
 - 2026-09-09 — MADCTL paysage corrigé de 0x70 (valeur Waveshare, jamais testée en
