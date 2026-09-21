@@ -20,10 +20,9 @@
   <xacro:property name="plateforme_lidar_largeur"  value="0.160"/>
   <xacro:property name="plateforme_lidar_hauteur"  value="0.070"/>
   <!-- plateforme_lidar_x : fond aligné sur le fond (arrière) du châssis, comme le RPLIDAR
-       fond châssis = -chassis_longueur/2 = -0.115 ; centre = -0.115 + largeur/2, car le
-       visual/collision est tourné de 90° en Z (voir plateforme_lidar_link) : la dimension
-       effective en X devient plateforme_lidar_largeur, pas plateforme_lidar_longueur -->
-  <xacro:property name="plateforme_lidar_x" value="-0.035"/>
+       fond châssis = -chassis_longueur/2 = -0.115 ; centre = -0.115 + dimension_X_boîte/2,
+       où dimension_X_boîte = plateforme_lidar_longueur = 0.130 -->
+  <xacro:property name="plateforme_lidar_x" value="-0.050"/>
   <!-- plateforme_lidar_z = sommet châssis (12,0 cm) + moitié hauteur plateforme (3,5 cm)
        - base_link_hauteur_sol -->
   <xacro:property name="plateforme_lidar_z" value="0.073"/>
@@ -33,10 +32,9 @@
   <xacro:property name="base_lidar_largeur"  value="0.100"/>
   <xacro:property name="base_lidar_hauteur"  value="0.030"/>
   <!-- base_lidar_x : fond aligné sur le fond (arrière) du châssis, comme plateforme_lidar_link
-       fond châssis = -0.115 ; centre = -0.115 + largeur/2, car le visual/collision est tourné
-       de 90° en Z (voir base_lidar_link) : la dimension effective en X devient
-       base_lidar_largeur, pas base_lidar_longueur -->
-  <xacro:property name="base_lidar_x" value="-0.065"/>
+       fond châssis = -0.115 ; centre = -0.115 + dimension_X_boîte/2, où dimension_X_boîte
+       = base_lidar_longueur = 0.070 -->
+  <xacro:property name="base_lidar_x" value="-0.080"/>
   <!-- base_lidar_z = sommet plateforme_lidar (19,0 cm) + moitié hauteur base (1,5 cm)
        - base_link_hauteur_sol -->
   <xacro:property name="base_lidar_z" value="0.123"/>
@@ -143,19 +141,15 @@
 
   <!-- Plateforme lidar : boîte de support posée sur le dessus du châssis, fond aligné sur
        l'arrière du châssis (X négatif), centrée en Y -->
-  <!-- Rotation de 90° en Z : plateforme_lidar_longueur/largeur sont définies selon les
-       dimensions physiques mesurées (L en X, P en Y), mais le repère X/Y de la boîte doit être
-       tourné pour correspondre à l'orientation réelle du support sur le châssis -->
+  <!-- Dimensions physiques mesurées : longueur (avant-arrière, axe X), largeur (axe Y) -->
   <link name="plateforme_lidar_link">
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 1.5708"/>
       <geometry>
         <box size="${plateforme_lidar_longueur} ${plateforme_lidar_largeur} ${plateforme_lidar_hauteur}"/>
       </geometry>
       <material name="bleu_fonce"/>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 1.5708"/>
       <geometry>
         <box size="${plateforme_lidar_longueur} ${plateforme_lidar_largeur} ${plateforme_lidar_hauteur}"/>
       </geometry>
@@ -179,17 +173,15 @@
 
   <!-- Base lidar : boîte de support posée sur le dessus de plateforme_lidar_link, fond aligné
        sur l'arrière du châssis comme plateforme_lidar_link, centrée en Y -->
-  <!-- Rotation de 90° en Z : même correctif d'orientation que plateforme_lidar_link -->
+  <!-- Dimensions physiques mesurées : longueur (avant-arrière, axe X), largeur (axe Y) -->
   <link name="base_lidar_link">
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 1.5708"/>
       <geometry>
         <box size="${base_lidar_longueur} ${base_lidar_largeur} ${base_lidar_hauteur}"/>
       </geometry>
       <material name="bleu_fonce"/>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 1.5708"/>
       <geometry>
         <box size="${base_lidar_longueur} ${base_lidar_largeur} ${base_lidar_hauteur}"/>
       </geometry>
