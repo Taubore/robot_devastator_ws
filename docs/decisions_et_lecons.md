@@ -358,3 +358,32 @@ actionneur dont l'état dépend d'un processus vivant ne peut pas être garanti 
 processus ; si la garantie compte, elle doit venir du matériel (relais, rail commutable). Pertinent
 pour RealSense et ReSpeaker (Phases 11-12) seulement s'ils exposent un actionneur piloté hors
 protocole.
+
+### Serveur Gazebo orphelin : modèle figé et plantage
+
+**Symptôme** : Gazebo affichait toujours la même version du modèle, quelles que soient
+les modifications du xacro, alors que RViz reflétait correctement les changements.
+Un plantage `getenv` dans le fil de découverte de gz-transport est aussi apparu.
+
+**Cause confirmée** : un processus `gz sim server` d'une session antérieure (PID bas,
+détaché de tout terminal) tournait encore. Chaque nouveau lancement dialoguait avec
+ce serveur et son modèle périmé au lieu du sien. Origine probable, non confirmée :
+une simulation lancée en arrière-plan par Claude Code et jamais arrêtée.
+
+**Cause probable, non prouvée** : le plantage `getenv` découle de la cohabitation
+de deux serveurs. Gazebo publiait aussi sur l'interface Tailscale (plusieurs
+interfaces réseau actives), ce qui fragilise sa découverte.
+
+**Diagnostic retenu** :
+- RViz correct mais Gazebo figé : soupçonner Gazebo, pas le xacro.
+- Avant le launch, `gz topic -l` doit être vide ; sinon un serveur orphelin tourne.
+- `gz topic -i -t /clock` donne l'adresse du publieur ; `pgrep -af "gz|ruby"` donne le PID.
+- Un statut « process has finished cleanly » ne prouve pas le bon fonctionnement.
+
+**Leçons de méthode** :
+- Lire le diff d'une modification de Claude Code avant de lancer un test complet.
+- Pour isoler une modification, mettre de côté tous les fichiers modifiés ensemble,
+  pas un seul : un état partiel produit des symptômes trompeurs.
+
+**Décision** : isoler la simulation dans `diag_simulation.launch.yaml`
+(`GZ_PARTITION` dédiée, `GZ_IP=127.0.0.1`).

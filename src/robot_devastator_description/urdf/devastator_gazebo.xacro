@@ -10,6 +10,29 @@
     <mu2>0.1</mu2>
   </gazebo>
 
+  <!-- Couleurs explicites pour Gazebo : capteurs.xacro référence des matériaux déclarés dans
+       d'autres fichiers (bleu_fonce dans corps.xacro, noir dans roues.xacro), ce que la
+       conversion URDF -> SDF de Gazebo Harmonic ne résout pas de façon fiable à travers les
+       fichiers xacro assemblés. RViz n'a pas ce problème (table de matériaux globale). -->
+  <gazebo reference="plateforme_lidar_link">
+    <material>
+      <ambient>0 0 0.3 1.0</ambient>
+      <diffuse>0 0 0.3 1.0</diffuse>
+    </material>
+  </gazebo>
+  <gazebo reference="base_lidar_link">
+    <material>
+      <ambient>0 0 0.3 1.0</ambient>
+      <diffuse>0 0 0.3 1.0</diffuse>
+    </material>
+  </gazebo>
+  <gazebo reference="laser_link">
+    <material>
+      <ambient>0.1 0.1 0.1 1.0</ambient>
+      <diffuse>0.1 0.1 0.1 1.0</diffuse>
+    </material>
+  </gazebo>
+
   <gazebo>
     <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
       <left_joint>left_wheel_joint</left_joint>
@@ -33,6 +56,15 @@
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
+  </gazebo>
+
+  <!-- laser_joint est fixed et relie laser_link à base_link, lui-même fusionné dans
+       base_footprint via base_footprint_joint (fixed). Sans cette directive, sdformat
+       fusionne récursivement laser_link jusque dans base_footprint lors de la conversion
+       URDF -> SDF : le lien laser_link disparaît, et le capteur ci-dessous ne trouve plus
+       sa référence (avertissement Gazebo, /scan ne publie rien). -->
+  <gazebo reference="laser_joint">
+    <disableFixedJointLumping>true</disableFixedJointLumping>
   </gazebo>
 
   <!-- Lidar simulé, calqué sur le RPLIDAR A1M8 réel (laser_link, voir capteurs.xacro).

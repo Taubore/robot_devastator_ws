@@ -10,9 +10,42 @@
   <xacro:property name="tourelle_x"   value="0.0845"/>
   <xacro:property name="tourelle_z"   value="0.048"/>
   <!-- Position mesurée du RPLIDAR A1M8, relative à base_link -->
-  <xacro:property name="laser_x"      value="-0.075"/>
-  <xacro:property name="laser_y"      value="-0.010"/>
-  <xacro:property name="laser_z"      value="0.101"/>
+  <xacro:property name="laser_x"      value="-0.080"/>
+  <xacro:property name="laser_y"      value="-0.015"/>
+  <xacro:property name="laser_z"      value="0.150"/>
+
+  <!-- Empilement du support lidar, sur le dessus du châssis, à l'arrière (X négatif) -->
+  <!-- Dimensions des boîtes de support (en mètres) : L x P x H -->
+  <xacro:property name="plateforme_lidar_longueur" value="0.130"/>
+  <xacro:property name="plateforme_lidar_largeur"  value="0.160"/>
+  <xacro:property name="plateforme_lidar_hauteur"  value="0.070"/>
+  <!-- plateforme_lidar_x : fond aligné sur le fond (arrière) du châssis, comme le RPLIDAR
+       fond châssis = -chassis_longueur/2 = -0.115 ; centre = -0.115 + largeur/2, car le
+       visual/collision est tourné de 90° en Z (voir plateforme_lidar_link) : la dimension
+       effective en X devient plateforme_lidar_largeur, pas plateforme_lidar_longueur -->
+  <xacro:property name="plateforme_lidar_x" value="-0.035"/>
+  <!-- plateforme_lidar_z = sommet châssis (12,0 cm) + moitié hauteur plateforme (3,5 cm)
+       - base_link_hauteur_sol -->
+  <xacro:property name="plateforme_lidar_z" value="0.073"/>
+  <xacro:property name="masse_plateforme_lidar" value="0.030"/>
+
+  <xacro:property name="base_lidar_longueur" value="0.070"/>
+  <xacro:property name="base_lidar_largeur"  value="0.100"/>
+  <xacro:property name="base_lidar_hauteur"  value="0.030"/>
+  <!-- base_lidar_x : fond aligné sur le fond (arrière) du châssis, comme plateforme_lidar_link
+       fond châssis = -0.115 ; centre = -0.115 + largeur/2, car le visual/collision est tourné
+       de 90° en Z (voir base_lidar_link) : la dimension effective en X devient
+       base_lidar_largeur, pas base_lidar_longueur -->
+  <xacro:property name="base_lidar_x" value="-0.065"/>
+  <!-- base_lidar_z = sommet plateforme_lidar (19,0 cm) + moitié hauteur base (1,5 cm)
+       - base_link_hauteur_sol -->
+  <xacro:property name="base_lidar_z" value="0.123"/>
+  <xacro:property name="masse_base_lidar" value="0.010"/>
+
+  <!-- Dimensions du RPLIDAR A1M8, mesures directes sur le robot réel -->
+  <xacro:property name="laser_rayon"    value="0.035"/>
+  <xacro:property name="laser_longueur" value="0.024"/>
+  <xacro:property name="masse_laser"    value="0.190"/>
 
   <xacro:property name="masse_sonar"  value="0.010"/>
 
@@ -25,7 +58,8 @@
     <color rgba="0.0 0.5 1.0 1.0"/>
   </material>
 
-  <!-- "gris" est déjà défini dans corps.xacro : réutilisé tel quel pour laser_link -->
+  <!-- "gris" et "bleu_fonce" sont déjà définis dans corps.xacro, "noir" dans roues.xacro :
+       réutilisés tels quels -->
 
   <!-- Sonar HC-SR04 : petite boîte bleue à l'avant -->
   <!-- Dimensions : 40 mm x 56 mm x 30 mm (p x l x h) -->
@@ -77,21 +111,104 @@
   </joint>
 
   <!-- RPLIDAR A1M8 : cylindre gris sur le dessus du châssis -->
-  <!-- Dimensions approximatives (pas de fiche technique précise sous la main) :
-       rayon 38 mm (diamètre ~76 mm), hauteur 40 mm -->
+  <!-- Dimensions mesurées directement sur le robot réel : rayon 35 mm (diamètre 70 mm),
+       hauteur 24 mm -->
   <link name="laser_link">
     <visual>
       <geometry>
-        <cylinder radius="0.038" length="0.040"/>
+        <cylinder radius="${laser_rayon}" length="${laser_longueur}"/>
       </geometry>
-      <material name="gris"/>
+      <material name="noir"/>
     </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="${laser_rayon}" length="${laser_longueur}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="${masse_laser}"/>
+      <inertia
+        ixx="${masse_laser*(3*laser_rayon*laser_rayon+laser_longueur*laser_longueur)/12}"
+        iyy="${masse_laser*(3*laser_rayon*laser_rayon+laser_longueur*laser_longueur)/12}"
+        izz="${masse_laser*laser_rayon*laser_rayon/2}"
+        ixy="0" ixz="0" iyz="0"/>
+    </inertial>
   </link>
 
   <joint name="laser_joint" type="fixed">
     <parent link="base_link"/>
     <child  link="laser_link"/>
     <origin xyz="${laser_x} ${laser_y} ${laser_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Plateforme lidar : boîte de support posée sur le dessus du châssis, fond aligné sur
+       l'arrière du châssis (X négatif), centrée en Y -->
+  <!-- Rotation de 90° en Z : plateforme_lidar_longueur/largeur sont définies selon les
+       dimensions physiques mesurées (L en X, P en Y), mais le repère X/Y de la boîte doit être
+       tourné pour correspondre à l'orientation réelle du support sur le châssis -->
+  <link name="plateforme_lidar_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 1.5708"/>
+      <geometry>
+        <box size="${plateforme_lidar_longueur} ${plateforme_lidar_largeur} ${plateforme_lidar_hauteur}"/>
+      </geometry>
+      <material name="bleu_fonce"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 1.5708"/>
+      <geometry>
+        <box size="${plateforme_lidar_longueur} ${plateforme_lidar_largeur} ${plateforme_lidar_hauteur}"/>
+      </geometry>
+    </collision>
+    <!-- Masse non mesurée, valeur symbolique -->
+    <inertial>
+      <mass value="${masse_plateforme_lidar}"/>
+      <inertia
+        ixx="${masse_plateforme_lidar*(plateforme_lidar_largeur*plateforme_lidar_largeur+plateforme_lidar_hauteur*plateforme_lidar_hauteur)/12}"
+        iyy="${masse_plateforme_lidar*(plateforme_lidar_longueur*plateforme_lidar_longueur+plateforme_lidar_hauteur*plateforme_lidar_hauteur)/12}"
+        izz="${masse_plateforme_lidar*(plateforme_lidar_longueur*plateforme_lidar_longueur+plateforme_lidar_largeur*plateforme_lidar_largeur)/12}"
+        ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="plateforme_lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="plateforme_lidar_link"/>
+    <origin xyz="${plateforme_lidar_x} 0 ${plateforme_lidar_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Base lidar : boîte de support posée sur le dessus de plateforme_lidar_link, fond aligné
+       sur l'arrière du châssis comme plateforme_lidar_link, centrée en Y -->
+  <!-- Rotation de 90° en Z : même correctif d'orientation que plateforme_lidar_link -->
+  <link name="base_lidar_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 1.5708"/>
+      <geometry>
+        <box size="${base_lidar_longueur} ${base_lidar_largeur} ${base_lidar_hauteur}"/>
+      </geometry>
+      <material name="bleu_fonce"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 1.5708"/>
+      <geometry>
+        <box size="${base_lidar_longueur} ${base_lidar_largeur} ${base_lidar_hauteur}"/>
+      </geometry>
+    </collision>
+    <!-- Masse non mesurée, valeur symbolique -->
+    <inertial>
+      <mass value="${masse_base_lidar}"/>
+      <inertia
+        ixx="${masse_base_lidar*(base_lidar_largeur*base_lidar_largeur+base_lidar_hauteur*base_lidar_hauteur)/12}"
+        iyy="${masse_base_lidar*(base_lidar_longueur*base_lidar_longueur+base_lidar_hauteur*base_lidar_hauteur)/12}"
+        izz="${masse_base_lidar*(base_lidar_longueur*base_lidar_longueur+base_lidar_largeur*base_lidar_largeur)/12}"
+        ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="base_lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="base_lidar_link"/>
+    <origin xyz="${base_lidar_x} 0 ${base_lidar_z}" rpy="0 0 0"/>
   </joint>
 
 </robot>

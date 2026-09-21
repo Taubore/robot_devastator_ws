@@ -376,6 +376,13 @@ Pour éviter les échecs de tests, rediriger temporairement les logs ROS vers `/
 - Ne pas exécuter `pytest` directement dans ce workspace
 - Utiliser `colcon test --packages-select <package>` puis `colcon test-result --verbose`
 
+### Processus de simulation et processus longs
+
+- Tout processus lancé pour un test (Gazebo, RViz, launch ROS 2, nœud) doit être arrêté avant la fin de la tâche. Aucun processus ne doit rester actif en arrière-plan.
+- Après l'arrêt, vérifier qu'aucun serveur Gazebo ne subsiste : `gz topic -l` doit être vide et `pgrep -af "gz sim"` ne doit rien retourner.
+- Si un processus ne peut pas être arrêté, ou doit rester actif, le signaler explicitement à l'humain avec son PID.
+- Avant un test en simulation, vérifier qu'aucun serveur Gazebo préexistant ne tourne.
+
 ## Documentation
 
 Documenter suffisamment pour faciliter l’usage et la réutilisation sans avoir à lire le code.
