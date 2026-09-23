@@ -22,6 +22,18 @@ Les paquets tiers (`rplidar_ros`, Piper) ne sont jamais modifiés. Tout comporte
 
 La simulation est lancée via `diag_simulation.launch.yaml`, avec une `GZ_PARTITION` dédiée et `GZ_IP=127.0.0.1`, pour qu'elle ne puisse pas se mélanger à une autre session ni à une interface réseau parasite. Voir « Serveur Gazebo orphelin ».
 
+### Arbitre moteur : point central unique
+
+`arbitre_commande_moteurs` est l'unique producteur de `/pico/commande_moteurs` (voir [contrat_pico_ros2.md](contrat_pico_ros2.md)). Toute source de commande (clavier, autonomie) passe par lui. L'autonomie simple reste expérimentale et démarre en mode attente.
+
+### Chenilles : triangle visuel statique et roue fonctionnelle invisible
+
+Chaque chenille est modélisée en triangle (roue menante + 2 roues folles), via décomposition trigonométrique (`atan2`) des 3 boîtes de liaison. Le visuel de la chenille (statique, joint `fixed`) est séparé de la roue fonctionnelle (invisible, `continuous`, collision en sphère au niveau du sol). Sans cette séparation, le triangle entier tournerait comme un objet rigide unique, incompatible avec une simulation physique.
+
+### Contrat UART maison avec le Pico WH, sans `ros2_control`
+
+Le contrat UART maison ([contrat_pico_ros2.md](contrat_pico_ros2.md)) est efficace pour Devastator, qui reste en diff-drive simplifié sans `ros2_control`. Sur RobotPi (cinématique mecanum, plateforme plus mature), `ros2_control` sera pertinent et remplacera ce contrat.
+
 ## Leçons apprises
 
 ### Matériel, alimentation et mécanique
@@ -104,6 +116,20 @@ La simulation est lancée via `diag_simulation.launch.yaml`, avec une `GZ_PARTIT
 
 **À retenir** : pour tout calcul d'odométrie, les valeurs mesurées empiriquement sur le robot réel priment sur les valeurs théoriques tirées de la géométrie, qui ne servent que de repère de cohérence. Les valeurs actives sont dans `robot_devastator_bringup/config/mecanique.yaml` ; la méthode et le contexte de mesure sont dans [parametres.md](parametres.md).
 
+#### Chenilles : entraxe effectif non mesurable précisément
+
+**Contexte / symptôme** : l'entraxe effectif d'un robot à chenilles (largeur de rotation réelle) ne se mesure pas avec précision, ce qui dégrade l'odométrie en rotation.
+
+**À retenir** : pour RobotPi, préférer des roues (mecanum aux coins) afin d'obtenir une odométrie fiable.
+
+#### Capteur numérique : borner chaque lecture par sa limite physique
+
+**Contexte / symptôme** : une masse intermittente produit des valeurs bien formées mais fausses. Exemple : un bus I2C flottant lit `0xFFFF`, ce qui donne −1,25 mA sur le registre de courant, une valeur crédible.
+
+**Cause** : un test unitaire valide le calcul, jamais la plausibilité de l'entrée.
+
+**À retenir** : borner chaque lecture par sa limite physique connue, dès la conception.
+
 #### Une calibration insuffisamment répétée fige du bruit en erreur systématique
 
 **Contexte / symptôme** : une constante de calibration (ticks/mètre gauche/droite) établie sur trop peu de passes se comporte comme un biais physique alors qu'elle reflète du bruit de mesure.
@@ -162,6 +188,18 @@ Le bloc `type plug` est nécessaire : un accès direct (`type hw`) par nom a éc
 
 **À retenir** : ne jamais utiliser d'index numérique de carte dans une configuration ALSA sur ce Pi, toujours résoudre par nom (`cat /proc/asound/cards` pour confirmer). Revérifier `aplay -l` et `/etc/asound.conf` après tout ajout ou retrait de périphérique USB, avant de conclure à un problème logiciel côté `annonces_audio`.
 
+### Affichage
+
+#### ST7789V : une valeur MADCTL « de référence » n'est fiable que si elle a été testée dans le même scénario
+
+**Contexte / symptôme** : en mode paysage, l'affichage était inversé alors que la valeur MADCTL 0x70 venait du code de référence Waveshare.
+
+**Cause** : cette valeur n'avait jamais été testée en paysage avec du contenu asymétrique. Une mire de couleurs symétrique ne révèle pas une inversion de rotation ; seul du texte ou une image asymétrique la révèle.
+
+**Solution retenue** : 0xA0, déterminé par essai direct sur le matériel (constante `_MADCTL_PAYSAGE`, voir `src/lcd_st7789v/README.md`).
+
+**À retenir** : toujours valider une orientation avec du contenu asymétrique avant de la considérer acquise.
+
 ### Lancement ROS 2 et intégration
 
 #### Un nœud validé manuellement peut rester absent du lancement de production sans le signaler
@@ -183,6 +221,36 @@ Le bloc `type plug` est nécessaire : un accès direct (`type hw`) par nom a éc
 **À retenir** : tout `param` chargé dynamiquement par `$(command ...)` dans un `*.launch.yaml` (ou `.xml`) est à risque si le contenu généré peut contenir du texte français avec espace avant deux-points (commentaires XML, chaînes de configuration, messages générés). Isoler alors le nœud dans un `*.launch.py` minimal et l'inclure, plutôt que de reformuler la typographie des commentaires sources pour contourner un détail d'implémentation.
 
 ### Simulation Gazebo
+
+#### RViz : Description Topic et Marker Scale non repris d'un lancement à l'autre
+
+**Contexte / symptôme** : le modèle du robot n'apparaît pas dans RViz au lancement, même si la configuration avait été réglée à la main auparavant.
+
+**Cause** : Description Topic et Marker Scale ne sont pas repris automatiquement sans fichier `.rviz` passé explicitement (`-d`) dans le launch file.
+
+**À retenir** : sur RobotPi, vérifier dès le premier lancement que le `.rviz` est chargé par le launch file.
+
+#### Modèle spawné = copie figée
+
+**À retenir** : toute modification du xacro exige un respawn complet dans Gazebo, jamais juste un rechargement de `/robot_description`.
+
+#### Une seule source de vérité par topic
+
+**Contexte / symptôme** : deux publishers sur `/joint_states` (interface graphique + simulation) cassent la cohérence temporelle des transforms, même si chacun fonctionne isolément.
+
+**À retenir** : un seul publisher par topic.
+
+#### Règle `<inertial>` : lien à joint mobile ou `fixed`
+
+**À retenir** : un lien à joint mobile exige `<inertial>` ; un lien à joint `fixed` est fusionné dans son parent et n'en a pas besoin.
+
+#### Base de sustentation
+
+**À retenir** : tout robot simulé a besoin d'au moins 3 points de contact non alignés pour être stable en tangage. RobotPi (4 roues mecanum aux coins) n'aura naturellement pas ce problème, mais le réflexe de vérification reste systématique.
+
+#### Friction différenciée
+
+**À retenir** : les points de contact passifs (skids, roulette folle) ont besoin d'une friction réduite ; les points moteurs gardent la friction par défaut pour la traction.
 
 #### Serveur Gazebo orphelin : modèle figé et plantage
 

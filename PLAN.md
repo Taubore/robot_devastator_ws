@@ -302,39 +302,3 @@ Quadrupède Stanford. Cinématique inverse, génération de démarche. Prérequi
 
 ### LeRobot Hugging Face (parallèle)
 Apprentissage des concepts IA en parallèle de Devastator et RobotPi. 
-
----
-
-## Leçons pour RobotPi
-
-Ce que Devastator m'a appris que je ferais différemment dès la conception. À compléter au fil du projet — une ligne par décision significative.
-
-- Chenilles : entraxe effectif non mesurable précisément → préférer roues pour odométrie fiable.
-- Pico WH : contrat UART maison efficace mais à remplacer par ros2_control sur plateforme plus mature.
-- Alimentation Pi 5 : résoudre avant conception, pas pendant.
-- Configuration RViz (.rviz) : Description Topic et Marker Scale ne sont pas repris automatiquement d'un lancement à l'autre sans fichier -d explicite dans le launch file — à vérifier dès le premier lancement sur RobotPi. J'ai beaucoup erré avant de pouvoir voir mon modèle de robot avant cela.
-- Base de sustentation : tout robot simulé a besoin d'au moins 3 points de contact non alignés pour être stable en tangage — RobotPi (4 roues mecanum aux coins) n'aura naturellement pas ce problème, mais le réflexe de vérification reste systématique.
-- Règle inertial/fixed : un lien à joint mobile exige <inertial> ; un lien à joint fixed est fusionné dans son parent et n'en a pas besoin.
-- Modèle spawné = copie figée : toute modification Xacro exige un respawn complet, jamais juste un rechargement de /robot_description.
-- Une seule source de vérité par topic : deux publishers sur /joint_states (GUI + simulation) cassent la cohérence temporelle des transforms, même si chacun fonctionne isolément.
-- Friction différenciée : les points de contact passifs (skids, roulette folle) ont besoin d'une friction réduite ; les points moteurs gardent la friction par défaut pour la traction.
-- ros2_control sera pertinent pour RobotPi (cinématique mecanum) — contrairement à Devastator, qui reste en diff-drive simplifié.
-- Écran ST7789V : une valeur MADCTL "reprise du code de référence" n'est fiable que si ce code de référence a été testé dans le même scénario. Un test avec du contenu symétrique (mire de couleurs) ne révèle pas une inversion de rotation — seul du texte ou une image asymétrique la révèle. Toujours valider une orientation avec du contenu asymétrique avant de la considérer acquise.
-- Capteur numérique : un test unitaire valide le calcul, jamais la plausibilité de l'entrée. Une masse intermittente produit des valeurs bien formées et fausses (I2C flottant = 0xFFFF = -1,25 mA sur le registre de courant, crédible). Borner chaque lecture par sa limite physique connue, dès la conception.
-
----
-
-## Décisions et contexte
-
-Format : `YYYY-MM-DD — décision ou observation clé (une ligne)`
-
-- 2026-09-19 — Phase 10 (SLAM) amorcée en simulation : lidar `gpu_lidar` simulé sur `laser_link` (calqué sur le RPLIDAR A1M8, `gz_frame_id` forcé pour éviter le nom composé par défaut de Gazebo Harmonic), monde `piece_test.sdf` (pièce asymétrique) créé dans `robot_devastator_description/worlds/`, `/scan` et `/clock` pontés, `use_sim_time` activé sur `robot_state_publisher` et RViz. Portée du lidar simulé non mesurée sur ce robot (défauts `rplidar_ros`) — voir README de `robot_devastator_description`.
-- 2026-09-11 — `affichage_lcd` intégré à `devastator.launch.yaml`, placé avant `annonces_audio` pour que l'écran soit déjà actif pendant la génération synchrone des WAV Piper au démarrage.
-- 2026-09-09 — MADCTL paysage corrigé de 0x70 (valeur Waveshare, jamais testée en paysage avec du contenu asymétrique) à 0xA0, déterminé par essai direct sur le matériel.
-- 2026-09-05 — manette PS2 retirée du projet, téléopération au clavier Rii X8 ; SPI0 libéré pour le LCD ; rétroéclairage LCD sur GPIO12 en raison de l'I2S câblé en dur sur GPIO18-21.
-- 2026-07-04 — Avant Phase 5 : séparation de la chenille (visuel statique, fixed) et de la roue  fonctionnelle (invisible, continuous, collision en sphère au niveau du sol). Nécessaire pour éviter que le triangle entier tourne comme un objet rigide unique — incompatible avec une simulation physique.
-- 2026-07-03 — Phase 4 close. Chenilles modélisées en triangle (roue menante + 2 roues folles) plutôt qu'un cylindre simple, via décomposition trigonométrique (atan2) des 3 boîtes de liaison.
-- 2026-06-22 — Plan enrichi : ordre validé (URDF → Gazebo → odométrie réelle), simulation placée en étalon visuel, `ros2_control` écarté (RobotPi).
-- 2026-06-22 — PLAN.md adopté comme source unique de progression.
-- 2026-06-10 — Arbitre moteur validé comme point central unique.
-- 2026-06-10 — Autonomie simple expérimentale, démarre en mode attente.
