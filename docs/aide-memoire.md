@@ -1,5 +1,6 @@
 # Commandes courantes
 
+- Pour partir Gazebo par terminal : `ros2 launch robot_devastator_bringup diag_simulation.launch.yaml`
 - Pour partir la teleop avec Gazebo : `ros2 run teleop_twist_keyboard teleop_twist_keyboard`
 
 # À retenir

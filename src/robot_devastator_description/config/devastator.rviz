@@ -1,16 +1,15 @@
 Panels:
   - Class: rviz_common/Displays
-    Help Height: 78
+    Help Height: 105
     Name: Displays
     Property Tree Widget:
       Expanded:
         - /Global Options1
         - /Status1
-        - /RobotModel1
-        - /LaserScan1
+        - /Map1
         - /LaserScan1/Topic1
-      Splitter Ratio: 0.5363881587982178
-    Tree Height: 678
+      Splitter Ratio: 0.6000000238418579
+    Tree Height: 719
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -31,7 +30,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: LaserScan
 Visualization Manager:
   Class: ""
   Displays:
@@ -53,7 +52,9 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.7
+    - Alpha: 0.699999988079071
+      Binary representation: false
+      Binary threshold: 100
       Class: rviz_default_plugins/Map
       Color Scheme: map
       Draw Behind: true
@@ -96,6 +97,11 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        base_lidar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base_link:
           Alpha: 1
           Show Axes: false
@@ -112,6 +118,11 @@ Visualization Manager:
           Show Trail: false
           Value: true
         left_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        plateforme_lidar_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -153,6 +164,8 @@ Visualization Manager:
         All Enabled: true
         base_footprint:
           Value: true
+        base_lidar_link:
+          Value: true
         base_link:
           Value: true
         laser_link:
@@ -164,6 +177,8 @@ Visualization Manager:
         map:
           Value: true
         odom:
+          Value: true
+        plateforme_lidar_link:
           Value: true
         right_chenille:
           Value: true
@@ -179,24 +194,28 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        base_footprint:
-          base_link:
-            laser_link:
-              {}
-            left_chenille:
-              {}
-            left_wheel:
-              {}
-            right_chenille:
-              {}
-            right_wheel:
-              {}
-            sonar_link:
-              {}
-            tourelle_link:
-              {}
-        odom:
-          {}
+        map:
+          odom:
+            base_footprint:
+              base_link:
+                base_lidar_link:
+                  {}
+                laser_link:
+                  {}
+                left_chenille:
+                  {}
+                left_wheel:
+                  {}
+                plateforme_lidar_link:
+                  {}
+                right_chenille:
+                  {}
+                right_wheel:
+                  {}
+                sonar_link:
+                  {}
+                tourelle_link:
+                  {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -209,16 +228,16 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/LaserScan
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4096
+      Max Intensity: 0
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: LaserScan
-      Position Transformer: ""
+      Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.009999999776482582
@@ -279,7 +298,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 9.92860221862793
+      Distance: 5.868397235870361
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -305,7 +324,7 @@ Window Geometry:
   Height: 1013
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000017500000353fc0200000006fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afc0000003f00000353000000eb0100001efa000000000100000004fb000000100044006900730070006c0061007900730100000000000001660000015600fffffffb0000000a005600690065007700730100000000ffffffff0000010000fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000000ffffffff0000009b00fffffffb0000001200530065006c0065006300740069006f006e0100000000ffffffff0000007300fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000017100000353fc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000006900000003efc0100000002fb0000000800540069006d00650100000000000006900000026f00fffffffb0000000800540069006d00650100000000000004500000000000000000000005150000035300000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000017400000397fc0200000006fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afc0000003f00000397000000eb0100001efa000000000100000004fb000000100044006900730070006c0061007900730100000000000001660000015600fffffffb0000000a005600690065007700730100000000ffffffff0000010000fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000000ffffffff0000009b00fffffffb0000001200530065006c0065006300740069006f006e0100000000ffffffff0000007300fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000017100000353fc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000006900000003efc0100000002fb0000000800540069006d00650000000000000006900000026f00fffffffb0000000800540069006d00650100000000000004500000000000000000000005160000039700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
