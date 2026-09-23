@@ -13,3 +13,6 @@ log/
 !.vscode/tasks.json
 __pycache__/
 *.pyc
+
+frames_*.gv
+frames_*.pdf
