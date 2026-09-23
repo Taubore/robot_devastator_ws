@@ -1,60 +1,30 @@
 # affichage_lcd
 
-Nœud ROS 2 d'affichage sur l'écran LCD Waveshare 2 pouces (ST7789V). Troisième et
-dernière couche de l'empilement d'affichage, au-dessus du pilote bas niveau et du
-rendu texte fournis par [`lcd_st7789v`](../lcd_st7789v/README.md) : `EcranSt7789v` et
-`GrilleTexte`. Ce nœud ne fait aucun accès matériel direct.
+Nœud ROS 2 d'affichage sur l'écran LCD Waveshare 2 pouces (ST7789V). Troisième et dernière couche de l'empilement d'affichage, au-dessus du pilote bas niveau et du rendu texte fournis par [`lcd_st7789v`](../lcd_st7789v/README.md) : `EcranSt7789v` et `GrilleTexte`. Ce nœud ne fait aucun accès matériel direct.
 
 ## Rôle
 
 Traduit l'état courant du robot en deux pages affichées à l'écran :
 
-- **Page bouche** (page 0) : bouche dessinée avec Pillow, imposée pendant une annonce
-  vocale (`/robot/parole_en_cours`), et forcée juste après un passage du mode manuel
-  vers le mode autonomie.
-- **Page tableau de bord** (page 1) : mode de conduite, tension/courant des deux rails
-  d'alimentation, consignes moteur gauche/droite réellement appliquées.
+- **Page bouche** (page 0) : bouche dessinée avec Pillow, imposée pendant une annonce vocale (`/robot/parole_en_cours`), et forcée juste après un passage du mode manuel vers le mode autonomie.
+- **Page tableau de bord** (page 1) : mode de conduite, tension/courant des deux rails d'alimentation, consignes moteur gauche/droite réellement appliquées.
 
-Les abonnements ne font que mettre à jour un état interne en mémoire ; un timer à
-10 Hz est le seul endroit du nœud qui dessine à l'écran.
+Les abonnements ne font que mettre à jour un état interne en mémoire ; un timer à 10 Hz est le seul endroit du nœud qui dessine à l'écran.
 
 ### Forme et animation de la page bouche
 
-Deux rectangles à coins arrondis nets et concentriques, dessinés directement avec
-Pillow sur l'écran complet 320 x 240 (pas de `GrilleTexte`), centre fixe (160, 140),
-toujours dessinés tous les deux — l'intérieur ne disparaît jamais, même au repos.
-Rayon de coin uniforme pour chaque rectangle : 0.55 x sa propre demi-hauteur
-courante. Seules les dimensions suivent l'**ouverture** continue (0.0 à 1.0) ;
-chaque rectangle garde sa couleur fixe à tout degré d'ouverture.
+Deux rectangles à coins arrondis nets et concentriques, dessinés directement avec Pillow sur l'écran complet 320 x 240 (pas de `GrilleTexte`), centre fixe (160, 140), toujours dessinés tous les deux — l'intérieur ne disparaît jamais, même au repos. Rayon de coin uniforme pour chaque rectangle : 0.55 x sa propre demi-hauteur courante. Seules les dimensions suivent l'**ouverture** continue (0.0 à 1.0) ; chaque rectangle garde sa couleur fixe à tout degré d'ouverture.
 
-- Extérieur : demi-largeur interpolée entre 88 px (ouverture 0.0) et 112 px
-  (ouverture 1.0), demi-hauteur interpolée entre 26 px et 40 px. Couleur fixe
-  RVB (46, 87, 135).
-- Intérieur : demi-largeur = demi-largeur de l'extérieur moins 15 px (marge fixe,
-  suit donc automatiquement la largeur de l'extérieur), demi-hauteur interpolée
-  entre 5 px (mince mais toujours visible) et 32 px. Couleur fixe RVB (22, 42, 65).
-  L'intérieur grandit beaucoup plus que l'extérieur avec l'ouverture, surtout en
-  hauteur, ce qui suggère une bouche qui s'ouvre plutôt qu'un simple agrandissement
-  d'ensemble.
+- Extérieur : demi-largeur interpolée entre 88 px (ouverture 0.0) et 112 px (ouverture 1.0), demi-hauteur interpolée entre 26 px et 40 px. Couleur fixe RVB (46, 87, 135).
+- Intérieur : demi-largeur = demi-largeur de l'extérieur moins 15 px (marge fixe, suit donc automatiquement la largeur de l'extérieur), demi-hauteur interpolée entre 5 px (mince mais toujours visible) et 32 px. Couleur fixe RVB (22, 42, 65). L'intérieur grandit beaucoup plus que l'extérieur avec l'ouverture, surtout en hauteur, ce qui suggère une bouche qui s'ouvre plutôt qu'un simple agrandissement d'ensemble.
 
-Animation pilotée par `/robot/parole_en_cours`, par transitions lissées (smoothstep)
-d'une ouverture de départ vers une ouverture cible :
+Animation pilotée par `/robot/parole_en_cours`, par transitions lissées (smoothstep) d'une ouverture de départ vers une ouverture cible :
 
 - faux : ouverture toujours ramenée à 0.0 (bouche aplatie) ;
-- vrai : dès qu'une transition se termine, tirage d'une nouvelle transition — 88 %
-  du temps vers une cible aléatoire entre 0.3 et 1.0 sur une durée aléatoire de
-  65 à 130 ms, 12 % du temps vers 0.0 (courte pause de 45 à 85 ms, simule une
-  respiration entre les mots). Le tirage évite un cycle mécanique et évoque une
-  phrase parlée ;
-- dès que `/robot/parole_en_cours` repasse à faux, une nouvelle transition vers 0.0
-  démarre immédiatement en continuité depuis l'ouverture courante (départ = valeur
-  au moment de la coupure, durée ~80 ms), sans attendre la fin de la transition
-  interrompue : le retour au repos est rapide et fluide, jamais un saut brusque.
+- vrai : dès qu'une transition se termine, tirage d'une nouvelle transition — 88 % du temps vers une cible aléatoire entre 0.3 et 1.0 sur une durée aléatoire de 65 à 130 ms, 12 % du temps vers 0.0 (courte pause de 45 à 85 ms, simule une respiration entre les mots). Le tirage évite un cycle mécanique et évoque une phrase parlée ;
+- dès que `/robot/parole_en_cours` repasse à faux, une nouvelle transition vers 0.0 démarre immédiatement en continuité depuis l'ouverture courante (départ = valeur au moment de la coupure, durée ~80 ms), sans attendre la fin de la transition interrompue : le retour au repos est rapide et fluide, jamais un saut brusque.
 
-Le timer à 10 Hz ne retransmet à l'écran que si l'ouverture à afficher a changé
-depuis le dernier tick. L'ouverture varie en continu, mais reste échantillonnée par
-ce timer : la fluidité perçue est donc plafonnée à 10 images par seconde (décision
-antérieure sur la boucle de rendu, hors de portée de cette page).
+Le timer à 10 Hz ne retransmet à l'écran que si l'ouverture à afficher a changé depuis le dernier tick. L'ouverture varie en continu, mais reste échantillonnée par ce timer : la fluidité perçue est donc plafonnée à 10 images par seconde (décision antérieure sur la boucle de rendu, hors de portée de cette page).
 
 ### Mise en page de la page tableau de bord
 
@@ -68,16 +38,11 @@ Gauche   : avance   650
 Droite   : avance   650
 ```
 
-Une couleur par bloc (mode, alimentation, consignes moteur), rouge exclu (réservé aux
-erreurs). Le courant est toujours affiché en valeur absolue : seule la tension sert de
-repère de charge, voir `docs/parametres.md`. Un champ affiche `--` si la mesure
-correspondante dépasse `peremption_alimentation_s` sans nouvelle réception.
+Une couleur par bloc (mode, alimentation, consignes moteur), rouge exclu (réservé aux erreurs). Le courant est toujours affiché en valeur absolue : seule la tension sert de repère de charge, voir `docs/parametres.md`. Un champ affiche `--` si la mesure correspondante dépasse `peremption_alimentation_s` sans nouvelle réception.
 
 ## Paramètres ROS 2
 
-Paramètres ajustables (péremption d'une mesure d'alimentation, période de rafraîchissement,
-intensité du rétroéclairage) et leur rôle : voir
-`robot_devastator_bringup/config/affichage_lcd.yaml`, chargé par le lancement principal.
+Paramètres ajustables (péremption d'une mesure d'alimentation, période de rafraîchissement, intensité du rétroéclairage) et leur rôle : voir `robot_devastator_bringup/config/affichage_lcd.yaml`, chargé par le lancement principal.
 
 ## Topics consommés
 
@@ -93,9 +58,7 @@ Aucun topic publié, aucun service, aucune action.
 
 ## Exemple de lancement
 
-Intégré au lancement de production via `devastator.launch.yaml`
-(`robot_devastator_bringup/config/affichage_lcd.yaml`). Pour un essai isolé, sans autre
-nœud (tous les signaux ci-dessus peuvent être publiés à la main) :
+Intégré au lancement de production via `devastator.launch.yaml` (`robot_devastator_bringup/config/affichage_lcd.yaml`). Pour un essai isolé, sans autre nœud (tous les signaux ci-dessus peuvent être publiés à la main) :
 
 ```bash
 ros2 run affichage_lcd affichage_lcd
@@ -140,8 +103,5 @@ ros2 topic pub --once /affichage/page_suivante std_msgs/msg/Empty '{}'
 
 ## Limites connues
 
-- Une seule page de statut pour l'instant (page 1) ; le bouclage de
-  `/affichage/page_suivante` n'alterne donc qu'entre les pages 0 et 1.
-- L'ouverture de la bouche varie en continu, mais reste échantillonnée par le
-  timer d'affichage à 10 Hz : les durées de transition tirées (65 à 130 ms,
-  pauses 45 à 85 ms) ne sont donc respectées qu'à environ 100 ms près.
+- Une seule page de statut pour l'instant (page 1) ; le bouclage de `/affichage/page_suivante` n'alterne donc qu'entre les pages 0 et 1.
+- L'ouverture de la bouche varie en continu, mais reste échantillonnée par le timer d'affichage à 10 Hz : les durées de transition tirées (65 à 130 ms, pauses 45 à 85 ms) ne sont donc respectées qu'à environ 100 ms près.

@@ -1,90 +1,44 @@
 # surveillance_alimentation
 
-`surveillance_alimentation` est le package ROS 2 qui surveille la tension et le courant des
-batteries d'un robot mobile à partir de capteurs **Adafruit INA260** sur bus I2C. Il publie un
-`sensor_msgs/msg/BatteryState` par rail d'alimentation et émet un événement quand une tension
-reste trop basse assez longtemps.
+`surveillance_alimentation` est le package ROS 2 qui surveille la tension et le courant des batteries d'un robot mobile à partir de capteurs **Adafruit INA260** sur bus I2C. Il publie un `sensor_msgs/msg/BatteryState` par rail d'alimentation et émet un événement quand une tension reste trop basse assez longtemps.
 
-Le package est volontairement indépendant de Devastator : aucune dépendance à `commun` ni à
-quoi que ce soit de spécifique au robot. Toute valeur propre à une installation (bus I2C,
-adresses, seuils en volts, libellés d'événement, technologie de batterie) vit dans le YAML. Il
-peut être récupéré tel quel sur un autre robot en ne changeant que le fichier de paramètres.
+Le package est volontairement indépendant de Devastator : aucune dépendance à `commun` ni à quoi que ce soit de spécifique au robot. Toute valeur propre à une installation (bus I2C, adresses, seuils en volts, libellés d'événement, technologie de batterie) vit dans le YAML. Il peut être récupéré tel quel sur un autre robot en ne changeant que le fichier de paramètres.
 
 ## Dépendance système
 
-Le pilote utilise `smbus2` (accès I2C brut), pas la bibliothèque Adafruit/Blinka. Sur le
-Raspberry Pi 4 :
+Le pilote utilise `smbus2` (accès I2C brut), pas la bibliothèque Adafruit/Blinka. Sur le Raspberry Pi 4 :
 
 ```bash
 sudo apt install python3-smbus2
 ```
 
-L'utilisateur qui lance le nœud doit appartenir au groupe `i2c` (`sudo usermod -aG i2c $USER`,
-puis rouvrir la session) et le bus I2C doit être activé (`dtparam=i2c_arm=on`).
+L'utilisateur qui lance le nœud doit appartenir au groupe `i2c` (`sudo usermod -aG i2c $USER`, puis rouvrir la session) et le bus I2C doit être activé (`dtparam=i2c_arm=on`).
 
 ## Rôle des fichiers principaux
 
-- `surveillance_alimentation/ina260.py` : pilote pur du circuit INA260 (`LecteurINA260`).
-  Ne connaît que le protocole : il reçoit un objet `SMBus`-compatible déjà ouvert, lit la
-  tension bus et le courant, vérifie l'identité du circuit et programme le moyennage matériel.
-  Registres et facteurs de conversion vérifiés contre le datasheet TI **SBOS656C** (voir
-  l'en-tête du fichier pour les références de section). N'importe `smbus2` que pour une
-  annotation de type (`if TYPE_CHECKING`) : le module est importable sans `smbus2` installé,
-  et donc testable sur Legion-Linux sans matériel. Réutilisable hors ROS 2.
-- `surveillance_alimentation/logique_alerte.py` : fonction pure `evaluer_seuils` et dataclasses
-  `SeuilAlerte`, `ConfigurationAlerte`, `ResultatAlerte`. Aucun import de `rclpy` ni de
-  `smbus2`, aucune journalisation : reçoit seuils, configuration et mesures, retourne la liste
-  des résultats (armement, rappel, rétablissement) à journaliser et à publier. C'est ici que
-  vivent la porte de courant, la temporisation et l'hystérésis ; testable sans matériel ni
-  contexte ROS 2.
-- `surveillance_alimentation/surveillance_alimentation.py` : nœud ROS 2
-  `surveillance_alimentation`, adaptateur mince. Ouvre un bus I2C partagé, instancie un
-  `LecteurINA260` par rail, publie les `BatteryState` à cadence fixe, puis délègue l'évaluation
-  des seuils à `evaluer_seuils` et se contente de journaliser les messages reçus et de publier
-  les libellés d'événement non vides.
+- `surveillance_alimentation/ina260.py` : pilote pur du circuit INA260 (`LecteurINA260`). Ne connaît que le protocole : il reçoit un objet `SMBus`-compatible déjà ouvert, lit la tension bus et le courant, vérifie l'identité du circuit et programme le moyennage matériel. Registres et facteurs de conversion vérifiés contre le datasheet TI **SBOS656C** (voir l'en-tête du fichier pour les références de section). N'importe `smbus2` que pour une annotation de type (`if TYPE_CHECKING`) : le module est importable sans `smbus2` installé, et donc testable sur Legion-Linux sans matériel. Réutilisable hors ROS 2.
+- `surveillance_alimentation/logique_alerte.py` : fonction pure `evaluer_seuils` et dataclasses `SeuilAlerte`, `ConfigurationAlerte`, `ResultatAlerte`. Aucun import de `rclpy` ni de `smbus2`, aucune journalisation : reçoit seuils, configuration et mesures, retourne la liste des résultats (armement, rappel, rétablissement) à journaliser et à publier. C'est ici que vivent la porte de courant, la temporisation et l'hystérésis ; testable sans matériel ni contexte ROS 2.
+- `surveillance_alimentation/surveillance_alimentation.py` : nœud ROS 2 `surveillance_alimentation`, adaptateur mince. Ouvre un bus I2C partagé, instancie un `LecteurINA260` par rail, publie les `BatteryState` à cadence fixe, puis délègue l'évaluation des seuils à `evaluer_seuils` et se contente de journaliser les messages reçus et de publier les libellés d'événement non vides.
 
 ## Interfaces ROS 2
 
-- Topics publiés, un par rail (nom configurable) : `sensor_msgs/msg/BatteryState`, à
-  `periode_publication_s` (défaut 1 Hz). Champs remplis : `voltage`, `current`,
-  `power_supply_technology`, `power_supply_status` (`DISCHARGING` en marche normale, `UNKNOWN`
-  si le capteur est illisible), `present`. `percentage` et les champs de capacité sont laissés
-  à `NaN` (voir *Choix de conception*).
-- Topic d'événement (défaut `/robot/evenement`) : `std_msgs/msg/String`. Le nœud y publie le
-  libellé configuré quand un seuil est armé. Les libellés sont des paramètres YAML, pas des
-  constantes. Sur Devastator, ce topic est consommé par `annonces_audio`.
+- Topics publiés, un par rail (nom configurable) : `sensor_msgs/msg/BatteryState`, à `periode_publication_s` (défaut 1 Hz). Champs remplis : `voltage`, `current`, `power_supply_technology`, `power_supply_status` (`DISCHARGING` en marche normale, `UNKNOWN` si le capteur est illisible), `present`. `percentage` et les champs de capacité sont laissés à `NaN` (voir *Choix de conception*).
+- Topic d'événement (défaut `/robot/evenement`) : `std_msgs/msg/String`. Le nœud y publie le libellé configuré quand un seuil est armé. Les libellés sont des paramètres YAML, pas des constantes. Sur Devastator, ce topic est consommé par `annonces_audio`.
 
 Aucun service ni action.
 
 ## Logique d'alerte
 
-La tension d'un accu chute sous charge par la résistance interne
-(`V = Vfem - R_interne x I`). Une lecture de tension n'indique l'état de charge que si le
-courant est faible. Trois garde-fous, tous configurables par rail :
+La tension d'un accu chute sous charge par la résistance interne (`V = Vfem - R_interne x I`). Une lecture de tension n'indique l'état de charge que si le courant est faible. Trois garde-fous, tous configurables par rail :
 
 1. **Porte de courant** : un seuil n'est évalué que si `abs(courant) < courant_max_evaluation_a`.
-2. **Temporisation** : la condition (tension sous le seuil, à courant faible) doit être
-   maintenue `temporisation_s` secondes avant que l'événement soit émis. La durée est suivie
-   par un accumulateur, pas par un horodatage : une condition de surveillance a trois états —
-   vraie, fausse, inconnue. **Porte de courant fermée = inconnue**, pas fausse : l'accumulateur
-   est alors laissé intact sans rien y ajouter, pour qu'une conduite alternant accélérations et
-   courts arrêts ne remette jamais la temporisation à zéro. Tension au-dessus du seuil à courant
-   faible = fausse : l'accumulateur repart de zéro.
-3. **Hystérésis** : un seuil armé ne se désarme que lorsque la tension repasse au-dessus de
-   `seuil + hysteresis_rearmement_v`, et seulement à courant faible.
-4. **Rappel périodique** : une alerte batterie est un état persistant. Tant qu'un seuil reste
-   armé, l'événement est réémis toutes les `periode_rappel_<niveau>_s` secondes (`0` = émission
-   unique). Le rappel suit l'état d'armement et non la mesure : il continue même pendant que la
-   porte de courant est fermée, et son compteur se réinitialise au désarmement. L'avertissement
-   et le critique se rappellent chacun à leur rythme, sans hiérarchisation : les deux libellés
-   sont publiés si les deux seuils sont armés (la déduplication appartient au consommateur).
+2. **Temporisation** : la condition (tension sous le seuil, à courant faible) doit être maintenue `temporisation_s` secondes avant que l'événement soit émis. La durée est suivie par un accumulateur, pas par un horodatage : une condition de surveillance a trois états — vraie, fausse, inconnue. **Porte de courant fermée = inconnue**, pas fausse : l'accumulateur est alors laissé intact sans rien y ajouter, pour qu'une conduite alternant accélérations et courts arrêts ne remette jamais la temporisation à zéro. Tension au-dessus du seuil à courant faible = fausse : l'accumulateur repart de zéro.
+3. **Hystérésis** : un seuil armé ne se désarme que lorsque la tension repasse au-dessus de `seuil + hysteresis_rearmement_v`, et seulement à courant faible.
+4. **Rappel périodique** : une alerte batterie est un état persistant. Tant qu'un seuil reste armé, l'événement est réémis toutes les `periode_rappel_<niveau>_s` secondes (`0` = émission unique). Le rappel suit l'état d'armement et non la mesure : il continue même pendant que la porte de courant est fermée, et son compteur se réinitialise au désarmement. L'avertissement et le critique se rappellent chacun à leur rythme, sans hiérarchisation : les deux libellés sont publiés si les deux seuils sont armés (la déduplication appartient au consommateur).
 
-Deux niveaux par rail : `avertissement` et `critique`, chacun avec son seuil en volts absolus
-et son libellé d'événement. Un seuil dont la tension est `0` est désactivé.
+Deux niveaux par rail : `avertissement` et `critique`, chacun avec son seuil en volts absolus et son libellé d'événement. Un seuil dont la tension est `0` est désactivé.
 
-Le signe du courant lu est ramené au contrat `BatteryState` (négatif en décharge) par le
-paramètre `signe_courant` propre à chaque rail (`1` ou `-1`, selon le câblage VIN+/VIN- du
-capteur). La logique d'alerte travaille sur `abs(courant)` et n'est pas affectée par ce choix.
+Le signe du courant lu est ramené au contrat `BatteryState` (négatif en décharge) par le paramètre `signe_courant` propre à chaque rail (`1` ou `-1`, selon le câblage VIN+/VIN- du capteur). La logique d'alerte travaille sur `abs(courant)` et n'est pas affectée par ce choix.
 
 ## Paramètres
 
@@ -118,46 +72,33 @@ capteur). La logique d'alerte travaille sur `abs(courant)` et n'est pas affecté
 | `evenement_avertissement` | Libellé publié sur `topic_evenement` (`''` = désactivé) |
 | `evenement_critique` | Libellé publié sur `topic_evenement` (`''` = désactivé) |
 
-Sur Devastator, ces valeurs sont dans
-`robot_devastator_bringup/config/surveillance_alimentation.yaml`.
+Sur Devastator, ces valeurs sont dans `robot_devastator_bringup/config/surveillance_alimentation.yaml`.
 
 ## Choix de conception
 
-- **`percentage` à `NaN`.** La courbe de décharge d'un accu NiMH est trop plate (~1,2 V/cellule
-  sur l'essentiel de la capacité) pour convertir une tension en pourcentage de charge honnête.
-  Publier une estimation serait trompeur ; la surveillance se fait sur des seuils de tension.
-- **Seuils en volts absolus.** Ils ne sont jamais calculés à partir d'un nombre de cellules
-  dans le code : le YAML porte la valeur finale, ce qui rend le module valable pour n'importe
-  quelle chimie et n'importe quel nombre de cellules.
-- **Robustesse.** Une erreur de lecture I2C ne tue jamais le nœud : les échecs consécutifs sont
-  comptés, un `BatteryState` en `POWER_SUPPLY_STATUS_UNKNOWN` continue d'être publié, et l'autre
-  rail n'est pas affecté. Un capteur absent au démarrage ne bloque pas le lancement.
+- **`percentage` à `NaN`.** La courbe de décharge d'un accu NiMH est trop plate (~1,2 V/cellule sur l'essentiel de la capacité) pour convertir une tension en pourcentage de charge honnête. Publier une estimation serait trompeur ; la surveillance se fait sur des seuils de tension.
+- **Seuils en volts absolus.** Ils ne sont jamais calculés à partir d'un nombre de cellules dans le code : le YAML porte la valeur finale, ce qui rend le module valable pour n'importe quelle chimie et n'importe quel nombre de cellules.
+- **Robustesse.** Une erreur de lecture I2C ne tue jamais le nœud : les échecs consécutifs sont comptés, un `BatteryState` en `POWER_SUPPLY_STATUS_UNKNOWN` continue d'être publié, et l'autre rail n'est pas affecté. Un capteur absent au démarrage ne bloque pas le lancement.
 
 ## Journalisation
 
-Silence en fonctionnement normal, aucun log périodique de mesure. `WARN` sur franchissement de
-seuil (dans les deux sens) et sur erreur I2C transitoire. `ERROR` unique quand un capteur
-devient illisible durablement, puis silence jusqu'au rétablissement.
+Silence en fonctionnement normal, aucun log périodique de mesure. `WARN` sur franchissement de seuil (dans les deux sens) et sur erreur I2C transitoire. `ERROR` unique quand un capteur devient illisible durablement, puis silence jusqu'au rétablissement.
 
 ## Lancement
 
-Le nœud tourne en production : il est démarré par `devastator.launch.yaml` du package
-`robot_devastator_bringup`, avec `config/surveillance_alimentation.yaml`.
+Le nœud tourne en production : il est démarré par `devastator.launch.yaml` du package `robot_devastator_bringup`, avec `config/surveillance_alimentation.yaml`.
 
 ```bash
 ros2 launch robot_devastator_bringup devastator.launch.yaml
 ```
 
-Pour une mise au point isolée (réglage de seuils, câblage, adresses I2C), le lancement de
-diagnostic ne démarre que ce nœud :
+Pour une mise au point isolée (réglage de seuils, câblage, adresses I2C), le lancement de diagnostic ne démarre que ce nœud :
 
 ```bash
 ros2 launch robot_devastator_bringup diag_surveillance_alimentation.launch.yaml
 ```
 
-Sur Devastator, les événements d'alerte publiés sur `/robot/evenement` sont prononcés par
-`annonces_audio` (`batterie_logique_faible`, `batterie_logique_critique`, `batterie_moteur_faible`,
-`batterie_moteur_critique` ; aucune variante silencieuse).
+Sur Devastator, les événements d'alerte publiés sur `/robot/evenement` sont prononcés par `annonces_audio` (`batterie_logique_faible`, `batterie_logique_critique`, `batterie_moteur_faible`, `batterie_moteur_critique` ; aucune variante silencieuse).
 
 ## Procédure de test CLI sur le Raspberry Pi 4
 
@@ -239,8 +180,7 @@ ros2 topic echo /robot/evenement
 
 ## Vérification de l'intégration permanente (Pi 4)
 
-Terminal SSH sourcé, robot allumé. Vérifie que le nœud démarre bien avec le robot complet et que
-l'alerte est prononcée.
+Terminal SSH sourcé, robot allumé. Vérifie que le nœud démarre bien avec le robot complet et que l'alerte est prononcée.
 
 ```bash
 # 1. Build
@@ -279,7 +219,6 @@ ros2 topic echo /robot/evenement
 
 ## Limites connues
 
-- Le nœud publie `power_supply_status = DISCHARGING` dès qu'une lecture réussit : il ne détecte
-  pas une charge (le robot ne se recharge pas en fonctionnement).
+- Le nœud publie `power_supply_status = DISCHARGING` dès qu'une lecture réussit : il ne détecte pas une charge (le robot ne se recharge pas en fonctionnement).
 - Pas d'estimation d'autonomie restante : hors périmètre pour une chimie NiMH.
 - Les capteurs sont sur le rail logique 3,3 V : aucune lecture n'est possible robot éteint.

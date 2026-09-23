@@ -1,15 +1,10 @@
 # robot_devastator_bringup
 
-`robot_devastator_bringup` est le point d'entrée unique pour lancer le robot Devastator. Il
-centralise les fichiers de lancement et les fichiers de paramètres, ce qui évite d'avoir plusieurs
-points d'entrée concurrents dans les packages applicatifs.
+`robot_devastator_bringup` est le point d'entrée unique pour lancer le robot Devastator. Il centralise les fichiers de lancement et les fichiers de paramètres, ce qui évite d'avoir plusieurs points d'entrée concurrents dans les packages applicatifs.
 
 ## Principe des fichiers de lancement
 
-Le lancement primaire `devastator.launch.yaml` démarre tous les nœuds de production. Seul
-`teleop.launch.yaml` fait exception au regroupement, car `teleop_clavier` capture les touches du
-terminal courant et ne peut pas tourner en arrière-plan. Tous les autres fichiers sont des
-lancements de diagnostic, préfixés `diag_`, jamais utilisés en exploitation normale.
+Le lancement primaire `devastator.launch.yaml` démarre tous les nœuds de production. Seul `teleop.launch.yaml` fait exception au regroupement, car `teleop_clavier` capture les touches du terminal courant et ne peut pas tourner en arrière-plan. Tous les autres fichiers sont des lancements de diagnostic, préfixés `diag_`, jamais utilisés en exploitation normale.
 
 Démarrer le robot avec téléopération tient en deux commandes, dans deux terminaux :
 
@@ -41,24 +36,11 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 | `teleop_clavier.yaml` | `teleop_clavier` | Vitesse initiale, bornes de vitesse, pas, période de publication |
 | `surveillance_alimentation.yaml` | `surveillance_alimentation` | Bus I2C, adresses INA260, seuils de tension par rail, porte de courant, temporisation, libellés d'événement |
 
-`rplidar_composition` (pilote RPLIDAR A1M8, paquet externe `rplidar_ros`) fait exception : ses deux
-seuls paramètres utiles à Devastator (`serial_port`, `frame_id`) sont déclarés directement dans
-`devastator.launch.yaml`, sans fichier YAML dédié — un seul nœud externe avec si peu de paramètres
-ne justifie pas un fichier séparé.
+`rplidar_composition` (pilote RPLIDAR A1M8, paquet externe `rplidar_ros`) fait exception : ses deux seuls paramètres utiles à Devastator (`serial_port`, `frame_id`) sont déclarés directement dans `devastator.launch.yaml`, sans fichier YAML dédié — un seul nœud externe avec si peu de paramètres ne justifie pas un fichier séparé.
 
-`gestion_lidar` (package `robot_devastator`) fait exception aussi : c'est un pont vers
-`rplidar_composition`, sans aucun paramètre ajustable — les noms de service qu'il utilise sont des
-invariants d'interface, pas des réglages. Il est donc déclaré sans `param:` dans
-`devastator.launch.yaml`.
+`gestion_lidar` (package `robot_devastator`) fait exception aussi : c'est un pont vers `rplidar_composition`, sans aucun paramètre ajustable — les noms de service qu'il utilise sont des invariants d'interface, pas des réglages. Il est donc déclaré sans `param:` dans `devastator.launch.yaml`.
 
-`robot_state_publisher` fait aussi exception : il est démarré par un sous-launch Python
-(`launch/robot_state_publisher.launch.py`, package `robot_devastator_bringup`) inclus par
-`devastator.launch.yaml` via une action `include`, plutôt que déclaré en `node:` direct. Ce n'est
-pas un deuxième point d'entrée de production — `devastator.launch.yaml` reste l'unique commande à
-lancer, ce sous-launch n'est qu'un détail d'implémentation. Raison : charger le xacro Devastator via
-`$(command 'xacro ...')` en YAML fait planter l'inférence de type de `launch_yaml` (`yaml.safe_load`
-interprète à tort la typographie française « mot : mot » des commentaires du xacro comme une clé de
-mapping). Voir `docs/decisions_et_lecons.md` pour le détail du piège.
+`robot_state_publisher` fait aussi exception : il est démarré par un sous-launch Python (`launch/robot_state_publisher.launch.py`, package `robot_devastator_bringup`) inclus par `devastator.launch.yaml` via une action `include`, plutôt que déclaré en `node:` direct. Ce n'est pas un deuxième point d'entrée de production — `devastator.launch.yaml` reste l'unique commande à lancer, ce sous-launch n'est qu'un détail d'implémentation. Raison : charger le xacro Devastator via `$(command 'xacro ...')` en YAML fait planter l'inférence de type de `launch_yaml` (`yaml.safe_load` interprète à tort la typographie française « mot : mot » des commentaires du xacro comme une clé de mapping). Voir `docs/decisions_et_lecons.md` pour le détail du piège.
 
 ## Lancement sur Raspberry Pi 4 via SSH
 
@@ -90,17 +72,11 @@ ros2 launch robot_devastator_bringup diag_interface_pico.launch.yaml
 
 ## Téléopération clavier
 
-`teleop.launch.yaml` se lance dans un terminal interactif, local ou SSH, en plus de
-`devastator.launch.yaml` : `teleop_clavier` capture les touches du terminal courant et ne peut
-pas tourner en arrière-plan. C'est l'exception documentée au principe du lancement primaire
-unique. Le launch charge `config/teleop_clavier.yaml`, ce qui évite la commande `ros2 run` longue
-et dépendante du répertoire courant.
+`teleop.launch.yaml` se lance dans un terminal interactif, local ou SSH, en plus de `devastator.launch.yaml` : `teleop_clavier` capture les touches du terminal courant et ne peut pas tourner en arrière-plan. C'est l'exception documentée au principe du lancement primaire unique. Le launch charge `config/teleop_clavier.yaml`, ce qui évite la commande `ros2 run` longue et dépendante du répertoire courant.
 
 ## Tâches VSCode (Legion-Linux)
 
-L'exécution des nœuds se fait toujours en terminal, sur le Raspberry Pi 4. Les tâches VSCode ne
-couvrent que le build, le nettoyage et la simulation Gazebo sans matériel. Elles sont disponibles
-via `Tasks: Run Task` (F1) avec le profil `ROS2` :
+L'exécution des nœuds se fait toujours en terminal, sur le Raspberry Pi 4. Les tâches VSCode ne couvrent que le build, le nettoyage et la simulation Gazebo sans matériel. Elles sont disponibles via `Tasks: Run Task` (F1) avec le profil `ROS2` :
 
 | Tâche | Équivalent CLI |
 |---|---|

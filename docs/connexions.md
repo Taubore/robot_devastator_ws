@@ -2,29 +2,20 @@
 
 ## A. Repères de numérotation
 
-Deux systèmes de numérotation distincts coexistent sur le Raspberry Pi 4 et ne doivent pas être
-confondus :
+Deux systèmes de numérotation distincts coexistent sur le Raspberry Pi 4 et ne doivent pas être confondus :
 
-- **GPIO (BCM)** — numéro logique du signal dans le SoC BCM2711. C'est l'identifiant utilisé dans
-  le code (bibliothèques GPIO, overlays de l'arbre de périphériques, paramètres ROS 2).
-  Exemple : `GPIO14`.
-- **Broche J8** — position physique de la broche sur l'embase 40 broches du Raspberry Pi 4,
-  désignée J8. C'est ce que l'on regarde en câblant. Exemple : broche 8.
+- **GPIO (BCM)** — numéro logique du signal dans le SoC BCM2711. C'est l'identifiant utilisé dans le code (bibliothèques GPIO, overlays de l'arbre de périphériques, paramètres ROS 2). Exemple : `GPIO14`.
+- **Broche J8** — position physique de la broche sur l'embase 40 broches du Raspberry Pi 4, désignée J8. C'est ce que l'on regarde en câblant. Exemple : broche 8.
 
-La correspondance entre les deux est figée sur le Raspberry Pi 4. La commande `pinout` sur le
-Raspberry Pi affiche la correspondance de référence complète.
+La correspondance entre les deux est figée sur le Raspberry Pi 4. La commande `pinout` sur le Raspberry Pi affiche la correspondance de référence complète.
 
-Le **Pico WH** utilise une convention différente : ses broches sont numérotées **GP0 à GP28**,
-sans numérotation BCM. Les fiches des composantes raccordées au Pico WH utilisent donc une seule
-colonne « GP » à la place des colonnes « GPIO (BCM) » et « Broche J8 ».
+Le **Pico WH** utilise une convention différente : ses broches sont numérotées **GP0 à GP28**, sans numérotation BCM. Les fiches des composantes raccordées au Pico WH utilisent donc une seule colonne « GP » à la place des colonnes « GPIO (BCM) » et « Broche J8 ».
 
-`GPIO18` à `GPIO21` du Raspberry Pi 4 sont réservés à l'interface I2S matérielle du BCM2711 :
-aucun autre usage ne doit leur être affecté.
+`GPIO18` à `GPIO21` du Raspberry Pi 4 sont réservés à l'interface I2S matérielle du BCM2711 : aucun autre usage ne doit leur être affecté.
 
 ### Lecture des fiches
 
-Chaque fiche décrit une composante : un en-tête (contrôleur hôte, interface ou bus, alimentation,
-mode de raccordement physique, statut) puis un tableau de connexions. Dans ce tableau :
+Chaque fiche décrit une composante : un en-tête (contrôleur hôte, interface ou bus, alimentation, mode de raccordement physique, statut) puis un tableau de connexions. Dans ce tableau :
 
 - **Broche composante** — repère de la broche tel qu'imprimé sur la composante externe ;
 - **Signal** — fonction de la ligne ;
@@ -41,16 +32,12 @@ Une correspondance incertaine est marquée **« à vérifier »** plutôt que de
 ### Liaison UART Raspberry Pi 4 ↔ Pico WH
 
 - **Contrôleurs** : Raspberry Pi 4 et Pico WH (liaison entre les deux contrôleurs)
-- **Interface** : UART0, série asynchrone, 115200 bd, commandes texte ASCII terminées par une fin
-  de ligne
-- **Alimentation** : sans objet (lignes de signal). Le Pico WH est alimenté séparément via VSYS
-  en fonctionnement autonome.
-- **Mode de raccordement** : câblage croisé, une résistance série de 1 kΩ sur chaque ligne de
-  données ; masse commune obligatoire.
+- **Interface** : UART0, série asynchrone, 115200 bd, commandes texte ASCII terminées par une fin de ligne
+- **Alimentation** : sans objet (lignes de signal). Le Pico WH est alimenté séparément via VSYS en fonctionnement autonome.
+- **Mode de raccordement** : câblage croisé, une résistance série de 1 kΩ sur chaque ligne de données ; masse commune obligatoire.
 - **Statut** : câblé, liaison validée sur `/dev/ttyS0`
 
-Cette fiche relie deux contrôleurs : le tableau conserve donc à la fois les colonnes du
-Raspberry Pi 4 (GPIO BCM, broche J8) et la colonne GP du Pico WH.
+Cette fiche relie deux contrôleurs : le tableau conserve donc à la fois les colonnes du Raspberry Pi 4 (GPIO BCM, broche J8) et la colonne GP du Pico WH.
 
 | Signal | GPIO (BCM) RPi4 | Broche J8 RPi4 | GP Pico | Couleur | Commentaire |
 | --- | --- | --- | --- | --- | --- |
@@ -58,18 +45,14 @@ Raspberry Pi 4 (GPIO BCM, broche J8) et la colonne GP du Pico WH.
 | Pico TX → RPi4 RX | GPIO15 (RXD) | 10 | GP0 | Vert | Via résistance série 1 kΩ. |
 | Masse commune | GND | GND | GND | Noir | Masse commune UART, obligatoire. |
 
-> Voir aussi [docs/decisions_et_lecons.md](decisions_et_lecons.md), section « Leçons apprises »,
-> pour les lignes sensibles au démarrage et les modes de travail USB / autonome.
+> Voir aussi [docs/decisions_et_lecons.md](decisions_et_lecons.md), section « Leçons apprises », pour les lignes sensibles au démarrage et les modes de travail USB / autonome.
 
 ### INA260 ×2 (capteurs d'alimentation)
 
 - **Contrôleur hôte** : Raspberry Pi 4
-- **Interface / bus** : I2C1 (`/dev/i2c-1`), lignes GPIO2/GPIO3, activé par `dtparam=i2c_arm=on`.
-  Deux capteurs Adafruit INA260 câblés en parallèle sur le bus, aux adresses `0x40` et `0x41`.
-- **Alimentation** : 3,3 V fournis par le rail logique (Pololu 4090), via le circuit
-  d'alimentation maison — pas depuis l'embase J8. Aucune lecture n'est possible robot éteint.
-- **Mode de raccordement** : chaque module est inséré en série (VIN+ / VIN-) sur le fil positif de
-  la batterie qu'il surveille. Résistances de tirage I2C présentes sur les modules Adafruit.
+- **Interface / bus** : I2C1 (`/dev/i2c-1`), lignes GPIO2/GPIO3, activé par `dtparam=i2c_arm=on`. Deux capteurs Adafruit INA260 câblés en parallèle sur le bus, aux adresses `0x40` et `0x41`.
+- **Alimentation** : 3,3 V fournis par le rail logique (Pololu 4090), via le circuit d'alimentation maison — pas depuis l'embase J8. Aucune lecture n'est possible robot éteint.
+- **Mode de raccordement** : chaque module est inséré en série (VIN+ / VIN-) sur le fil positif de la batterie qu'il surveille. Résistances de tirage I2C présentes sur les modules Adafruit.
 - **Statut** : câblé, intégré et validé ; lu en permanence par le nœud `surveillance_alimentation`.
 
 | Broche composante | Signal | GPIO (BCM) | Broche J8 | Couleur | Commentaire |
@@ -90,8 +73,7 @@ Adresses et rails surveillés :
 ### AUDIO_I2S (MAX98357 + PCM5102A)
 
 - **Contrôleur hôte** : Raspberry Pi 4
-- **Interface / bus** : I2S (PCM) matériel, activé par `dtparam=i2s=on` et
-  `dtoverlay=hifiberry-dac`. Détecté comme carte ALSA.
+- **Interface / bus** : I2S (PCM) matériel, activé par `dtparam=i2s=on` et `dtoverlay=hifiberry-dac`. Détecté comme carte ALSA.
 - **Alimentation** : 5 V fournis par le rail logique (Pololu 4091), via le circuit d'alimentation maison 
 - **Mode de raccordement** : sur breadboard avec condensateurs recommandés.
 - **Statut** : câblé, sortie audio fonctionnelle.
@@ -102,20 +84,17 @@ Adresses et rails surveillés :
 | LRC | I2S — sélection de voie (LRCLK) | GPIO19 | 35 | Bleu | GPIO réservé I2S (BCM2711) |
 | DIN | I2S — données vers l'ampli | GPIO21 | 40 | Jaune | GPIO réservé I2S (BCM2711) |
 
-Les connexions d'alimentation et de masse des modules audio ne sont pas documentées ici — à
-compléter.
+Les connexions d'alimentation et de masse des modules audio ne sont pas documentées ici — à compléter.
 
 **Notes**
 
-Activation logicielle : `dtparam=i2s=on`, `dtoverlay=hifiberry-dac`. Le HiFiBerry DAC est alors
-détecté comme carte ALSA. Test fonctionnel Devastator :
+Activation logicielle : `dtparam=i2s=on`, `dtoverlay=hifiberry-dac`. Le HiFiBerry DAC est alors détecté comme carte ALSA. Test fonctionnel Devastator :
 
 ```bash
 aplay -D default ~/.cache/robot_devastator/audio/demarrage_01.wav
 ```
 
-Diagnostic et décision au sujet du « clac » à la lecture : voir
-[docs/decisions_et_lecons.md](decisions_et_lecons.md), section « Leçons apprises ».
+Diagnostic et décision au sujet du « clac » à la lecture : voir [docs/decisions_et_lecons.md](decisions_et_lecons.md), section « Leçons apprises ».
 
 ### CLAV_X8 (mini clavier USB sans-fil Rii X8)
 
@@ -125,29 +104,19 @@ Diagnostic et décision au sujet du « clac » à la lecture : voir
 - **Mode de raccordement** : dongle USB
 - **Statut** : câblé (connecté)
 
-Aucun tableau de broches : la composante se connecte par un port USB standard du Raspberry Pi 4 ou 
-sur PC (Legion-Linux)
+Aucun tableau de broches : la composante se connecte par un port USB standard du Raspberry Pi 4 ou  sur PC (Legion-Linux)
 
 Usage : permet de saisir du texte directement pour une téléopération simple pour des tests manuels.
 
 ### LCD2 (Waveshare 2" ST7789V)
 
 - **Contrôleur hôte** : Raspberry Pi 4
-- **Interface / bus** : SPI0, sélection de puce CE0 (GPIO8). Affichage en écriture seule
-  (quatre fils : CS, DS, CLK, DIN).
-- **Alimentation** : 3,3 V depuis l'embase J8. Le module accepte 3,3 V ou 5 V, mais la tension
-  d'alimentation doit être cohérente avec la tension logique — logique en 3,3 V, donc
-  alimentation en 3,3 V. Consommation maximale annoncée : 46 mA sous 3,3 V.
-- **Mode de raccordement** : nappe Dupont femelle 8 fils fournie avec le module, branchée
-  directement sur les broches mâles du HAT du Raspberry Pi 4. Aucune breadboard.
-- **Statut** : câblé, intégré et validé ; démarré par `devastator.launch.yaml` (nœud
-  `affichage_lcd`). Brochage vérifié contre la documentation Waveshare et la table du
-  connecteur J8 ; couleurs relevées sur la nappe réelle.
+- **Interface / bus** : SPI0, sélection de puce CE0 (GPIO8). Affichage en écriture seule (quatre fils : CS, DS, CLK, DIN).
+- **Alimentation** : 3,3 V depuis l'embase J8. Le module accepte 3,3 V ou 5 V, mais la tension d'alimentation doit être cohérente avec la tension logique — logique en 3,3 V, donc alimentation en 3,3 V. Consommation maximale annoncée : 46 mA sous 3,3 V.
+- **Mode de raccordement** : nappe Dupont femelle 8 fils fournie avec le module, branchée directement sur les broches mâles du HAT du Raspberry Pi 4. Aucune breadboard.
+- **Statut** : câblé, intégré et validé ; démarré par `devastator.launch.yaml` (nœud `affichage_lcd`). Brochage vérifié contre la documentation Waveshare et la table du connecteur J8 ; couleurs relevées sur la nappe réelle.
 
-> **Avertissement couleurs** : sur cette nappe, l'alimentation est **violette** et la masse est
-> **blanche** — pas rouge et noire. Le blanc sert par ailleurs à des lignes de signal ailleurs
-> dans le robot. Vérifier la continuité violet ↔ VCC et blanc ↔ GND au multimètre avant la
-> première mise sous tension.
+> **Avertissement couleurs** : sur cette nappe, l'alimentation est **violette** et la masse est **blanche** — pas rouge et noire. Le blanc sert par ailleurs à des lignes de signal ailleurs dans le robot. Vérifier la continuité violet ↔ VCC et blanc ↔ GND au multimètre avant la première mise sous tension.
 
 | Broche composante | Signal | GPIO (BCM) | Broche J8 | Couleur | Commentaire |
 | --- | --- | --- | --- | --- | --- |
@@ -162,26 +131,20 @@ Usage : permet de saisir du texte directement pour une téléopération simple p
 
 **Notes**
 
-- Couleurs relevées sur la nappe fournie avec le module. La documentation Waveshare ne définit
-  aucun code couleur : seule la correspondance des repères de broches fait foi.
-- GPIO9 (MISO, J8-21) est réservé au bus SPI0 mais n'est pas raccordé : le ST7789V est en
-  écriture seule et la nappe ne comporte que huit fils.
-- Résolution 240 × 320, format de couleur RGB565, soit 153 600 octets pour un rafraîchissement
-  plein écran.
+- Couleurs relevées sur la nappe fournie avec le module. La documentation Waveshare ne définit aucun code couleur : seule la correspondance des repères de broches fait foi.
+- GPIO9 (MISO, J8-21) est réservé au bus SPI0 mais n'est pas raccordé : le ST7789V est en écriture seule et la nappe ne comporte que huit fils.
+- Résolution 240 × 320, format de couleur RGB565, soit 153 600 octets pour un rafraîchissement plein écran.
 - Le bus SPI doit être activé au niveau du système avant tout essai.
 
 ### MDD3A (Cytron MDD3A)
 
 - **Contrôleur hôte** : Pico WH
 - **Interface / bus** : GPIO — 4 lignes PWM, deux par moteur (entrées A et B)
-- **Alimentation** : entrées logiques pilotées par le Pico WH (3,3 V). Alimentation de puissance
-  des moteurs par le rail moteur (batterie Melasta 6 V) via un fusible 10 A fast.
-- **Mode de raccordement** : par l'entremise des borniers. La carte est fixée sur le chassis bas 
-du robot.
+- **Alimentation** : entrées logiques pilotées par le Pico WH (3,3 V). Alimentation de puissance des moteurs par le rail moteur (batterie Melasta 6 V) via un fusible 10 A fast.
+- **Mode de raccordement** : par l'entremise des borniers. La carte est fixée sur le chassis bas  du robot.
 - **Statut** : câblé, validé.
 
-Le Pico WH utilise la numérotation GP0–GP28 (pas de BCM) : la colonne « GP » remplace
-« GPIO (BCM) » et « Broche J8 ».
+Le Pico WH utilise la numérotation GP0–GP28 (pas de BCM) : la colonne « GP » remplace « GPIO (BCM) » et « Broche J8 ».
 
 | Broche composante | Signal | GP | Couleur | Commentaire |
 | --- | --- | --- | --- | --- |
@@ -197,9 +160,7 @@ Sorties M1/M2 vers les moteurs FIT0521 (voir fiches FIT0521_G / FIT0521_D).
 
 - **Contrôleur hôte** : Pico WH (signaux d'encodeur)
 - **Interface / bus** : GPIO — encodeur en quadrature, 2 voies (A et B)
-- **Alimentation** : encodeur en 3,3 V (fil bleu) et masse (fil noir), depuis le Pico WH. Le
-  bobinage moteur est piloté par le MDD3A (voir fiche MDD3A) ; cette fiche ne couvre que
-  l'encodeur.
+- **Alimentation** : encodeur en 3,3 V (fil bleu) et masse (fil noir), depuis le Pico WH. Le bobinage moteur est piloté par le MDD3A (voir fiche MDD3A) ; cette fiche ne couvre que l'encodeur.
 - **Mode de raccordement** : directement avec les fils fournis sur le moteur.
 - **Statut** : câblé, validé.
 
@@ -214,9 +175,7 @@ Sorties M1/M2 vers les moteurs FIT0521 (voir fiches FIT0521_G / FIT0521_D).
 
 - **Contrôleur hôte** : Pico WH (signaux d'encodeur)
 - **Interface / bus** : GPIO — encodeur en quadrature, 2 voies (A et B)
-- **Alimentation** : encodeur en 3,3 V (fil bleu) et masse (fil noir), depuis le Pico WH. Le
-  bobinage moteur est piloté par le MDD3A (voir fiche MDD3A) ; cette fiche ne couvre que
-  l'encodeur.
+- **Alimentation** : encodeur en 3,3 V (fil bleu) et masse (fil noir), depuis le Pico WH. Le bobinage moteur est piloté par le MDD3A (voir fiche MDD3A) ; cette fiche ne couvre que l'encodeur.
 - **Mode de raccordement** : directement avec les fils fournis sur le moteur.
 - **Statut** : câblé, validé.
 
@@ -257,8 +216,7 @@ Sorties M1/M2 vers les moteurs FIT0521 (voir fiches FIT0521_G / FIT0521_D).
 
 ## C. Table d'occupation des GPIO du Raspberry Pi 4
 
-Index inversé. Les fiches ci-dessus restent la source de vérité pour les couleurs, les
-commentaires et les broches des composantes.
+Index inversé. Les fiches ci-dessus restent la source de vérité pour les couleurs, les commentaires et les broches des composantes.
 
 | GPIO (BCM) | Composante |
 | --- | --- |

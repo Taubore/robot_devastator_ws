@@ -2,14 +2,11 @@
 
 ## Rôle de `interface_pico`
 
-`interface_pico` est le pont entre ROS 2 sur le Raspberry Pi 4 et le firmware du Pico WH par
-UART texte. Il expose des topics et services ROS 2, valide les plages simples, envoie les commandes
-ASCII au Pico, lit les lignes UART reçues et republie les informations utiles dans ROS 2.
+`interface_pico` est le pont entre ROS 2 sur le Raspberry Pi 4 et le firmware du Pico WH par UART texte. Il expose des topics et services ROS 2, valide les plages simples, envoie les commandes ASCII au Pico, lit les lignes UART reçues et republie les informations utiles dans ROS 2.
 
 Il traduit dans les deux sens : commandes ROS 2 vers commandes UART, et réponses/événements UART vers topics ou réponses de services ROS 2.
 
-Le nœud ne décide pas du comportement du robot. Il ne fait pas d'évitement d'obstacle, ne calcule
-pas d'odométrie et ne corrige pas le sens des moteurs en logiciel.
+Le nœud ne décide pas du comportement du robot. Il ne fait pas d'évitement d'obstacle, ne calcule pas d'odométrie et ne corrige pas le sens des moteurs en logiciel.
 
 ## Responsabilités
 
@@ -57,29 +54,21 @@ Les commandes sont du texte ASCII terminé par un saut de ligne.
 | Lecture encodeurs | `ENC` | `OK ENC <gauche_ticks> <droite_ticks>` |
 | Remise à zéro encodeurs | `RESET_ENC` | `OK RESET_ENC` |
 
-`STATUS` est supporté par la couche de transport et par le décodeur de réponses avec le format
-`OK STATUS <gauche> <droite> <actif>`, mais le nœud `interface_pico` actuel ne l'expose pas par
-topic, service ou timer.
+`STATUS` est supporté par la couche de transport et par le décodeur de réponses avec le format `OK STATUS <gauche> <droite> <actif>`, mais le nœud `interface_pico` actuel ne l'expose pas par topic, service ou timer.
 
 ## Sécurité et erreurs connues
 
 - Les consignes moteurs ROS 2 valides sont limitées à `-1000` à `1000`.
 - Une consigne `0, 0` représente l'arrêt.
-- Dans le lancement normal, `arbitre_commande_moteurs` est le seul producteur de
-  `/pico/commande_moteurs`.
-- La téléopération clavier publie sur `/robot/commande_moteurs/manuelle` et l'autonomie simple sur
-  `/robot/commande_moteurs/autonomie`.
+- Dans le lancement normal, `arbitre_commande_moteurs` est le seul producteur de `/pico/commande_moteurs`.
+- La téléopération clavier publie sur `/robot/commande_moteurs/manuelle` et l'autonomie simple sur `/robot/commande_moteurs/autonomie`.
 - `interface_pico` répète temporairement la dernière consigne moteur avec `periode_maintien_s`.
-- Si aucune nouvelle consigne moteur ROS 2 n'arrive avant
-  `delai_expiration_consigne_moteurs_s`, le nœud mémorise et envoie un arrêt.
-- Au démarrage ou après reconnexion UART, `interface_pico` envoie `STOP_MOT`, mémorise l'arrêt et
-  attend une nouvelle consigne ROS avant de relancer un mouvement.
-- Après une erreur UART, le port est fermé, la consigne mémorisée devient `0, 0` et les tentatives
-  suivantes essaient de rouvrir la liaison.
+- Si aucune nouvelle consigne moteur ROS 2 n'arrive avant `delai_expiration_consigne_moteurs_s`, le nœud mémorise et envoie un arrêt.
+- Au démarrage ou après reconnexion UART, `interface_pico` envoie `STOP_MOT`, mémorise l'arrêt et attend une nouvelle consigne ROS avant de relancer un mouvement.
+- Après une erreur UART, le port est fermé, la consigne mémorisée devient `0, 0` et les tentatives suivantes essaient de rouvrir la liaison.
 - À la destruction du nœud, `interface_pico` tente d'envoyer `STOP_MOT` avant de fermer le port.
 - Les lignes `READY` et `AVERT TIMEOUT` du Pico sont publiées sur `/pico/etat` et journalisées.
-- Le Pico applique aussi un arrêt automatique si aucune commande UART valide n'arrive depuis plus
-  de `500 ms`, selon la documentation du dépôt.
+- Le Pico applique aussi un arrêt automatique si aucune commande UART valide n'arrive depuis plus de `500 ms`, selon la documentation du dépôt.
 
 ## Paramètres importants
 
@@ -101,25 +90,19 @@ Valeurs actives avec `robot_devastator_bringup/config/interface_pico.yaml` :
 - Aucune action ROS 2 n'est fournie par `interface_pico`.
 - Aucune odométrie n'est calculée à partir des encodeurs.
 - `STATUS` n'a pas de point d'entrée ROS 2 actuellement.
-- Les réponses `SET_MOT`, `SET_SERVO` et `STATUS` sont validées et publiées sur `/pico/etat`,
-  mais elles ne produisent pas de topic spécialisé.
+- Les réponses `SET_MOT`, `SET_SERVO` et `STATUS` sont validées et publiées sur `/pico/etat`, mais elles ne produisent pas de topic spécialisé.
 - Le nœud ne publie pas d'état de connexion UART structuré.
-- Le balayage de tourelle et l'évitement d'obstacle appartiennent à `robot_devastator`, pas à
-  `interface_pico`.
+- Le balayage de tourelle et l'évitement d'obstacle appartiennent à `robot_devastator`, pas à `interface_pico`.
 
 ## Validation CLI courte sur Raspberry Pi 4
 
 Validation Phase 3A, faite sur Raspberry Pi 4 via SSH, roues dans le vide :
 
-- une publication unique sur `/pico/commande_moteurs` provoque un mouvement bref, puis l'arrêt
-  automatique par expiration de consigne ;
+- une publication unique sur `/pico/commande_moteurs` provoque un mouvement bref, puis l'arrêt automatique par expiration de consigne ;
 - une publication continue à `10 Hz` maintient le mouvement ;
 - `Ctrl+C` du publisher provoque l'arrêt automatique après expiration ;
-- `/pico/stop_moteurs` arrête les moteurs, mais un publisher actif qui continue à publier une
-  consigne non nulle les fait repartir ;
-- conclusion opérationnelle : un arrêt fiable de téléopération doit aussi arrêter ou neutraliser
-  la source de commande active. Le nœud `arbitre_commande_moteurs` répond à ce besoin pour le
-  lancement normal.
+- `/pico/stop_moteurs` arrête les moteurs, mais un publisher actif qui continue à publier une consigne non nulle les fait repartir ;
+- conclusion opérationnelle : un arrêt fiable de téléopération doit aussi arrêter ou neutraliser la source de commande active. Le nœud `arbitre_commande_moteurs` répond à ce besoin pour le lancement normal.
 
 Préparer le terminal :
 
@@ -152,21 +135,16 @@ ros2 service call /pico/stop_moteurs std_srvs/srv/Trigger
 ## Critères d'acceptation observables
 
 - `/pico/ping` retourne `success=True` avec confirmation `OK PING`.
-- `/pico/etat` affiche les lignes UART reçues, par exemple `OK PING`, `OK STOP_MOT`, `READY` ou
-  `AVERT TIMEOUT`.
+- `/pico/etat` affiche les lignes UART reçues, par exemple `OK PING`, `OK STOP_MOT`, `READY` ou `AVERT TIMEOUT`.
 - `/pico/distance_ultrason_mm` publie des entiers en millimètres lorsque le sonar répond.
 - `/pico/encodeurs` publie `gauche_ticks` et `droite_ticks`.
 - `/pico/reset_encodeurs` retourne `success=True` avec confirmation `OK RESET_ENC`.
-- La commande tourelle à `95` est acceptée et confirmée par une ligne `OK SET_SERVO 95` sur
-  `/pico/etat`.
-- L'essai moteur borné fait tourner brièvement les roues dans le vide, puis publie un arrêt
-  explicite.
+- La commande tourelle à `95` est acceptée et confirmée par une ligne `OK SET_SERVO 95` sur `/pico/etat`.
+- L'essai moteur borné fait tourner brièvement les roues dans le vide, puis publie un arrêt explicite.
 - Après arrêt ou expiration de consigne, les moteurs cessent de tourner.
 
 ## Points ouverts
 
-- Le dépôt ROS 2 documente le timeout Pico de `500 ms`, mais l'implémentation exacte est dans le
-  firmware Pico, hors de ce workspace.
-- Le sens exact d'évolution des ticks encodeurs dépend du câblage et du firmware Pico ; le README
-  indique qu'ils doivent augmenter en marche avant et diminuer en marche arrière.
+- Le dépôt ROS 2 documente le timeout Pico de `500 ms`, mais l'implémentation exacte est dans le firmware Pico, hors de ce workspace.
+- Le sens exact d'évolution des ticks encodeurs dépend du câblage et du firmware Pico ; le README indique qu'ils doivent augmenter en marche avant et diminuer en marche arrière.
 - Aucune procédure automatisée ne valide encore ce contrat sans matériel.

@@ -1,17 +1,13 @@
 # lcd_st7789v
 
-Package **sans dépendance ROS 2** regroupant les deux couches basses de l'affichage
-de Devastator, sur écran LCD Waveshare 2 pouces (contrôleur ST7789V, 240x320,
-RGB565, SPI, écriture seule) :
+Package **sans dépendance ROS 2** regroupant les deux couches basses de l'affichage de Devastator, sur écran LCD Waveshare 2 pouces (contrôleur ST7789V, 240x320, RGB565, SPI, écriture seule) :
 
 | Module | Rôle |
 |---|---|
 | `pilote_st7789v` | Pilote bas niveau. Transmet à l'écran des images [Pillow](https://pillow.readthedocs.io/) déjà construites. Ne dessine rien lui-même. |
 | `rendu_texte` | Grille de caractères façon terminal, avec rendu différentiel. Bâti au-dessus du pilote. |
 
-Deux des trois niveaux de l'empilement d'affichage : le pilote, le rendu texte, puis
-un futur package ROS 2. Les deux modules sont réutilisables tels quels sur un autre
-projet.
+Deux des trois niveaux de l'empilement d'affichage : le pilote, le rendu texte, puis un futur package ROS 2. Les deux modules sont réutilisables tels quels sur un autre projet.
 
 ## Pilote : interface publique
 
@@ -26,8 +22,7 @@ Classe `EcranSt7789v` (`lcd_st7789v.pilote_st7789v`) :
 | `fermer()` | Libère le bus SPI et les broches GPIO. Idempotent, tolérant à une construction partiellement échouée. |
 | `with EcranSt7789v(...) as ecran:` | Gestionnaire de contexte : appelle `fermer()` automatiquement, y compris en cas d'exception. **À préférer** à un appel manuel de `fermer()`. |
 
-Paramètres du constructeur (valeurs par défaut = câblage validé sur Devastator, voir
-`docs/connexions.md` du dépôt principal) :
+Paramètres du constructeur (valeurs par défaut = câblage validé sur Devastator, voir `docs/connexions.md` du dépôt principal) :
 
 | Paramètre | Défaut | Rôle |
 |---|---|---|
@@ -44,19 +39,11 @@ Paramètres du constructeur (valeurs par défaut = câblage validé sur Devastat
 
 ## Rendu texte : interface publique
 
-Classe `GrilleTexte` (`lcd_st7789v.rendu_texte`) : simule un terminal texte sur
-l'écran. Une grille de cellules de taille fixe, chacune portant un caractère, une
-couleur de texte et une couleur de fond indépendantes.
+Classe `GrilleTexte` (`lcd_st7789v.rendu_texte`) : simule un terminal texte sur l'écran. Une grille de cellules de taille fixe, chacune portant un caractère, une couleur de texte et une couleur de fond indépendantes.
 
-Le module conserve deux états en mémoire, l'état **voulu** et l'état **affiché**, et
-ne retransmet que les cellules dont le contenu logique a changé — une cellule
-modifiée, un appel à `afficher_image_region`. La comparaison porte sur le triplet
-(caractère, couleur de texte, couleur de fond), jamais sur les pixels. Les cellules
-adjacentes modifiées ne sont pas regroupées en un seul envoi.
+Le module conserve deux états en mémoire, l'état **voulu** et l'état **affiché**, et ne retransmet que les cellules dont le contenu logique a changé — une cellule modifiée, un appel à `afficher_image_region`. La comparaison porte sur le triplet (caractère, couleur de texte, couleur de fond), jamais sur les pixels. Les cellules adjacentes modifiées ne sont pas regroupées en un seul envoi.
 
-Le module ne connaît rien à ROS 2, aux topics ni au sens de ce qu'il affiche. Il ne
-construit pas le pilote : il en reçoit une instance déjà initialisée, et n'utilise
-que `largeur`, `hauteur`, `afficher_image_region` et `afficher_image_pleine`.
+Le module ne connaît rien à ROS 2, aux topics ni au sens de ce qu'il affiche. Il ne construit pas le pilote : il en reçoit une instance déjà initialisée, et n'utilise que `largeur`, `hauteur`, `afficher_image_region` et `afficher_image_pleine`.
 
 ### Résolution de la grille
 
@@ -72,16 +59,9 @@ Valeurs **mesurées** avec Pillow, pas choisies à l'avance :
 | **Grille sur 320 x 240** | **32 colonnes x 12 lignes** (384 cellules) |
 | Pixels inutilisés | 0 en largeur, 12 px en bas (12 x 19 = 228 sur 240) |
 
-La cible indicative était d'environ 26 colonnes sur 15 lignes, ce qui supposait une
-cellule au rapport largeur/hauteur d'environ 0.77, propre aux polices bitmap de
-terminal (VGA 8x16). DejaVu Sans Mono est bien plus étroite — rapport 0.51, avance
-de 0.602 em pour une hauteur de ligne de 1.164 em — et **aucune taille entière ne
-donne 26 x 15 sans déformer les glyphes**. Autres tailles mesurées, si le besoin
-change : 13 points donnent 40 x 14 (cellule 8 x 17), 19 points donnent 26 x 10
-(cellule 12 x 23).
+La cible indicative était d'environ 26 colonnes sur 15 lignes, ce qui supposait une cellule au rapport largeur/hauteur d'environ 0.77, propre aux polices bitmap de terminal (VGA 8x16). DejaVu Sans Mono est bien plus étroite — rapport 0.51, avance de 0.602 em pour une hauteur de ligne de 1.164 em — et **aucune taille entière ne donne 26 x 15 sans déformer les glyphes**. Autres tailles mesurées, si le besoin change : 13 points donnent 40 x 14 (cellule 8 x 17), 19 points donnent 26 x 10 (cellule 12 x 23).
 
-La bande de 12 px sous la dernière ligne n'appartient à aucune cellule : seul
-`effacer()` la repeint.
+La bande de 12 px sous la dernière ligne n'appartient à aucune cellule : seul `effacer()` la repeint.
 
 ### Méthodes
 
@@ -94,29 +74,21 @@ La bande de 12 px sous la dernière ligne n'appartient à aucune cellule : seul
 | `effacer(couleur_fond=None)` | **Efface immédiatement tout l'écran** en un seul plein écran, et synchronise les deux états. |
 | `rendre()` | Transmet les seules cellules changées. Retourne le nombre de cellules redessinées. |
 
-Attributs publics calculés à la construction : `colonnes`, `lignes`,
-`largeur_cellule`, `hauteur_cellule`.
+Attributs publics calculés à la construction : `colonnes`, `lignes`, `largeur_cellule`, `hauteur_cellule`.
 
-Couleurs prédéfinies exportées par le module (triplets RVB) : `NOIR`, `BLANC`,
-`ROUGE`, `VERT`, `BLEU`, `JAUNE`, `CYAN`, `MAGENTA`, `GRIS`.
+Couleurs prédéfinies exportées par le module (triplets RVB) : `NOIR`, `BLANC`, `ROUGE`, `VERT`, `BLEU`, `JAUNE`, `CYAN`, `MAGENTA`, `GRIS`.
 
 ### Bornes : erreur ou troncature
 
 La distinction est volontaire :
 
-- **position de départ hors grille** → `IndexError`. C'est une erreur de
-  programmation, elle doit être bruyante ;
-- **chaîne trop longue** → tronquée à la dernière colonne, sans exception. C'est un
-  cas courant, signalé par la valeur de retour de `ecrire_texte`.
+- **position de départ hors grille** → `IndexError`. C'est une erreur de programmation, elle doit être bruyante ;
+- **chaîne trop longue** → tronquée à la dernière colonne, sans exception. C'est un cas courant, signalé par la valeur de retour de `ecrire_texte`.
 
 ### Deux exceptions au principe « seul `rendre()` transmet à l'écran »
 
-1. `effacer()` peint immédiatement l'écran entier. Un effacement cellule par cellule
-   coûterait 384 appels au pilote au lieu d'un seul, et ne pourrait pas nettoyer la
-   bande résiduelle du bas.
-2. **Appeler `effacer()` en premier**, avant le premier `rendre()`. À l'allumage, le
-   contenu de l'écran est inconnu : l'état affiché démarre donc à « inconnu » partout
-   et un premier `rendre()` enverrait les 384 cellules vides une par une.
+1. `effacer()` peint immédiatement l'écran entier. Un effacement cellule par cellule coûterait 384 appels au pilote au lieu d'un seul, et ne pourrait pas nettoyer la bande résiduelle du bas.
+2. **Appeler `effacer()` en premier**, avant le premier `rendre()`. À l'allumage, le contenu de l'écran est inconnu : l'état affiché démarre donc à « inconnu » partout et un premier `rendre()` enverrait les 384 cellules vides une par une.
 
 ### Exemple minimal
 
@@ -138,26 +110,15 @@ with EcranSt7789v() as ecran:
 
 ### Limites connues
 
-- Aucun regroupement des cellules adjacentes modifiées : chaque cellule est un appel
-  au pilote. À revoir seulement si un besoin réel apparaît.
-- Aucun cache des glyphes déjà tracés : chaque cellule redessinée reconstruit son
-  image. Le coût dominant est le SPI, pas Pillow.
-- Pas de curseur, de défilement ni de retour à la ligne automatique : ce module gère
-  une grille, pas un flux de texte.
+- Aucun regroupement des cellules adjacentes modifiées : chaque cellule est un appel au pilote. À revoir seulement si un besoin réel apparaît.
+- Aucun cache des glyphes déjà tracés : chaque cellule redessinée reconstruit son image. Le coût dominant est le SPI, pas Pillow.
+- Pas de curseur, de défilement ni de retour à la ligne automatique : ce module gère une grille, pas un flux de texte.
 
 ## Dépendances
 
-Bibliothèques imposées par le projet (voir `AGENTS.md`, section GPIO et SPI) :
-`spidev` pour le bus SPI, `lgpio` pour les broches GPIO (y compris le PWM logiciel
-du rétroéclairage), Pillow et `numpy` pour les images. Aucune autre bibliothèque
-d'accès GPIO (`gpiozero`, `RPi.GPIO`, `pigpio`, `bcm2835`, `wiringPi`) n'est utilisée
-ni ne doit être ajoutée : les mélanger provoque des conflits d'accès aux broches.
+Bibliothèques imposées par le projet (voir `AGENTS.md`, section GPIO et SPI) : `spidev` pour le bus SPI, `lgpio` pour les broches GPIO (y compris le PWM logiciel du rétroéclairage), Pillow et `numpy` pour les images. Aucune autre bibliothèque d'accès GPIO (`gpiozero`, `RPi.GPIO`, `pigpio`, `bcm2835`, `wiringPi`) n'est utilisée ni ne doit être ajoutée : les mélanger provoque des conflits d'accès aux broches.
 
-Le module `rendu_texte` n'ajoute aucune bibliothèque : il n'utilise que Pillow, déjà
-requis par le pilote. Il exige en revanche la **police DejaVu Sans Mono**, livrée par
-le paquet `fonts-dejavu-core`, présent d'office sur Ubuntu 24.04 (poste comme
-Raspberry Pi). Son absence est détectée à la construction de `GrilleTexte`, avec un
-message nommant le paquet à installer.
+Le module `rendu_texte` n'ajoute aucune bibliothèque : il n'utilise que Pillow, déjà requis par le pilote. Il exige en revanche la **police DejaVu Sans Mono**, livrée par le paquet `fonts-dejavu-core`, présent d'office sur Ubuntu 24.04 (poste comme Raspberry Pi). Son absence est détectée à la construction de `GrilleTexte`, avec un message nommant le paquet à installer.
 
 ```bash
 sudo apt install python3-spidev python3-lgpio python3-pil python3-numpy
@@ -166,35 +127,22 @@ sudo apt install fonts-dejavu-core
 
 ## Permissions requises
 
-Aucune exécution en root. L'utilisateur qui lance le pilote doit appartenir aux
-groupes `gpio` et `spi` :
+Aucune exécution en root. L'utilisateur qui lance le pilote doit appartenir aux groupes `gpio` et `spi` :
 
 ```bash
 sudo usermod -aG gpio,spi $USER
 ```
 
-Ouvrir une nouvelle session (déconnexion/reconnexion SSH) pour que l'appartenance
-aux groupes soit prise en compte.
+Ouvrir une nouvelle session (déconnexion/reconnexion SSH) pour que l'appartenance aux groupes soit prise en compte.
 
 ## Essais directs sur le Raspberry Pi 4
 
-Deux scripts autonomes à la racine de ce package, sans dépendance ROS 2 et sans
-`colcon build` requis :
+Deux scripts autonomes à la racine de ce package, sans dépendance ROS 2 et sans `colcon build` requis :
 
-- `essai_pilote.py` : initialise l'écran, affiche une mire de couleurs plein écran en
-  mesurant la durée du rafraîchissement, puis affiche une petite région et mesure
-  également sa durée.
-- `essai_rendu_texte.py` : construit le pilote et la grille, affiche une page d'état
-  en plusieurs couleurs, modifie **une seule cellule** en mesurant le coût de ce
-  rendu partiel, puis efface et redessine la grille complète en mesurant ce coût
-  aussi. Il mesure enfin le pire cas (384 cellules changées), à comparer au plein
-  écran du pilote : c'est ce rapport qui dit si le coût est dominé par le nombre
-  d'appels ou par le volume de pixels.
+- `essai_pilote.py` : initialise l'écran, affiche une mire de couleurs plein écran en mesurant la durée du rafraîchissement, puis affiche une petite région et mesure également sa durée.
+- `essai_rendu_texte.py` : construit le pilote et la grille, affiche une page d'état en plusieurs couleurs, modifie **une seule cellule** en mesurant le coût de ce rendu partiel, puis efface et redessine la grille complète en mesurant ce coût aussi. Il mesure enfin le pire cas (384 cellules changées), à comparer au plein écran du pilote : c'est ce rapport qui dit si le coût est dominé par le nombre d'appels ou par le volume de pixels.
 
-**Règle d'exploitation impérative avant tout essai direct** : `lgpio` verrouille les
-broches GPIO au niveau noyau. Si un lancement permanent du robot (ou tout autre
-processus) détient déjà l'écran, l'ouverture des broches par ce script échoue.
-Arrêter ce lancement avant l'essai :
+**Règle d'exploitation impérative avant tout essai direct** : `lgpio` verrouille les broches GPIO au niveau noyau. Si un lancement permanent du robot (ou tout autre processus) détient déjà l'écran, l'ouverture des broches par ce script échoue. Arrêter ce lancement avant l'essai :
 
 ```bash
 # Si le robot tourne en lancement permanent (autre terminal), l'arrêter (Ctrl+C),
@@ -210,34 +158,15 @@ python3 essai_pilote.py
 python3 essai_rendu_texte.py
 ```
 
-Les deux scripts signalent explicitement les causes probables des échecs courants
-(bibliothèque ou police manquante, permission refusée, broche déjà retenue par un
-autre processus).
+Les deux scripts signalent explicitement les causes probables des échecs courants (bibliothèque ou police manquante, permission refusée, broche déjà retenue par un autre processus).
 
 ## Origine du code
 
-La séquence d'initialisation du contrôleur ST7789V (réglages gamma compris), les
-codes de commande, la logique de définition de la fenêtre d'adressage, la formule de
-conversion RGB565 et la séquence de réinitialisation matérielle sont repris du code
-de démonstration Waveshare (dépôt `LCD_Module_RPI_code`, licence MIT,
-Copyright 2022 Waveshare Electronics) : ce sont des faits matériels du contrôleur et
-du panneau, déjà validés sur le robot physique (après adaptation des broches RST et
-BL au câblage réel). La structure de classe, la gestion des ressources, les
-identifiants et l'interface publique sont propres à ce projet et n'ont pas
-d'équivalent dans le code Waveshare, qui dépend de `gpiozero` (proscrit ici).
+La séquence d'initialisation du contrôleur ST7789V (réglages gamma compris), les codes de commande, la logique de définition de la fenêtre d'adressage, la formule de conversion RGB565 et la séquence de réinitialisation matérielle sont repris du code de démonstration Waveshare (dépôt `LCD_Module_RPI_code`, licence MIT, Copyright 2022 Waveshare Electronics) : ce sont des faits matériels du contrôleur et du panneau, déjà validés sur le robot physique (après adaptation des broches RST et BL au câblage réel). La structure de classe, la gestion des ressources, les identifiants et l'interface publique sont propres à ce projet et n'ont pas d'équivalent dans le code Waveshare, qui dépend de `gpiozero` (proscrit ici).
 
-Un seul écart volontaire au code Waveshare, dans `_definir_fenetre` : la référence
-décrémente uniquement l'octet bas de l'adresse de fin et laisse l'octet haut porter
-la valeur non décrémentée. L'asymétrie est sans effet tant que la fin de fenêtre
-n'est pas un multiple de 256, ce qui n'arrive jamais en plein écran (320 ou 240) ;
-elle transmet en revanche 511 au lieu de 255 pour une fenêtre se terminant
-exactement à 256. Le pilote convertit donc la borne exclusive en adresse inclusive
-avant de séparer les deux octets.
+Un seul écart volontaire au code Waveshare, dans `_definir_fenetre` : la référence décrémente uniquement l'octet bas de l'adresse de fin et laisse l'octet haut porter la valeur non décrémentée. L'asymétrie est sans effet tant que la fin de fenêtre n'est pas un multiple de 256, ce qui n'arrive jamais en plein écran (320 ou 240) ; elle transmet en revanche 511 au lieu de 255 pour une fenêtre se terminant exactement à 256. Le pilote convertit donc la borne exclusive en adresse inclusive avant de séparer les deux octets.
 
 ## Limites connues du pilote
 
-- Orientation `paysage=True` validée sur le matériel réel avec MADCTL = 0xA0
-  (voir la constante `_MADCTL_PAYSAGE`). La valeur 0x70 reprise du code Waveshare
-  produisait une image inversée à 180° ; jamais testée par Waveshare lui-même avec
-  du contenu asymétrique.
+- Orientation `paysage=True` validée sur le matériel réel avec MADCTL = 0xA0 (voir la constante `_MADCTL_PAYSAGE`). La valeur 0x70 reprise du code Waveshare produisait une image inversée à 180° ; jamais testée par Waveshare lui-même avec du contenu asymétrique.
 - Écriture seule : aucune lecture d'état du panneau (MISO non câblé).

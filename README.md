@@ -2,10 +2,7 @@
 
 ## Objectif du projet
 
-Devastator est un robot mobile utilisé comme plateforme d'apprentissage pour ROS 2,
-l'électronique, Python et les systèmes embarqués. Le workspace contient la logique ROS 2
-exécutée sur Raspberry Pi 4, l'interface avec un Raspberry Pi Pico WH et les interfaces
-communes du projet.
+Devastator est un robot mobile utilisé comme plateforme d'apprentissage pour ROS 2, l'électronique, Python et les systèmes embarqués. Le workspace contient la logique ROS 2 exécutée sur Raspberry Pi 4, l'interface avec un Raspberry Pi Pico WH et les interfaces communes du projet.
 
 ## Environnement
 
@@ -33,8 +30,7 @@ communes du projet.
 
 ## Faire fonctionner le robot
 
-Le robot réel s'exécute entièrement sur le Raspberry Pi 4, en terminal, via SSH. VSCode sert au
-développement et au débogage, jamais à lancer le robot.
+Le robot réel s'exécute entièrement sur le Raspberry Pi 4, en terminal, via SSH. VSCode sert au développement et au débogage, jamais à lancer le robot.
 
 ### 1. Mettre à jour et compiler
 
@@ -45,9 +41,7 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-`colcon build --symlink-install` compile tout le workspace en quelques secondes. Refaire
-`source install/setup.bash` dans chaque nouveau terminal. L'underlay ROS 2
-(`source /opt/ros/jazzy/setup.bash`) est supposé déjà chargé depuis `~/.bashrc`.
+`colcon build --symlink-install` compile tout le workspace en quelques secondes. Refaire `source install/setup.bash` dans chaque nouveau terminal. L'underlay ROS 2 (`source /opt/ros/jazzy/setup.bash`) est supposé déjà chargé depuis `~/.bashrc`.
 
 ### 2. Lancer le robot et le conduire
 
@@ -61,12 +55,7 @@ ros2 launch robot_devastator_bringup devastator.launch.yaml
 ros2 launch robot_devastator_bringup teleop.launch.yaml
 ```
 
-`devastator.launch.yaml` démarre la surveillance d'alimentation, l'interface Pico, l'odométrie,
-l'arbitre moteur, l'affichage LCD, l'autonomie (en attente), les annonces audio et le pilote
-RPLIDAR (`/scan`), en mode manuel.
-`teleop.launch.yaml` se lance à part parce que
-`teleop_clavier` lit les touches du terminal courant : c'est la seule exception au lancement
-unique.
+`devastator.launch.yaml` démarre la surveillance d'alimentation, l'interface Pico, l'odométrie, l'arbitre moteur, l'affichage LCD, l'autonomie (en attente), les annonces audio et le pilote RPLIDAR (`/scan`), en mode manuel. `teleop.launch.yaml` se lance à part parce que `teleop_clavier` lit les touches du terminal courant : c'est la seule exception au lancement unique.
 
 Touches (clavier QWERTY, terminal 2 au premier plan) :
 
@@ -80,49 +69,26 @@ Touches (clavier QWERTY, terminal 2 au premier plan) :
 | `p` | page suivante sur l'affichage (`/affichage/page_suivante`) |
 | `x` | quitter (publie un arrêt moteur) |
 
-Garder les roues dans le vide au premier essai. La vitesse par défaut est `300`, bornée de `300` à
-`1000` (`config/teleop_clavier.yaml`). En mode autonomie, les touches de mouvement sont ignorées ;
-`m`, `=`, `-` et `p` restent actives. `Ctrl+C` dans un terminal publie aussi un arrêt moteur.
+Garder les roues dans le vide au premier essai. La vitesse par défaut est `300`, bornée de `300` à `1000` (`config/teleop_clavier.yaml`). En mode autonomie, les touches de mouvement sont ignorées ; `m`, `=`, `-` et `p` restent actives. `Ctrl+C` dans un terminal publie aussi un arrêt moteur.
 
 ### 3. Fin de séance (quotidien)
 
-- **Débrancher le connecteur XT30 de la batterie moteur (6 V Melasta).** Le MDD3A consomme
-  ~32,5 mA en continu tant que ce connecteur est branché, même moteurs à l'arrêt : le pack de
-  2000 mAh est à plat en ~2,5 jours, avec risque d'inversion de cellule sur un pack NiMH 5S
-  (dommage permanent).
-- La batterie logique (7,2 V Tenergy) n'a **pas** besoin d'être débranchée chaque jour (veille des
-  régulateurs Pololu ~0,2 mA). La débrancher seulement en cas d'inactivité de plusieurs jours.
+- **Débrancher le connecteur XT30 de la batterie moteur (6 V Melasta).** Le MDD3A consomme ~32,5 mA en continu tant que ce connecteur est branché, même moteurs à l'arrêt : le pack de 2000 mAh est à plat en ~2,5 jours, avec risque d'inversion de cellule sur un pack NiMH 5S (dommage permanent).
+- La batterie logique (7,2 V Tenergy) n'a **pas** besoin d'être débranchée chaque jour (veille des régulateurs Pololu ~0,2 mA). La débrancher seulement en cas d'inactivité de plusieurs jours.
 
 Justification chiffrée de ces consignes : section « Consommation du robot » ci-dessous.
 
 ## Comportement du robot
 
-- **Modes de conduite.** `teleop_clavier` publie le mode (`manuel` ou `autonomie`) ; l'arbitre
-  `arbitre_commande_moteurs` sélectionne la source moteur correspondante. L'arbitre est le seul
-  nœud à publier vers `/pico/commande_moteurs`, ce qui évite tout conflit entre le clavier et
-  l'autonomie.
-- **Autonomie simple (expérimentale).** En mode autonomie, le robot avance tant que le sonar est
-  dégagé. Devant un obstacle, il arrête les moteurs, balaie avec la tourelle (gauche, centre,
-  droite), tourne vers le côté le plus dégagé, puis reprend l'avance après confirmation du passage
-  par plusieurs mesures. Sans issue dans le délai prévu, il recule brièvement et recommence.
-- **Arrêt de sécurité.** `interface_pico` ne maintient une consigne moteur que `0,5 s`. Sans
-  nouvelle consigne, après une erreur UART ou à la reconnexion, il force et mémorise un arrêt.
-- **Audio.** `annonces_audio` joue des annonces vocales (Piper) sur les événements du robot.
-  Purement décoratif : si Piper ou `aplay` sont absents, l'erreur est journalisée et les autres
-  nœuds continuent normalement. Limitation connue du bruit de démarrage de l'ampli I2S : voir
-  [docs/decisions_et_lecons.md](docs/decisions_et_lecons.md).
-- **Surveillance d'alimentation.** `surveillance_alimentation` lit deux INA260 sur I2C, publie
-  `/alimentation/logique` et `/alimentation/moteur` (`sensor_msgs/BatteryState`) et émet un
-  événement batterie sur `/robot/evenement` quand une tension reste basse assez longtemps, à
-  courant faible. `annonces_audio` prononce alors l'alerte correspondante.
+- **Modes de conduite.** `teleop_clavier` publie le mode (`manuel` ou `autonomie`) ; l'arbitre `arbitre_commande_moteurs` sélectionne la source moteur correspondante. L'arbitre est le seul nœud à publier vers `/pico/commande_moteurs`, ce qui évite tout conflit entre le clavier et l'autonomie.
+- **Autonomie simple (expérimentale).** En mode autonomie, le robot avance tant que le sonar est dégagé. Devant un obstacle, il arrête les moteurs, balaie avec la tourelle (gauche, centre, droite), tourne vers le côté le plus dégagé, puis reprend l'avance après confirmation du passage par plusieurs mesures. Sans issue dans le délai prévu, il recule brièvement et recommence.
+- **Arrêt de sécurité.** `interface_pico` ne maintient une consigne moteur que `0,5 s`. Sans nouvelle consigne, après une erreur UART ou à la reconnexion, il force et mémorise un arrêt.
+- **Audio.** `annonces_audio` joue des annonces vocales (Piper) sur les événements du robot. Purement décoratif : si Piper ou `aplay` sont absents, l'erreur est journalisée et les autres nœuds continuent normalement. Limitation connue du bruit de démarrage de l'ampli I2S : voir [docs/decisions_et_lecons.md](docs/decisions_et_lecons.md).
+- **Surveillance d'alimentation.** `surveillance_alimentation` lit deux INA260 sur I2C, publie `/alimentation/logique` et `/alimentation/moteur` (`sensor_msgs/BatteryState`) et émet un événement batterie sur `/robot/evenement` quand une tension reste basse assez longtemps, à courant faible. `annonces_audio` prononce alors l'alerte correspondante.
 
 ## Consommation du robot
 
-Repères de consommation établis sur le robot réel, mesurés par les deux INA260 du nœud
-`surveillance_alimentation` (topics `/alimentation/logique` et `/alimentation/moteur`,
-`sensor_msgs/BatteryState`, champ `current`). Ils servent au calcul d'autonomie et à
-l'interprétation des mesures. La surveillance de batterie, elle, se fait toujours sur la
-**tension**, jamais sur le courant.
+Repères de consommation établis sur le robot réel, mesurés par les deux INA260 du nœud `surveillance_alimentation` (topics `/alimentation/logique` et `/alimentation/moteur`, `sensor_msgs/BatteryState`, champ `current`). Ils servent au calcul d'autonomie et à l'interprétation des mesures. La surveillance de batterie, elle, se fait toujours sur la **tension**, jamais sur le courant.
 
 Journal d'observations : ajouter une ligne datée à chaque nouvel état caractérisé.
 
@@ -132,8 +98,7 @@ Journal d'observations : ajouter une ligne datée à chaque nouvel état caract�
 |---|---|---|
 | Arrêté, sans afficheur LCD allumé, sans audio | 430–450 mA | 2026-09-06 |
 
-Le courant du rail logique dépend de ce qui tourne sur le Raspberry Pi 4 (session SSH, nœuds
-ROS 2, sortie HDMI) et de l'état du LCD Waveshare. Tension typique au repos : ~7,1–7,2 V.
+Le courant du rail logique dépend de ce qui tourne sur le Raspberry Pi 4 (session SSH, nœuds ROS 2, sortie HDMI) et de l'état du LCD Waveshare. Tension typique au repos : ~7,1–7,2 V.
 
 ### Rail moteur — batterie 6 V Melasta, INA260 `0x41`
 
@@ -146,18 +111,12 @@ Valeurs approximatives, même consigne envoyée aux deux chenilles :
 | Charge partielle (robot roule au sol) | ~1,25 A |
 | Les deux chenilles bloquées à consigne 1000 | ~6,5 A |
 
-Tension typique au repos : ~5,8–6,4 V. Le blocage des deux chenilles produit le courant maximal
-du robot — mode de défaillance connu de la plateforme, voir
-[docs/decisions_et_lecons.md](docs/decisions_et_lecons.md). Un fusible rapide 10 A protège le rail
-moteur (voir [docs/parametres.md](docs/parametres.md)).
+Tension typique au repos : ~5,8–6,4 V. Le blocage des deux chenilles produit le courant maximal du robot — mode de défaillance connu de la plateforme, voir [docs/decisions_et_lecons.md](docs/decisions_et_lecons.md). Un fusible rapide 10 A protège le rail moteur (voir [docs/parametres.md](docs/parametres.md)).
 
 ### Veille hors séance
 
-- **MDD3A : ~32,5 mA en continu** tant que le connecteur XT30 de la batterie moteur est branché,
-  même moteurs arrêtés. Le pack 2000 mAh est à plat en ~2,5 jours, avec risque d'inversion de
-  cellule sur un pack NiMH 5S. → Débrancher le XT30 en fin de séance.
-- **Régulateurs Pololu : ~0,2 mA** de veille sur le rail logique. → Débrancher la batterie
-  logique seulement après plusieurs jours d'inactivité.
+- **MDD3A : ~32,5 mA en continu** tant que le connecteur XT30 de la batterie moteur est branché, même moteurs arrêtés. Le pack 2000 mAh est à plat en ~2,5 jours, avec risque d'inversion de cellule sur un pack NiMH 5S. → Débrancher le XT30 en fin de séance.
+- **Régulateurs Pololu : ~0,2 mA** de veille sur le rail logique. → Débrancher la batterie logique seulement après plusieurs jours d'inactivité.
 
 ## Développement dans VSCode
 
@@ -175,18 +134,11 @@ Tâches définies dans `.vscode/tasks.json` :
 
 ### Débogage d'un nœud Python
 
-`.vscode/launch.json` → configuration `Nœud Python ROS 2` (F5) : demande le module à exécuter, par
-exemple `robot_devastator.evitement_obstacle` ou `interface_pico.interface_pico`. Réservé au debug
-d'un nœud isolé, jamais à l'exploitation du robot.
+`.vscode/launch.json` → configuration `Nœud Python ROS 2` (F5) : demande le module à exécuter, par exemple `robot_devastator.evitement_obstacle` ou `interface_pico.interface_pico`. Réservé au debug d'un nœud isolé, jamais à l'exploitation du robot.
 
 ### Simulation et visualisation (Legion-Linux, sans matériel)
 
-- **Gazebo** : tâche `ROS 2 - Lancer simulation Gazebo` (seule tâche VSCode d'exécution). Monde
-  utilisé : `robot_devastator_description/worlds/piece_test.sdf`, une pièce fermée avec obstacles
-  asymétriques (voir le README de `robot_devastator_description`). Le lidar simulé publie `/scan`
-  dans le repère `laser_link`, `/clock` est ponté et `use_sim_time` est actif — préparation pour
-  `slam_toolbox` (Phase 10). Dans RViz : fixer le **Fixed Frame** à `odom` pour voir le scan
-  s'aligner correctement pendant un déplacement.
+- **Gazebo** : tâche `ROS 2 - Lancer simulation Gazebo` (seule tâche VSCode d'exécution). Monde utilisé : `robot_devastator_description/worlds/piece_test.sdf`, une pièce fermée avec obstacles asymétriques (voir le README de `robot_devastator_description`). Le lidar simulé publie `/scan` dans le repère `laser_link`, `/clock` est ponté et `use_sim_time` est actif — préparation pour `slam_toolbox` (Phase 10). Dans RViz : fixer le **Fixed Frame** à `odom` pour voir le scan s'aligner correctement pendant un déplacement.
 - **RViz / URDF** :
 
   ```bash
@@ -195,16 +147,13 @@ d'un nœud isolé, jamais à l'exploitation du robot.
   ros2 launch robot_devastator_description affichage.launch.py
   ```
 
-  Dans RViz : ajouter un affichage **RobotModel**, fixer le **Fixed Frame** à `base_footprint`.
-  `joint_state_publisher_gui` ouvre une fenêtre pour tourner les roues manuellement.
+  Dans RViz : ajouter un affichage **RobotModel**, fixer le **Fixed Frame** à `base_footprint`. `joint_state_publisher_gui` ouvre une fenêtre pour tourner les roues manuellement.
 
 ## Référence
 
 ### Interfaces ROS 2 — index alphabétique
 
-Le producteur et le consommateur de chaque interface ne sont pas repris ici : ce flux est
-documenté dans le README du package concerné, ou dans
-[docs/contrat_pico_ros2.md](docs/contrat_pico_ros2.md) pour l'interface Pico.
+Le producteur et le consommateur de chaque interface ne sont pas repris ici : ce flux est documenté dans le README du package concerné, ou dans [docs/contrat_pico_ros2.md](docs/contrat_pico_ros2.md) pour l'interface Pico.
 
 | Nom | Sous-section |
 |---|---|
@@ -300,16 +249,11 @@ Mesures approximatives, robot alimenté par sources de laboratoire, RPLIDAR bran
 | En dormance (`/stop_motor` — moteur et laser arrêtés) | ~620 mA | 2026-09-16 |
 | Actif (moteur en rotation, laser en mesure) | ~800 mA | 2026-09-16 |
 
-Le delta dormance/débranché (~180 mA) correspond à l'électronique de veille du RPLIDAR
-(contrôleur USB-série, microcontrôleur), qui reste alimentée tant que l'USB est branché même
-lidar arrêté. Le delta actif/dormance (~180 mA) correspond au moteur et au système de mesure
-laser. Voir [docs/decisions_et_lecons.md](docs/decisions_et_lecons.md) pour le comportement de
-démarrage automatique du RPLIDAR et la gestion de sa dormance (nœud `gestion_lidar`).
+Le delta dormance/débranché (~180 mA) correspond à l'électronique de veille du RPLIDAR (contrôleur USB-série, microcontrôleur), qui reste alimentée tant que l'USB est branché même lidar arrêté. Le delta actif/dormance (~180 mA) correspond au moteur et au système de mesure laser. Voir [docs/decisions_et_lecons.md](docs/decisions_et_lecons.md) pour le comportement de démarrage automatique du RPLIDAR et la gestion de sa dormance (nœud `gestion_lidar`).
 
 ### Nœuds ROS 2
 
-Convention : noms de nœuds et d'exécutables en `snake_case`, sans suffixe `_node` systématique. Les
-clés racines des fichiers YAML de paramètres reprennent le nom exact du nœud lancé.
+Convention : noms de nœuds et d'exécutables en `snake_case`, sans suffixe `_node` systématique. Les clés racines des fichiers YAML de paramètres reprennent le nom exact du nœud lancé.
 
 | Nœud | Package | Exécutable / module | État | Rôle |
 |---|---|---|---|---|
@@ -332,8 +276,7 @@ clés racines des fichiers YAML de paramètres reprennent le nom exact du nœud 
 
 ### Commandes de diagnostic
 
-Lancements `diag_*` : jamais utilisés en exploitation normale, réservés à l'isolement d'un
-sous-système. Dans un terminal sourcé, roues dans le vide :
+Lancements `diag_*` : jamais utilisés en exploitation normale, réservés à l'isolement d'un sous-système. Dans un terminal sourcé, roues dans le vide :
 
 ```bash
 # Banc de test de l'interface Pico seule
@@ -361,40 +304,27 @@ ros2 topic echo /alimentation/logique
 ros2 topic echo /alimentation/moteur
 ```
 
-Les ticks doivent augmenter en marche avant et diminuer en marche arrière. Si un moteur tourne dans
-le mauvais sens, corriger le câblage au MDD3A plutôt que le logiciel.
+Les ticks doivent augmenter en marche avant et diminuer en marche arrière. Si un moteur tourne dans le mauvais sens, corriger le câblage au MDD3A plutôt que le logiciel.
 
 ### Matériel — repères électriques
 
-Tensions typiques, courants par rail et par état, veille hors séance : section
-**« Consommation du robot »** plus haut. Utiliser la **tension**, pas le courant, comme
-indicateur de batterie faible.
+Tensions typiques, courants par rail et par état, veille hors séance : section **« Consommation du robot »** plus haut. Utiliser la **tension**, pas le courant, comme indicateur de batterie faible.
 
-Les deux INA260 sont alimentés par le rail logique 3,3 V (Pololu 4090), coupé quand l'interrupteur
-logique est à off : aucune lecture n'est possible robot éteint. Pour vérifier l'état de charge
-avant un rangement prolongé, allumer brièvement le robot ou utiliser un multimètre externe.
+Les deux INA260 sont alimentés par le rail logique 3,3 V (Pololu 4090), coupé quand l'interrupteur logique est à off : aucune lecture n'est possible robot éteint. Pour vérifier l'état de charge avant un rangement prolongé, allumer brièvement le robot ou utiliser un multimètre externe.
 
-Ces deux INA260 (0x40 rail logique, 0x41 rail moteur) sont lus en permanence par le nœud
-`surveillance_alimentation`, lancé par `devastator.launch.yaml`.
-`diag_surveillance_alimentation.launch.yaml` reste disponible pour l'isoler lors d'une mise au
-point. Voir `src/surveillance_alimentation/README.md`.
+Ces deux INA260 (0x40 rail logique, 0x41 rail moteur) sont lus en permanence par le nœud `surveillance_alimentation`, lancé par `devastator.launch.yaml`. `diag_surveillance_alimentation.launch.yaml` reste disponible pour l'isoler lors d'une mise au point. Voir `src/surveillance_alimentation/README.md`.
 
 ### Audio I2S — état du diagnostic
 
-Sortie fonctionnelle avec `dtparam=i2s=on` et `dtoverlay=hifiberry-dac` ; le HiFiBerry DAC est
-détecté comme carte ALSA. Test fonctionnel :
+Sortie fonctionnelle avec `dtparam=i2s=on` et `dtoverlay=hifiberry-dac` ; le HiFiBerry DAC est détecté comme carte ALSA. Test fonctionnel :
 
 ```bash
 aplay -D default ~/.cache/robot_devastator/audio/demarrage_01.wav
 ```
 
-`annonces_audio` charge les annonces de `config/annonces_audio.yaml`, vérifie le cache persistant
-`~/.cache/robot_devastator/audio`, génère synchroniquement avec Piper les WAV manquants au
-démarrage, puis les réutilise aux lancements suivants. Une annonce peut proposer plusieurs
-variantes ; une chaîne vide représente une variante silencieuse.
+`annonces_audio` charge les annonces de `config/annonces_audio.yaml`, vérifie le cache persistant `~/.cache/robot_devastator/audio`, génère synchroniquement avec Piper les WAV manquants au démarrage, puis les réutilise aux lancements suivants. Une annonce peut proposer plusieurs variantes ; une chaîne vide représente une variante silencieuse.
 
-Limitation connue du bruit de démarrage (« clac ») de l'ampli I2S : voir
-[docs/decisions_et_lecons.md](docs/decisions_et_lecons.md).
+Limitation connue du bruit de démarrage (« clac ») de l'ampli I2S : voir [docs/decisions_et_lecons.md](docs/decisions_et_lecons.md).
 
 ## Documentation détaillée
 
