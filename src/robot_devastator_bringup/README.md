@@ -21,7 +21,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 | `teleop.launch.yaml` | `teleop_clavier` | Téléopération clavier, dans un terminal interactif séparé (production, exception documentée) |
 | `diag_interface_pico.launch.yaml` | `interface_pico` | Diagnostic isolé de la couche UART, encodeurs, sonar et tourelle |
 | `diag_surveillance_alimentation.launch.yaml` | `surveillance_alimentation` | Isole le sous-système INA260 pour une mise au point (le nœud tourne en production dans `devastator.launch.yaml`) |
-| `diag_simulation.launch.yaml` | Simulation Gazebo | Diagnostic visuel sur Legion-Linux, sans matériel |
+| `diag_simulation.launch.yaml` | Simulation Gazebo, `slam_toolbox` (inclus via son `online_async_launch.py`) | Diagnostic visuel et cartographie SLAM sur Legion-Linux, sans matériel |
 
 ## Fichiers de configuration
 
@@ -33,6 +33,7 @@ ros2 launch robot_devastator_bringup teleop.launch.yaml
 | `affichage_lcd.yaml` | `affichage_lcd` | Péremption des mesures d'alimentation, période de rafraîchissement, intensité du rétroéclairage |
 | `annonces_audio.yaml` | `annonces_audio` | Exécutable Piper, modèle vocal, délai de répétition, liste des annonces par événement |
 | `autonomie_simple.yaml` | `evitement_obstacle` | Distance d'arrêt, vitesses, angles de tourelle, durées de rotation et de recul |
+| `slam_toolbox.yaml` | `slam_toolbox` | Copie complète de `mapper_params_online_async.yaml` du paquet (le launch du paquet remplace le fichier, sans fusion) ; écarts documentés en en-tête : portées min/max du lidar |
 | `teleop_clavier.yaml` | `teleop_clavier` | Vitesse initiale, bornes de vitesse, pas, période de publication |
 | `surveillance_alimentation.yaml` | `surveillance_alimentation` | Bus I2C, adresses INA260, seuils de tension par rail, porte de courant, temporisation, libellés d'événement |
 

@@ -21,3 +21,11 @@ launch:
     param:
     - name: config_file
       value: $(find-pkg-share robot_devastator_bringup)/config/gazebo_bridge.yaml
+
+- include:
+    file: $(find-pkg-share slam_toolbox)/launch/online_async_launch.py
+    arg:
+    - name: slam_params_file
+      value: $(find-pkg-share robot_devastator_bringup)/config/slam_toolbox.yaml
+    - name: use_sim_time
+      value: "true"

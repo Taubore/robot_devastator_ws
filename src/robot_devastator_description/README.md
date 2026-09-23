@@ -43,7 +43,13 @@ Toutes les balises `<gazebo>` ajoutées sont ignorées par le robot réel, qui c
 ros2 launch robot_devastator_bringup diag_simulation.launch.yaml
 ```
 
-Dans RViz, Fixed Frame `odom` : le scan doit dessiner les murs et les obstacles, rester aligné pendant une rotation sur place (`teleop_twist_keyboard`), et `ros2 topic hz /scan` doit indiquer ~6,8 Hz.
+Dans RViz (Fixed Frame `map` par défaut depuis l'ajout de `slam_toolbox`, passer à `odom` pour vérifier l'odométrie seule) : le scan doit dessiner les murs et les obstacles, rester aligné pendant une rotation sur place (`teleop_twist_keyboard`), et `ros2 topic hz /scan` doit indiquer ~6,8 Hz.
+
+## SLAM (Phase 10)
+
+`diag_simulation.launch.yaml` inclut `online_async_launch.py` de `slam_toolbox` (`sudo apt install ros-jazzy-slam-toolbox`) avec `config/slam_toolbox.yaml` du package bringup. Repères confirmés en simulation : `odom → base_footprint` vient de Gazebo (DiffDrive), le reste de l'arbre de `robot_state_publisher`, et `slam_toolbox` publie `map → odom`. Le repère de base est `base_footprint`, pas `base_link`. RViz affiche `/map` (durabilité Transient Local). Pas de sauvegarde de carte à cette étape.
+
+Test : lancer la simulation, conduire avec `ros2 run teleop_twist_keyboard teleop_twist_keyboard` à basse vitesse. `ros2 lifecycle get /slam_toolbox` doit répondre `active`. La carte apparaît après le premier déplacement de 0,5 m ou rotation de 0,5 rad, et dessine les murs et les trois obstacles sans dupliquer ni dériver au retour sur place.
 
 ## Limites connues
 
